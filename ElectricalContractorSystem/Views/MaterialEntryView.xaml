@@ -1,15 +1,160 @@
-<UserControl x:Class="ElectricalContractorSystem.Views.MaterialEntryView"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:ElectricalContractorSystem.Views"
-             mc:Ignorable="d" 
-             d:DesignHeight="768" d:DesignWidth="1024">
-    <Grid>
-        <TextBlock Text="Material Entry View - To be implemented" 
-                   HorizontalAlignment="Center" 
-                   VerticalAlignment="Center" 
-                   FontSize="24"/>
+<Window x:Class="ElectricalContractorSystem.Views.MaterialEntryView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ElectricalContractorSystem.Views"
+        xmlns:vm="clr-namespace:ElectricalContractorSystem.ViewModels"
+        xmlns:helpers="clr-namespace:ElectricalContractorSystem.Helpers"
+        mc:Ignorable="d"
+        Title="Material Entry" Height="800" Width="1200">
+    
+    <Grid Background="#F5F5F5">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <Grid Grid.Row="0" Margin="20,20,20,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            
+            <TextBlock Text="Material Entry" FontSize="24" FontWeight="Bold" VerticalAlignment="Center"/>
+        </Grid>
+        
+        <!-- Main Content -->
+        <Grid Grid.Row="1" Margin="20,10,20,20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="400"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <!-- Material Entry Form -->
+            <Border Grid.Column="0" Background="White" Margin="0,0,10,0" Padding="20" CornerRadius="5" 
+                    BorderBrush="#E0E0E0" BorderThickness="1">
+                <StackPanel>
+                    <TextBlock Text="Material Entry Details" FontSize="18" FontWeight="SemiBold" 
+                               Foreground="#424242" Margin="0,0,0,20"/>
+                    
+                    <!-- Job Selection -->
+                    <TextBlock Text="Select Job" FontSize="12" Foreground="#757575" Margin="0,0,0,5"/>
+                    <ComboBox ItemsSource="{Binding ActiveJobs}" 
+                              SelectedItem="{Binding SelectedJob}"
+                              DisplayMemberPath="JobNumber"
+                              Margin="0,0,0,15"/>
+                    
+                    <!-- Stage Selection -->
+                    <TextBlock Text="Select Stage" FontSize="12" Foreground="#757575" Margin="0,0,0,5"/>
+                    <ComboBox ItemsSource="{Binding JobStages}" 
+                              SelectedItem="{Binding SelectedStage}"
+                              DisplayMemberPath="StageName"
+                              IsEnabled="{Binding SelectedJob, Converter={StaticResource NotNullConverter}}"
+                              Margin="0,0,0,15"/>
+                    
+                    <!-- Vendor Selection -->
+                    <TextBlock Text="Select Vendor" FontSize="12" Foreground="#757575" Margin="0,0,0,5"/>
+                    <ComboBox ItemsSource="{Binding Vendors}" 
+                              SelectedItem="{Binding SelectedVendor}"
+                              DisplayMemberPath="Name"
+                              Margin="0,0,0,15"/>
+                    
+                    <!-- Date -->
+                    <TextBlock Text="Date" FontSize="12" Foreground="#757575" Margin="0,0,0,5"/>
+                    <DatePicker SelectedDate="{Binding EntryDate}" Margin="0,0,0,15"/>
+                    
+                    <!-- Cost -->
+                    <TextBlock Text="Cost" FontSize="12" Foreground="#757575" Margin="0,0,0,5"/>
+                    <Grid Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <TextBlock Text="$" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                        <TextBox Grid.Column="1" Text="{Binding Cost, StringFormat=N2}" Padding="20,5,5,5"/>
+                    </Grid>
+                    
+                    <!-- Invoice Number -->
+                    <TextBlock Text="Invoice Number (Optional)" FontSize="12" Foreground="#757575" Margin="0,0,0,5"/>
+                    <TextBox Text="{Binding InvoiceNumber}" Padding="5" Margin="0,0,0,15"/>
+                    
+                    <!-- Invoice Total -->
+                    <TextBlock Text="Invoice Total (Optional)" FontSize="12" Foreground="#757575" Margin="0,0,0,5"/>
+                    <Grid Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <TextBlock Text="$" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                        <TextBox Grid.Column="1" Text="{Binding InvoiceTotal, StringFormat=N2}" Padding="20,5,5,5"/>
+                    </Grid>
+                    
+                    <!-- Notes -->
+                    <TextBlock Text="Notes (Optional)" FontSize="12" Foreground="#757575" Margin="0,0,0,5"/>
+                    <TextBox Text="{Binding Notes}" TextWrapping="Wrap" AcceptsReturn="True" 
+                             Height="80" VerticalScrollBarVisibility="Auto" Margin="0,0,0,20"/>
+                    
+                    <!-- Buttons -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <Button Grid.Column="0" Content="Clear Form" Command="{Binding ClearFormCommand}" 
+                                Background="#E0E0E0" Foreground="#424242" Padding="15,8" 
+                                BorderThickness="0" Margin="0,0,5,0">
+                            <Button.Resources>
+                                <Style TargetType="Border">
+                                    <Setter Property="CornerRadius" Value="4"/>
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+                        
+                        <Button Grid.Column="1" Content="Save Entry" Command="{Binding SaveEntryCommand}" 
+                                Background="#43A047" Foreground="White" Padding="15,8" 
+                                BorderThickness="0" Margin="5,0,0,0">
+                            <Button.Resources>
+                                <Style TargetType="Border">
+                                    <Setter Property="CornerRadius" Value="4"/>
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+                    </Grid>
+                </StackPanel>
+            </Border>
+            
+            <!-- Recent Material Entries -->
+            <Border Grid.Column="1" Background="White" Margin="10,0,0,0" CornerRadius="5" 
+                    BorderBrush="#E0E0E0" BorderThickness="1">
+                <Grid Margin="20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    
+                    <TextBlock Grid.Row="0" Text="Recent Material Entries" FontSize="18" FontWeight="SemiBold" 
+                               Foreground="#424242" Margin="0,0,0,20"/>
+                    
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding RecentMaterialEntries}" AutoGenerateColumns="False" 
+                              HeadersVisibility="Column" GridLinesVisibility="Horizontal" 
+                              RowHeaderWidth="0" Background="Transparent" BorderThickness="0" IsReadOnly="True">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=d}" Width="100"/>
+                            <DataGridTextColumn Header="Job" Binding="{Binding Job.JobNumber}" Width="80"/>
+                            <DataGridTextColumn Header="Stage" Binding="{Binding JobStage.StageName}" Width="100"/>
+                            <DataGridTextColumn Header="Vendor" Binding="{Binding Vendor.Name}" Width="150"/>
+                            <DataGridTextColumn Header="Cost" Binding="{Binding Cost, StringFormat=\${0:N2}}" Width="100"/>
+                            <DataGridTextColumn Header="Invoice #" Binding="{Binding InvoiceNumber}" Width="120"/>
+                            <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
-</UserControl>
+</Window>
