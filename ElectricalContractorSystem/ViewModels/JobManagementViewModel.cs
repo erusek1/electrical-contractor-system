@@ -62,6 +62,7 @@ namespace ElectricalContractorSystem.ViewModels
                     EditJobCommand.RaiseCanExecuteChanged();
                     DeleteJobCommand.RaiseCanExecuteChanged();
                     ViewJobDetailsCommand.RaiseCanExecuteChanged();
+                    EnterJobDataCommand.RaiseCanExecuteChanged();
                 }
             }
         }
@@ -111,7 +112,13 @@ namespace ElectricalContractorSystem.ViewModels
         public string ErrorMessage
         {
             get => _errorMessage;
-            set => SetProperty(ref _errorMessage, value);
+            set
+            {
+                if (SetProperty(ref _errorMessage, value))
+                {
+                    OnPropertyChanged(nameof(HasError));
+                }
+            }
         }
 
         /// <summary>
@@ -141,6 +148,16 @@ namespace ElectricalContractorSystem.ViewModels
             set => SetProperty(ref _totalActual, value);
         }
 
+        /// <summary>
+        /// Indicates if there is an error
+        /// </summary>
+        public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
+
+        /// <summary>
+        /// Indicates if there are no jobs to display
+        /// </summary>
+        public bool HasNoJobs => FilteredJobs != null && FilteredJobs.Count == 0 && !IsLoading && !HasError;
+
         #endregion
 
         #region Commands
@@ -166,6 +183,11 @@ namespace ElectricalContractorSystem.ViewModels
         public RelayCommandWithCanExecute ViewJobDetailsCommand { get; }
 
         /// <summary>
+        /// Command to enter data for the selected job
+        /// </summary>
+        public RelayCommandWithCanExecute EnterJobDataCommand { get; }
+
+        /// <summary>
         /// Command to refresh the job list
         /// </summary>
         public RelayCommand RefreshJobsCommand { get; }
@@ -185,6 +207,11 @@ namespace ElectricalContractorSystem.ViewModels
         /// </summary>
         public RelayCommand ShowAllJobsCommand { get; }
 
+        /// <summary>
+        /// Command to clear the search text
+        /// </summary>
+        public RelayCommand ClearSearchCommand { get; }
+
         #endregion
 
         /// <summary>
@@ -203,10 +230,12 @@ namespace ElectricalContractorSystem.ViewModels
             EditJobCommand = new RelayCommandWithCanExecute(EditJob, CanEditJob);
             DeleteJobCommand = new RelayCommandWithCanExecute(DeleteJob, CanDeleteJob);
             ViewJobDetailsCommand = new RelayCommandWithCanExecute(ViewJobDetails, CanViewJobDetails);
+            EnterJobDataCommand = new RelayCommandWithCanExecute(EnterJobData, CanEnterJobData);
             RefreshJobsCommand = new RelayCommand(LoadJobs);
             ShowActiveJobsCommand = new RelayCommand(ShowActiveJobs);
             ShowCompletedJobsCommand = new RelayCommand(ShowCompletedJobs);
             ShowAllJobsCommand = new RelayCommand(ShowAllJobs);
+            ClearSearchCommand = new RelayCommand(ClearSearch);
 
             // Load data
             LoadJobs();
@@ -284,6 +313,9 @@ namespace ElectricalContractorSystem.ViewModels
             
             // Update summary statistics based on the filter
             UpdateSummaryStatistics();
+            
+            // Notify that HasNoJobs may have changed
+            OnPropertyChanged(nameof(HasNoJobs));
         }
 
         /// <summary>
@@ -360,6 +392,20 @@ namespace ElectricalContractorSystem.ViewModels
             return SelectedJob != null;
         }
 
+        private void EnterJobData(object parameter)
+        {
+            if (SelectedJob == null)
+                return;
+
+            // In a real implementation, this would navigate to a job data entry screen
+            System.Windows.MessageBox.Show($"Enter Data for Job {SelectedJob.JobNumber} functionality not yet implemented");
+        }
+
+        private bool CanEnterJobData(object parameter)
+        {
+            return SelectedJob != null && SelectedJob.Status != "Complete";
+        }
+
         private void ShowActiveJobs(object parameter)
         {
             ActiveFilter = "active";
@@ -373,6 +419,11 @@ namespace ElectricalContractorSystem.ViewModels
         private void ShowAllJobs(object parameter)
         {
             ActiveFilter = "all";
+        }
+
+        private void ClearSearch(object parameter)
+        {
+            SearchText = string.Empty;
         }
 
         #endregion
