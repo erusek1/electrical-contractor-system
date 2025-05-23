@@ -1,284 +1,80 @@
 <Window x:Class="ElectricalContractorSystem.Views.JobCostTrackingView"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:ElectricalContractorSystem.Views"
-        xmlns:vm="clr-namespace:ElectricalContractorSystem.ViewModels"
-        xmlns:helpers="clr-namespace:ElectricalContractorSystem.Helpers"
-        mc:Ignorable="d"
-        Title="Job Cost Tracking" Height="800" Width="1200">
-    
-    <Window.Resources>
-        <helpers:StatusToColorConverter x:Key="StatusToColorConverter"/>
-        <helpers:StatusToVisibilityConverter x:Key="StatusToVisibilityConverter"/>
-    </Window.Resources>
+        Title="Job Cost Tracking" Height="600" Width="1000">
     
     <Grid Background="#F5F5F5">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         
         <!-- Header -->
-        <Grid Grid.Row="0" Margin="20,20,20,10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="20" HorizontalAlignment="SpaceBetween">
             <TextBlock Text="Job Cost Tracking" FontSize="24" FontWeight="Bold" VerticalAlignment="Center"/>
-            
-            <Button Grid.Column="1" Content="Print Report" Command="{Binding PrintReportCommand}" 
-                    Background="#1976D2" Foreground="White" Padding="15,8" BorderThickness="0">
-                <Button.Resources>
-                    <Style TargetType="Border">
-                        <Setter Property="CornerRadius" Value="4"/>
-                    </Style>
-                </Button.Resources>
-            </Button>
-        </Grid>
+            <Button Content="Print Report" Background="#1976D2" Foreground="White" Padding="15,8"/>
+        </StackPanel>
         
         <!-- Job Selection -->
-        <Border Grid.Row="1" Background="White" Margin="20,10" Padding="20" CornerRadius="5" 
-                BorderBrush="#E0E0E0" BorderThickness="1">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                
-                <StackPanel Grid.Column="0" Margin="0,0,20,0">
-                    <TextBlock Text="Select Job" FontSize="12" Foreground="#757575" Margin="0,0,0,5"/>
-                    <ComboBox Width="200" ItemsSource="{Binding JobsList}" 
-                              SelectedValue="{Binding SelectedJobNumber}" 
-                              SelectedValuePath="JobNumber" 
-                              DisplayMemberPath="JobNumber"/>
-                </StackPanel>
-                
-                <StackPanel Grid.Column="2" Margin="20,0">
-                    <TextBlock Text="Customer" FontSize="12" Foreground="#757575" Margin="0,0,0,5"/>
-                    <TextBlock Text="{Binding SelectedJob.Customer.Name}" FontWeight="SemiBold"/>
-                </StackPanel>
-                
-                <StackPanel Grid.Column="4" Margin="20,0">
-                    <TextBlock Text="Address" FontSize="12" Foreground="#757575" Margin="0,0,0,5"/>
-                    <TextBlock Text="{Binding SelectedJob.Address}"/>
-                </StackPanel>
-            </Grid>
+        <Border Grid.Row="1" Background="White" Margin="20,0,20,20" Padding="20">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Select Job:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <ComboBox Width="200" Height="30"/>
+                <TextBlock Text="Customer:" VerticalAlignment="Center" Margin="20,0,10,0"/>
+                <TextBlock Text="[Customer Name]" VerticalAlignment="Center" FontWeight="SemiBold"/>
+            </StackPanel>
         </Border>
         
-        <!-- Summary Cards -->
-        <Grid Grid.Row="2" Margin="20,10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            
-            <!-- Estimated Total -->
-            <Border Grid.Column="0" Background="White" Margin="0,0,10,0" Padding="15" CornerRadius="5" 
-                    BorderBrush="#E0E0E0" BorderThickness="1">
-                <StackPanel>
-                    <TextBlock Text="ESTIMATED TOTAL" FontSize="12" FontWeight="SemiBold" Foreground="#757575"/>
-                    <TextBlock Text="{Binding EstimatedTotal, StringFormat=\${0:N2}}" FontSize="20" FontWeight="Bold" Margin="0,5,0,5"/>
-                    <TextBlock FontSize="10" Foreground="#757575">
-                        <Run Text="Materials: "/>
-                        <Run Text="{Binding EstimatedMaterialTotal, StringFormat=\${0:N2}}"/>
-                        <Run Text=" | Labor: "/>
-                        <Run Text="{Binding EstimatedLaborCost, StringFormat=\${0:N2}}"/>
-                    </TextBlock>
-                </StackPanel>
-            </Border>
-            
-            <!-- Actual Total -->
-            <Border Grid.Column="1" Background="White" Margin="10,0" Padding="15" CornerRadius="5" 
-                    BorderBrush="#E0E0E0" BorderThickness="1">
-                <StackPanel>
-                    <TextBlock Text="ACTUAL TOTAL" FontSize="12" FontWeight="SemiBold" Foreground="#757575"/>
-                    <TextBlock Text="{Binding ActualTotal, StringFormat=\${0:N2}}" FontSize="20" FontWeight="Bold" Margin="0,5,0,5"/>
-                    <TextBlock FontSize="10" Foreground="#757575">
-                        <Run Text="Materials: "/>
-                        <Run Text="{Binding ActualMaterialTotal, StringFormat=\${0:N2}}"/>
-                        <Run Text=" | Labor: "/>
-                        <Run Text="{Binding ActualLaborCost, StringFormat=\${0:N2}}"/>
-                    </TextBlock>
-                </StackPanel>
-            </Border>
-            
-            <!-- Profit -->
-            <Border Grid.Column="2" Background="White" Margin="10,0" Padding="15" CornerRadius="5" 
-                    BorderThickness="0,4,0,0">
-                <Border.Style>
-                    <Style TargetType="Border">
-                        <Setter Property="BorderBrush" Value="{Binding Profit, Converter={StaticResource StatusToColorConverter}}"/>
-                    </Style>
-                </Border.Style>
-                <StackPanel>
-                    <TextBlock Text="PROFIT" FontSize="12" FontWeight="SemiBold" Foreground="#757575"/>
-                    <TextBlock Text="{Binding Profit, StringFormat=\${0:N2}}" FontSize="20" FontWeight="Bold" Margin="0,5,0,5"
-                               Foreground="{Binding Profit, Converter={StaticResource StatusToColorConverter}}"/>
-                    <TextBlock FontSize="10" Foreground="#757575">
-                        <Run Text="{Binding ProfitPercentage, StringFormat={}{0:F1}%}"/>
-                        <Run Text=" of estimated revenue"/>
-                    </TextBlock>
-                </StackPanel>
-            </Border>
-            
-            <!-- Labor Hours -->
-            <Border Grid.Column="3" Background="White" Margin="10,0,0,0" Padding="15" CornerRadius="5" 
-                    BorderBrush="#E0E0E0" BorderThickness="1">
-                <StackPanel>
-                    <TextBlock Text="LABOR HOURS" FontSize="12" FontWeight="SemiBold" Foreground="#757575"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,5,0,5">
-                        <TextBlock Text="{Binding ActualHoursTotal, StringFormat={}{0:F1}}" FontSize="20" FontWeight="Bold"/>
-                        <TextBlock Text=" / " FontSize="20"/>
-                        <TextBlock Text="{Binding EstimatedHoursTotal, StringFormat={}{0:F1}}" FontSize="20"/>
-                    </StackPanel>
-                    <TextBlock FontSize="10" Foreground="#757575">
-                        <Run Text="{Binding ActualHoursTotal, StringFormat={}{0:F1}}"/>
-                        <Run Text="h used ("/>
-                        <Run Text="{Binding ActualHoursTotal, Converter={StaticResource ProfitRatioConverter}, ConverterParameter={Binding EstimatedHoursTotal}, StringFormat={}{0:P1}}"/>
-                        <Run Text=" of estimate)"/>
-                    </TextBlock>
-                </StackPanel>
-            </Border>
-        </Grid>
-        
-        <!-- Tabbed Content -->
-        <Grid Grid.Row="3" Margin="20,10,20,20">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-            
-            <!-- Estimated vs Actual by Stage -->
-            <Border Grid.Row="0" Background="White" Margin="0,0,0,20" CornerRadius="5" 
-                    BorderBrush="#E0E0E0" BorderThickness="1">
-                <Grid>
+        <!-- Main Content -->
+        <TabControl Grid.Row="2" Margin="20,0,20,20">
+            <TabItem Header="Summary">
+                <Grid Margin="20">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     
-                    <TextBlock Grid.Row="0" Text="Estimated vs. Actual by Stage" FontWeight="SemiBold" 
-                               Margin="20,15" Foreground="#424242"/>
+                    <!-- Summary Cards -->
+                    <UniformGrid Grid.Row="0" Rows="1" Columns="4" Margin="0,0,0,20">
+                        <Border Background="White" Margin="0,0,10,0" Padding="15">
+                            <StackPanel>
+                                <TextBlock Text="Estimated Total" FontSize="12" Foreground="#757575"/>
+                                <TextBlock Text="$0.00" FontSize="20" FontWeight="Bold"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Background="White" Margin="10,0" Padding="15">
+                            <StackPanel>
+                                <TextBlock Text="Actual Total" FontSize="12" Foreground="#757575"/>
+                                <TextBlock Text="$0.00" FontSize="20" FontWeight="Bold"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Background="White" Margin="10,0" Padding="15">
+                            <StackPanel>
+                                <TextBlock Text="Profit" FontSize="12" Foreground="#757575"/>
+                                <TextBlock Text="$0.00" FontSize="20" FontWeight="Bold" Foreground="Green"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Background="White" Margin="10,0,0,0" Padding="15">
+                            <StackPanel>
+                                <TextBlock Text="Labor Hours" FontSize="12" Foreground="#757575"/>
+                                <TextBlock Text="0 / 0" FontSize="20" FontWeight="Bold"/>
+                            </StackPanel>
+                        </Border>
+                    </UniformGrid>
                     
-                    <DataGrid Grid.Row="1" ItemsSource="{Binding StageComparisonList}" AutoGenerateColumns="False" 
-                              HeadersVisibility="Column" GridLinesVisibility="Horizontal" 
-                              RowHeaderWidth="0" Background="Transparent" BorderThickness="0">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Stage" Binding="{Binding StageName}" Width="100"/>
-                            <DataGridTextColumn Header="Est. Hours" Binding="{Binding EstimatedHours, StringFormat=F1}" Width="80"/>
-                            <DataGridTextColumn Header="Act. Hours" Binding="{Binding ActualHours, StringFormat=F1}" Width="80"/>
-                            <DataGridTemplateColumn Header="Variance" Width="100">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding Path=., Converter={StaticResource HoursVarianceConverter}}" 
-                                                   Foreground="{Binding Path=., Converter={StaticResource VarianceColorConverter}}"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="Est. Materials" Binding="{Binding EstimatedMaterialCost, StringFormat=\${0:N2}}" Width="120"/>
-                            <DataGridTextColumn Header="Act. Materials" Binding="{Binding ActualMaterialCost, StringFormat=\${0:N2}}" Width="120"/>
-                            <DataGridTemplateColumn Header="Variance" Width="120">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding Path=., Converter={StaticResource MaterialVarianceConverter}}" 
-                                                   Foreground="{Binding Path=., Converter={StaticResource VarianceColorConverter}, ConverterParameter=material}"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
+                    <!-- Data Grid -->
+                    <DataGrid Grid.Row="1" AutoGenerateColumns="True" Background="White"/>
                 </Grid>
-            </Border>
+            </TabItem>
             
-            <!-- Detail Tabs -->
-            <Border Grid.Row="1" Background="White" CornerRadius="5" 
-                    BorderBrush="#E0E0E0" BorderThickness="1">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    
-                    <TextBlock Grid.Row="0" Text="Job Details" FontWeight="SemiBold" 
-                               Margin="20,15" Foreground="#424242"/>
-                    
-                    <!-- Tab Buttons -->
-                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="20,0,0,0" 
-                                Background="Transparent" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1">
-                        <Button Content="Labor Hours by Employee" 
-                                Command="{Binding ChangeTabCommand}" CommandParameter="labor"
-                                Style="{StaticResource TabButtonStyle}"
-                                IsEnabled="{Binding ActiveTab, Converter={StaticResource StringNotEqualityConverter}, ConverterParameter=labor}"/>
-                        <Button Content="Material Transactions" 
-                                Command="{Binding ChangeTabCommand}" CommandParameter="material"
-                                Style="{StaticResource TabButtonStyle}"
-                                IsEnabled="{Binding ActiveTab, Converter={StaticResource StringNotEqualityConverter}, ConverterParameter=material}"/>
-                        <Button Content="Room Specifications" 
-                                Command="{Binding ChangeTabCommand}" CommandParameter="rooms"
-                                Style="{StaticResource TabButtonStyle}"
-                                IsEnabled="{Binding ActiveTab, Converter={StaticResource StringNotEqualityConverter}, ConverterParameter=rooms}"/>
-                    </StackPanel>
-                    
-                    <!-- Tab Content -->
-                    <Grid Grid.Row="2">
-                        <!-- Labor Hours Tab -->
-                        <DataGrid ItemsSource="{Binding LaborEntries}" AutoGenerateColumns="False" 
-                                  HeadersVisibility="Column" GridLinesVisibility="Horizontal" 
-                                  RowHeaderWidth="0" Background="Transparent" BorderThickness="0"
-                                  Visibility="{Binding ActiveTab, Converter={StaticResource StringEqualityToVisibilityConverter}, ConverterParameter=labor}">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Employee" Binding="{Binding Employee.Name}" Width="120"/>
-                                <DataGridTextColumn Header="Stage" Binding="{Binding JobStage.StageName}" Width="100"/>
-                                <DataGridTextColumn Header="Hours" Binding="{Binding Hours, StringFormat=F1}" Width="80"/>
-                                <DataGridTextColumn Header="Labor Cost" Binding="{Binding Path=., Converter={StaticResource LaborCostConverter}}" Width="120"/>
-                                <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=d}" Width="100"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                        
-                        <!-- Material Transactions Tab -->
-                        <DataGrid ItemsSource="{Binding MaterialEntries}" AutoGenerateColumns="False" 
-                                  HeadersVisibility="Column" GridLinesVisibility="Horizontal" 
-                                  RowHeaderWidth="0" Background="Transparent" BorderThickness="0"
-                                  Visibility="{Binding ActiveTab, Converter={StaticResource StringEqualityToVisibilityConverter}, ConverterParameter=material}">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=d}" Width="100"/>
-                                <DataGridTextColumn Header="Stage" Binding="{Binding JobStage.StageName}" Width="100"/>
-                                <DataGridTextColumn Header="Vendor" Binding="{Binding Vendor.Name}" Width="150"/>
-                                <DataGridTextColumn Header="Description" Binding="{Binding Notes}" Width="*"/>
-                                <DataGridTextColumn Header="Invoice #" Binding="{Binding InvoiceNumber}" Width="120"/>
-                                <DataGridTextColumn Header="Cost" Binding="{Binding Cost, StringFormat=\${0:N2}}" Width="100"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                        
-                        <!-- Room Specifications Tab -->
-                        <DataGrid ItemsSource="{Binding RoomSpecifications}" AutoGenerateColumns="False" 
-                                  HeadersVisibility="Column" GridLinesVisibility="Horizontal" 
-                                  RowHeaderWidth="0" Background="Transparent" BorderThickness="0"
-                                  Visibility="{Binding ActiveTab, Converter={StaticResource StringEqualityToVisibilityConverter}, ConverterParameter=rooms}">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Room" Binding="{Binding RoomName}" Width="150"/>
-                                <DataGridTextColumn Header="Item Description" Binding="{Binding ItemDescription}" Width="*"/>
-                                <DataGridTextColumn Header="Quantity" Binding="{Binding Quantity}" Width="80"/>
-                                <DataGridTextColumn Header="Item Code" Binding="{Binding ItemCode}" Width="100"/>
-                                <DataGridTextColumn Header="Unit Price" Binding="{Binding UnitPrice, StringFormat=\${0:N2}}" Width="100"/>
-                                <DataGridTextColumn Header="Total Price" Binding="{Binding TotalPrice, StringFormat=\${0:N2}}" Width="100"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </Grid>
-                </Grid>
-            </Border>
-        </Grid>
+            <TabItem Header="Labor Details">
+                <DataGrid Margin="20" AutoGenerateColumns="True" Background="White"/>
+            </TabItem>
+            
+            <TabItem Header="Material Details">
+                <DataGrid Margin="20" AutoGenerateColumns="True" Background="White"/>
+            </TabItem>
+        </TabControl>
     </Grid>
 </Window>
