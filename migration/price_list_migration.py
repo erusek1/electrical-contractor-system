@@ -14,8 +14,8 @@ def main():
     # Configuration - Update these settings
     db_config = {
         "host": "localhost",
-        "user": "your_db_username",
-        "password": "your_db_password",
+        "user": "root",
+        "password": "215Osborn",
         "database": "electrical_contractor_db"
     }
     
