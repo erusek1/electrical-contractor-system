@@ -1,23 +1,46 @@
 using System;
+using System.Configuration;
+using MySql.Data.MySqlClient;
 using System.Windows;
-using ElectricalContractorSystem.ViewModels;
 
 namespace ElectricalContractorSystem
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         public MainWindow()
         {
             InitializeComponent();
-            
-            // The ViewModel is set in XAML, but we can also access it here
-            var viewModel = (MainViewModel)DataContext;
-            
-            // Set the title based on company name (could be loaded from config)
-            Title = "Erik Rusek Electric - Contractor System";
+            TestDatabaseConnection();
+        }
+
+        private void TestDatabaseConnection()
+        {
+            try
+            {
+                string connectionString = ConfigurationManager.ConnectionStrings["MySQLConnection"].ConnectionString;
+                
+                using (var connection = new MySqlConnection(connectionString))
+                {
+                    connection.Open();
+                    
+                    // Simple test query
+                    using (var command = new MySqlCommand("SELECT VERSION()", connection))
+                    {
+                        var version = command.ExecuteScalar();
+                        MessageBox.Show($"Database connection successful!\nMySQL Version: {version}", 
+                                      "Connection Test", 
+                                      MessageBoxButton.OK, 
+                                      MessageBoxImage.Information);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Database connection failed:\n{ex.Message}", 
+                              "Connection Test", 
+                              MessageBoxButton.OK, 
+                              MessageBoxImage.Error);
+            }
         }
     }
 }
