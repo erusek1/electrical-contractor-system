@@ -7,12 +7,8 @@
         xmlns:viewmodels="clr-namespace:ElectricalContractorSystem.ViewModels"
         xmlns:views="clr-namespace:ElectricalContractorSystem.Views"
         mc:Ignorable="d"
-        Title="Electrical Contractor System" Height="768" Width="1024" 
+        Title="Electrical Contractor System - Erik Rusek Electric" Height="768" Width="1024" 
         WindowStartupLocation="CenterScreen">
-
-    <Window.DataContext>
-        <viewmodels:MainViewModel />
-    </Window.DataContext>
 
     <Window.Resources>
         <Style x:Key="NavButtonStyle" TargetType="Button">
@@ -22,30 +18,43 @@
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="Foreground" Value="DarkSlateGray"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
                     <Setter Property="Background" Value="#E8F5E9"/>
                 </Trigger>
-                <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                    <Setter Property="Background" Value="{StaticResource PrimaryLightBrush}"/>
-                    <Setter Property="Foreground" Value="White"/>
-                </DataTrigger>
             </Style.Triggers>
         </Style>
     </Window.Resources>
 
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="220"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
+        <!-- Menu Bar -->
+        <Menu Grid.Row="0" Grid.ColumnSpan="2" Background="LightGray">
+            <MenuItem Header="_Database">
+                <MenuItem Header="_Test Connection" Click="TestConnection_Click"/>
+                <MenuItem Header="_Create Sample Data" Click="CreateSampleData_Click"/>
+                <Separator/>
+                <MenuItem Header="E_xit" Click="Exit_Click"/>
+            </MenuItem>
+            <MenuItem Header="_Help">
+                <MenuItem Header="_About" Click="About_Click"/>
+            </MenuItem>
+        </Menu>
+
         <!-- Navigation Panel -->
-        <Border Background="#F5F5F5" Grid.Column="0">
+        <Border Background="#F5F5F5" Grid.Row="1" Grid.Column="0">
             <DockPanel>
                 <!-- App Title -->
-                <Border DockPanel.Dock="Top" Height="60" Background="{StaticResource PrimaryBrush}">
+                <Border DockPanel.Dock="Top" Height="60" Background="DarkSlateGray">
                     <TextBlock Text="ERE System" 
                                VerticalAlignment="Center" 
                                HorizontalAlignment="Center"
@@ -82,7 +91,7 @@
         </Border>
 
         <!-- Content Area -->
-        <Border Grid.Column="1" Background="White">
+        <Border Grid.Row="1" Grid.Column="1" Background="White">
             <ContentControl Content="{Binding CurrentView}"/>
         </Border>
     </Grid>
