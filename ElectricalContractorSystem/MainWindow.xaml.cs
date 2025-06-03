@@ -30,6 +30,19 @@ namespace ElectricalContractorSystem
             DatabaseConnectionTest.CreateSampleData();
         }
         
+        private void About_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show(
+                "Electrical Contractor System\n" +
+                "Version 1.0\n\n" +
+                "Erik Rusek Electric\n" +
+                "Database-driven business management system\n\n" +
+                "Replacing Excel with modern technology!",
+                "About ERE System",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
+        
         private void Exit_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
