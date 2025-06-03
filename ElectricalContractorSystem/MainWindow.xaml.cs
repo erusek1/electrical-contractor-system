@@ -2,6 +2,7 @@ using System;
 using System.Configuration;
 using MySql.Data.MySqlClient;
 using System.Windows;
+using ElectricalContractorSystem.ViewModels;
 
 namespace ElectricalContractorSystem
 {
@@ -10,37 +11,28 @@ namespace ElectricalContractorSystem
         public MainWindow()
         {
             InitializeComponent();
-            TestDatabaseConnection();
+            
+            // Test database connection on startup
+            DatabaseConnectionTest.TestConnection();
+            
+            // Set up main view model
+            this.DataContext = new MainViewModel();
         }
 
-        private void TestDatabaseConnection()
+        // Menu event handlers for testing
+        private void TestConnection_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                string connectionString = ConfigurationManager.ConnectionStrings["MySQLConnection"].ConnectionString;
-                
-                using (var connection = new MySqlConnection(connectionString))
-                {
-                    connection.Open();
-                    
-                    // Simple test query
-                    using (var command = new MySqlCommand("SELECT VERSION()", connection))
-                    {
-                        var version = command.ExecuteScalar();
-                        MessageBox.Show($"Database connection successful!\nMySQL Version: {version}", 
-                                      "Connection Test", 
-                                      MessageBoxButton.OK, 
-                                      MessageBoxImage.Information);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Database connection failed:\n{ex.Message}", 
-                              "Connection Test", 
-                              MessageBoxButton.OK, 
-                              MessageBoxImage.Error);
-            }
+            DatabaseConnectionTest.TestConnection();
+        }
+        
+        private void CreateSampleData_Click(object sender, RoutedEventArgs e)
+        {
+            DatabaseConnectionTest.CreateSampleData();
+        }
+        
+        private void Exit_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
         }
     }
 }
