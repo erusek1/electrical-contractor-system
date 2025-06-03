@@ -10,36 +10,26 @@
 
     <UserControl.Resources>
         <helpers:StatusToColorConverter x:Key="StatusToColorConverter" />
-        <helpers:StatusToBrushConverter x:Key="StatusToBrushConverter" />
-        <helpers:StatusToVisibilityConverter x:Key="StatusToVisibilityConverter" />
-        <helpers:StatusToInverseVisibilityConverter x:Key="StatusToInverseVisibilityConverter" />
+        <helpers:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         
+        <!-- Simplified filter button style -->
         <Style x:Key="FilterButtonStyle" TargetType="Button">
-            <Setter Property="Padding" Value="15,5"/>
+            <Setter Property="Padding" Value="15,8"/>
             <Setter Property="Margin" Value="5,0"/>
             <Setter Property="Background" Value="#F0F0F0"/>
-            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
-            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#CCCCCC"/>
             <Style.Triggers>
-                <DataTrigger Binding="{Binding ActiveFilter}" Value="active">
-                    <Setter Property="Background" Value="{StaticResource PrimaryLightBrush}" 
-                            Condition="{Binding RelativeSource={RelativeSource Self}, Path=Content, Converter={StaticResource StringEqualityConverter}, ConverterParameter=Active Jobs}"/>
-                    <Setter Property="Foreground" Value="White" 
-                            Condition="{Binding RelativeSource={RelativeSource Self}, Path=Content, Converter={StaticResource StringEqualityConverter}, ConverterParameter=Active Jobs}"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding ActiveFilter}" Value="completed">
-                    <Setter Property="Background" Value="{StaticResource PrimaryLightBrush}" 
-                            Condition="{Binding RelativeSource={RelativeSource Self}, Path=Content, Converter={StaticResource StringEqualityConverter}, ConverterParameter=Completed Jobs}"/>
-                    <Setter Property="Foreground" Value="White" 
-                            Condition="{Binding RelativeSource={RelativeSource Self}, Path=Content, Converter={StaticResource StringEqualityConverter}, ConverterParameter=Completed Jobs}"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding ActiveFilter}" Value="all">
-                    <Setter Property="Background" Value="{StaticResource PrimaryLightBrush}" 
-                            Condition="{Binding RelativeSource={RelativeSource Self}, Path=Content, Converter={StaticResource StringEqualityConverter}, ConverterParameter=All Jobs}"/>
-                    <Setter Property="Foreground" Value="White" 
-                            Condition="{Binding RelativeSource={RelativeSource Self}, Path=Content, Converter={StaticResource StringEqualityConverter}, ConverterParameter=All Jobs}"/>
-                </DataTrigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#E0E0E0"/>
+                </Trigger>
             </Style.Triggers>
+        </Style>
+        
+        <Style x:Key="ActiveFilterButtonStyle" TargetType="Button" BasedOn="{StaticResource FilterButtonStyle}">
+            <Setter Property="Background" Value="DarkSlateGray"/>
+            <Setter Property="Foreground" Value="White"/>
         </Style>
     </UserControl.Resources>
 
@@ -59,18 +49,23 @@
             </Grid.ColumnDefinitions>
             
             <TextBlock Text="Job Management" 
-                       Style="{StaticResource HeaderTextStyle}"
+                       FontSize="24"
+                       FontWeight="Bold"
                        VerticalAlignment="Center"/>
             
             <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <Button Content="New Job" 
                         Command="{Binding NewJobCommand}"
-                        Style="{StaticResource PrimaryButtonStyle}" 
+                        Background="DarkSlateGray"
+                        Foreground="White"
+                        Padding="15,8"
                         Margin="5,0"/>
                 
                 <Button Content="Refresh" 
                         Command="{Binding RefreshJobsCommand}"
-                        Style="{StaticResource AccentButtonStyle}" 
+                        Background="LightGray"
+                        Foreground="Black"
+                        Padding="15,8"
                         Margin="5,0"/>
             </StackPanel>
         </Grid>
@@ -84,10 +79,16 @@
             </Grid.ColumnDefinitions>
             
             <!-- Active Jobs Card -->
-            <Border Grid.Column="0" Style="{StaticResource CardStyle}" Margin="0,0,10,0">
+            <Border Grid.Column="0" 
+                    Background="White" 
+                    BorderBrush="#DDDDDD" 
+                    BorderThickness="1" 
+                    Padding="15"
+                    Margin="0,0,10,0">
                 <StackPanel>
                     <TextBlock Text="Active Jobs" 
-                               Style="{StaticResource SubHeaderTextStyle}"/>
+                               FontSize="14"
+                               Foreground="Gray"/>
                     <TextBlock Text="{Binding ActiveJobCount}" 
                                FontSize="24" 
                                FontWeight="Bold"
@@ -96,10 +97,16 @@
             </Border>
             
             <!-- Total Estimates Card -->
-            <Border Grid.Column="1" Style="{StaticResource CardStyle}" Margin="5,0">
+            <Border Grid.Column="1" 
+                    Background="White" 
+                    BorderBrush="#DDDDDD" 
+                    BorderThickness="1" 
+                    Padding="15"
+                    Margin="5,0">
                 <StackPanel>
                     <TextBlock Text="Total Estimates" 
-                               Style="{StaticResource SubHeaderTextStyle}"/>
+                               FontSize="14"
+                               Foreground="Gray"/>
                     <TextBlock FontSize="24" 
                                FontWeight="Bold"
                                Margin="0,10,0,0">
@@ -110,10 +117,16 @@
             </Border>
             
             <!-- Actual to Date Card -->
-            <Border Grid.Column="2" Style="{StaticResource CardStyle}" Margin="10,0,0,0">
+            <Border Grid.Column="2" 
+                    Background="White" 
+                    BorderBrush="#DDDDDD" 
+                    BorderThickness="1" 
+                    Padding="15"
+                    Margin="10,0,0,0">
                 <StackPanel>
                     <TextBlock Text="Actual to Date" 
-                               Style="{StaticResource SubHeaderTextStyle}"/>
+                               FontSize="14"
+                               Foreground="Gray"/>
                     <TextBlock FontSize="24" 
                                FontWeight="Bold"
                                Margin="0,10,0,0">
@@ -125,7 +138,12 @@
         </Grid>
 
         <!-- Search and Filter -->
-        <Border Grid.Row="2" Style="{StaticResource CardStyle}" Margin="20,10">
+        <Border Grid.Row="2" 
+                Background="White" 
+                BorderBrush="#DDDDDD" 
+                BorderThickness="1" 
+                Padding="15"
+                Margin="20,10">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -152,7 +170,6 @@
                         Background="White"
                         BorderBrush="#CCCCCC"
                         BorderThickness="1"
-                        CornerRadius="4"
                         Margin="20,0,0,0"
                         Padding="5,0"
                         HorizontalAlignment="Right"
@@ -174,22 +191,53 @@
                                    Foreground="Gray"
                                    VerticalAlignment="Center"
                                    Margin="10,0,0,0"
-                                   Visibility="{Binding SearchText, Converter={StaticResource StringEmptyToVisibilityConverter}}"/>
+                                   IsHitTestVisible="False">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SearchText}" Value="">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding SearchText}" Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
                         
                         <Button Grid.Column="1" 
                                 Content="✕"
                                 Foreground="Gray"
                                 Background="Transparent"
                                 BorderThickness="0"
-                                Visibility="{Binding SearchText, Converter={StaticResource StringNotEmptyToVisibilityConverter}}"
-                                Command="{Binding ClearSearchCommand}"/>
+                                Command="{Binding ClearSearchCommand}">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SearchText}" Value="">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding SearchText}" Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
                     </Grid>
                 </Border>
             </Grid>
         </Border>
 
         <!-- Jobs Table -->
-        <Border Grid.Row="3" Style="{StaticResource CardStyle}" Margin="20,10,20,20">
+        <Border Grid.Row="3" 
+                Background="White" 
+                BorderBrush="#DDDDDD" 
+                BorderThickness="1"
+                Margin="20,10,20,20">
             <Grid>
                 <DataGrid ItemsSource="{Binding FilteredJobs}" 
                           SelectedItem="{Binding SelectedJob}"
@@ -221,12 +269,12 @@
                         <DataGridTemplateColumn Header="Status" Width="Auto">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Border Background="{Binding Status, Converter={StaticResource StatusToBrushConverter}}"
+                                    <Border Background="LightBlue"
                                             CornerRadius="10" 
                                             Padding="8,2" 
                                             Margin="5">
                                         <TextBlock Text="{Binding Status}" 
-                                                   Foreground="White" 
+                                                   Foreground="DarkBlue" 
                                                    FontSize="12" 
                                                    FontWeight="SemiBold"/>
                                     </Border>
@@ -286,8 +334,18 @@
                                                 Foreground="#673AB7"
                                                 Background="Transparent"
                                                 BorderThickness="0"
-                                                Margin="2"
-                                                Visibility="{Binding Status, Converter={StaticResource StatusToVisibilityConverter}, ConverterParameter=Active}"/>
+                                                Margin="2">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Status}" Value="Complete">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
                                     </StackPanel>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
@@ -301,18 +359,27 @@
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                         <TextBlock Text="Loading..." 
                                    FontSize="20"
-                                   Foreground="{StaticResource PrimaryBrush}"/>
+                                   Foreground="DarkSlateGray"/>
                         <ProgressBar IsIndeterminate="True" 
                                      Width="200" 
                                      Height="10" 
                                      Margin="0,10,0,0"
-                                     Foreground="{StaticResource PrimaryBrush}"/>
+                                     Foreground="DarkSlateGray"/>
                     </StackPanel>
                 </Border>
                 
                 <!-- No Data Indicator -->
-                <Border Background="White" 
-                        Visibility="{Binding HasNoJobs, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Border Background="White">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasNoJobs}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                         <TextBlock Text="No jobs found" 
                                    FontSize="20"
@@ -323,14 +390,25 @@
                                    Margin="0,10,0,0"/>
                         <Button Content="Create New Job" 
                                 Command="{Binding NewJobCommand}"
-                                Style="{StaticResource PrimaryButtonStyle}" 
+                                Background="DarkSlateGray"
+                                Foreground="White"
+                                Padding="15,8"
                                 Margin="0,20,0,0"/>
                     </StackPanel>
                 </Border>
                 
                 <!-- Error Indicator -->
-                <Border Background="#80FFFFFF" 
-                        Visibility="{Binding HasError, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Border Background="#80FFFFFF">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasError}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                         <TextBlock Text="Error loading jobs" 
                                    FontSize="20"
@@ -343,7 +421,9 @@
                                    MaxWidth="400"/>
                         <Button Content="Retry" 
                                 Command="{Binding RefreshJobsCommand}"
-                                Style="{StaticResource PrimaryButtonStyle}" 
+                                Background="DarkSlateGray"
+                                Foreground="White"
+                                Padding="15,8"
                                 Margin="0,20,0,0"/>
                     </StackPanel>
                 </Border>
