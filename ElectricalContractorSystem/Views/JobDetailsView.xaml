@@ -13,7 +13,7 @@
         <helpers:StringEqualityToVisibilityConverter x:Key="StringEqualityToVisibilityConverter"/>
     </UserControl.Resources>
     
-    <Grid Background="#F5F5F5">
+    <Grid Background="LightGray">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -158,46 +158,47 @@
                         Padding="15,10" Background="Transparent" BorderThickness="0" Foreground="Gray"/>
             </StackPanel>
             
-            <!-- Tab Content -->
+            <!-- Tab Content - FIXED: Only one child Grid inside Border -->
             <Border Grid.Row="1" Background="White" BorderBrush="LightGray" BorderThickness="1">
-                
-                <!-- Details Tab (Job Notes) -->
-                <Grid Visibility="{Binding ActiveTab, Converter={StaticResource StringEqualityToVisibilityConverter}, ConverterParameter=details}"
-                      Margin="20">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
+                <Grid>
+                    <!-- Details Tab (Job Notes) -->
+                    <Grid Visibility="{Binding ActiveTab, Converter={StaticResource StringEqualityToVisibilityConverter}, ConverterParameter=details}"
+                          Margin="20">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        
+                        <TextBlock Grid.Row="0" Text="Job Notes" FontSize="16" FontWeight="SemiBold" 
+                                   Foreground="Black" Margin="0,0,0,10"/>
+                        
+                        <TextBox Grid.Row="1" Text="{Binding CurrentJob.Notes}" TextWrapping="Wrap" AcceptsReturn="True" 
+                                 VerticalScrollBarVisibility="Auto"/>
+                    </Grid>
                     
-                    <TextBlock Grid.Row="0" Text="Job Notes" FontSize="16" FontWeight="SemiBold" 
-                               Foreground="Black" Margin="0,0,0,10"/>
+                    <!-- Stages Tab -->
+                    <Grid Visibility="{Binding ActiveTab, Converter={StaticResource StringEqualityToVisibilityConverter}, ConverterParameter=stages}"
+                          Margin="20">
+                        <TextBlock Text="Job Stages functionality will be implemented here" 
+                                   FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                                   Foreground="Gray"/>
+                    </Grid>
                     
-                    <TextBox Grid.Row="1" Text="{Binding CurrentJob.Notes}" TextWrapping="Wrap" AcceptsReturn="True" 
-                             VerticalScrollBarVisibility="Auto"/>
-                </Grid>
-                
-                <!-- Stages Tab -->
-                <Grid Visibility="{Binding ActiveTab, Converter={StaticResource StringEqualityToVisibilityConverter}, ConverterParameter=stages}"
-                      Margin="20">
-                    <TextBlock Text="Job Stages functionality will be implemented here" 
-                               FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" 
-                               Foreground="Gray"/>
-                </Grid>
-                
-                <!-- Room Specifications Tab -->
-                <Grid Visibility="{Binding ActiveTab, Converter={StaticResource StringEqualityToVisibilityConverter}, ConverterParameter=rooms}"
-                      Margin="20">
-                    <TextBlock Text="Room Specifications functionality will be implemented here" 
-                               FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" 
-                               Foreground="Gray"/>
-                </Grid>
-                
-                <!-- Permit Items Tab -->
-                <Grid Visibility="{Binding ActiveTab, Converter={StaticResource StringEqualityToVisibilityConverter}, ConverterParameter=permits}"
-                      Margin="20">
-                    <TextBlock Text="Permit Items functionality will be implemented here" 
-                               FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" 
-                               Foreground="Gray"/>
+                    <!-- Room Specifications Tab -->
+                    <Grid Visibility="{Binding ActiveTab, Converter={StaticResource StringEqualityToVisibilityConverter}, ConverterParameter=rooms}"
+                          Margin="20">
+                        <TextBlock Text="Room Specifications functionality will be implemented here" 
+                                   FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                                   Foreground="Gray"/>
+                    </Grid>
+                    
+                    <!-- Permit Items Tab -->
+                    <Grid Visibility="{Binding ActiveTab, Converter={StaticResource StringEqualityToVisibilityConverter}, ConverterParameter=permits}"
+                          Margin="20">
+                        <TextBlock Text="Permit Items functionality will be implemented here" 
+                                   FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                                   Foreground="Gray"/>
+                    </Grid>
                 </Grid>
             </Border>
         </Grid>
