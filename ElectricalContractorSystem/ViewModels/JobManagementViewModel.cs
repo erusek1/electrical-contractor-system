@@ -217,6 +217,13 @@ namespace ElectricalContractorSystem.ViewModels
         /// <summary>
         /// Constructor
         /// </summary>
+        public JobManagementViewModel() : this(new DatabaseService())
+        {
+        }
+
+        /// <summary>
+        /// Constructor with dependency injection
+        /// </summary>
         public JobManagementViewModel(DatabaseService databaseService)
         {
             _databaseService = databaseService ?? throw new ArgumentNullException(nameof(databaseService));
@@ -251,11 +258,16 @@ namespace ElectricalContractorSystem.ViewModels
 
             try
             {
-                // In a real implementation, this would load from the database
-                // For now, we'll use test data
-                var testJobs = GetTestJobs();
-                
-                Jobs = new ObservableCollection<Job>(testJobs);
+                // Test database connection first
+                if (!_databaseService.TestConnection())
+                {
+                    ErrorMessage = "Unable to connect to database. Please check your connection settings.";
+                    return;
+                }
+
+                // Load jobs from database
+                var jobsFromDb = _databaseService.GetAllJobs();
+                Jobs = new ObservableCollection<Job>(jobsFromDb);
                 
                 // Apply filters to update the filtered list
                 ApplyFilters();
@@ -266,6 +278,20 @@ namespace ElectricalContractorSystem.ViewModels
             catch (Exception ex)
             {
                 ErrorMessage = $"Error loading jobs: {ex.Message}";
+                
+                // Fallback to test data if database connection fails
+                try
+                {
+                    var testJobs = GetTestJobs();
+                    Jobs = new ObservableCollection<Job>(testJobs);
+                    ApplyFilters();
+                    UpdateSummaryStatistics();
+                    ErrorMessage += " (Using test data)";
+                }
+                catch (Exception testEx)
+                {
+                    ErrorMessage = $"Error loading jobs and test data: {testEx.Message}";
+                }
             }
             finally
             {
@@ -302,10 +328,10 @@ namespace ElectricalContractorSystem.ViewModels
             {
                 string search = SearchText.ToLower();
                 filtered = filtered.Where(j =>
-                    j.JobNumber.ToLower().Contains(search) ||
-                    j.JobName.ToLower().Contains(search) ||
-                    j.Address.ToLower().Contains(search) ||
-                    (j.Customer != null && j.Customer.Name.ToLower().Contains(search)));
+                    (j.JobNumber != null && j.JobNumber.ToLower().Contains(search)) ||
+                    (j.JobName != null && j.JobName.ToLower().Contains(search)) ||
+                    (j.Address != null && j.Address.ToLower().Contains(search)) ||
+                    (j.Customer != null && j.Customer.Name != null && j.Customer.Name.ToLower().Contains(search)));
             }
 
             // Update the filtered list
@@ -323,6 +349,14 @@ namespace ElectricalContractorSystem.ViewModels
         /// </summary>
         private void UpdateSummaryStatistics()
         {
+            if (Jobs == null)
+            {
+                ActiveJobCount = 0;
+                TotalEstimate = 0;
+                TotalActual = 0;
+                return;
+            }
+
             // Calculate summary statistics based on active jobs only
             var activeJobs = Jobs.Where(j => j.Status != "Complete").ToList();
             
@@ -337,7 +371,7 @@ namespace ElectricalContractorSystem.ViewModels
         {
             // In a real implementation, this would navigate to a job creation screen
             // For now, just output a message
-            System.Windows.MessageBox.Show("Create New Job functionality not yet implemented");
+            System.Windows.MessageBox.Show("Create New Job functionality will be implemented next. This will open a job details form.");
         }
 
         private void EditJob(object parameter)
@@ -346,7 +380,7 @@ namespace ElectricalContractorSystem.ViewModels
                 return;
 
             // In a real implementation, this would navigate to a job editing screen
-            System.Windows.MessageBox.Show($"Edit Job {SelectedJob.JobNumber} functionality not yet implemented");
+            System.Windows.MessageBox.Show($"Edit Job {SelectedJob.JobNumber} functionality will be implemented next. This will open the job details form in edit mode.");
         }
 
         private bool CanEditJob(object parameter)
@@ -368,8 +402,20 @@ namespace ElectricalContractorSystem.ViewModels
 
             if (result == System.Windows.MessageBoxResult.Yes)
             {
-                // In a real implementation, this would delete from the database
-                System.Windows.MessageBox.Show($"Delete Job {SelectedJob.JobNumber} functionality not yet implemented");
+                try
+                {
+                    // TODO: Implement actual job deletion in database
+                    System.Windows.MessageBox.Show($"Delete Job {SelectedJob.JobNumber} functionality will be implemented next.");
+                    
+                    // For now, remove from local collection
+                    Jobs.Remove(SelectedJob);
+                    ApplyFilters();
+                    UpdateSummaryStatistics();
+                }
+                catch (Exception ex)
+                {
+                    ErrorMessage = $"Error deleting job: {ex.Message}";
+                }
             }
         }
 
@@ -384,7 +430,7 @@ namespace ElectricalContractorSystem.ViewModels
                 return;
 
             // In a real implementation, this would navigate to a job details screen
-            System.Windows.MessageBox.Show($"View Job {SelectedJob.JobNumber} Details functionality not yet implemented");
+            System.Windows.MessageBox.Show($"View Job {SelectedJob.JobNumber} Details functionality will be implemented next. This will show the job cost tracking view.");
         }
 
         private bool CanViewJobDetails(object parameter)
@@ -398,7 +444,7 @@ namespace ElectricalContractorSystem.ViewModels
                 return;
 
             // In a real implementation, this would navigate to a job data entry screen
-            System.Windows.MessageBox.Show($"Enter Data for Job {SelectedJob.JobNumber} functionality not yet implemented");
+            System.Windows.MessageBox.Show($"Enter Data for Job {SelectedJob.JobNumber} functionality will be implemented next. This will open the weekly labor entry or material entry forms.");
         }
 
         private bool CanEnterJobData(object parameter)
@@ -431,7 +477,7 @@ namespace ElectricalContractorSystem.ViewModels
         #region Helper Methods
 
         /// <summary>
-        /// Gets test jobs for UI development
+        /// Gets test jobs for UI development (fallback when database is not available)
         /// </summary>
         private List<Job> GetTestJobs()
         {
