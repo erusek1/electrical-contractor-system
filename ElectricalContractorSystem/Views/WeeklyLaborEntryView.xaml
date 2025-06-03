@@ -1,4 +1,4 @@
-<Window x:Class="ElectricalContractorSystem.Views.WeeklyLaborEntryView"
+<UserControl x:Class="ElectricalContractorSystem.Views.WeeklyLaborEntryView"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -6,13 +6,12 @@
         xmlns:local="clr-namespace:ElectricalContractorSystem.Views"
         xmlns:vm="clr-namespace:ElectricalContractorSystem.ViewModels"
         xmlns:helpers="clr-namespace:ElectricalContractorSystem.Helpers"
-        mc:Ignorable="d"
-        Title="Weekly Labor Entry" Height="800" Width="1200">
+        mc:Ignorable="d">
     
-    <Window.Resources>
+    <UserControl.Resources>
         <helpers:HoursStatusConverter x:Key="HoursStatusConverter"/>
         <helpers:HoursStatusTextConverter x:Key="HoursStatusTextConverter"/>
-    </Window.Resources>
+    </UserControl.Resources>
     
     <Grid Background="#F5F5F5">
         <Grid.RowDefinitions>
@@ -32,13 +31,7 @@
             <TextBlock Text="Weekly Labor Entry" FontSize="24" FontWeight="Bold" VerticalAlignment="Center"/>
             
             <Button Grid.Column="1" Content="Save All Entries" Command="{Binding SaveAllEntriesCommand}" 
-                    Background="#43A047" Foreground="White" Padding="15,8" BorderThickness="0">
-                <Button.Resources>
-                    <Style TargetType="Border">
-                        <Setter Property="CornerRadius" Value="4"/>
-                    </Style>
-                </Button.Resources>
-            </Button>
+                    Background="#43A047" Foreground="White" Padding="15,8" BorderThickness="0"/>
         </Grid>
         
         <!-- Week Selection -->
@@ -52,25 +45,13 @@
                 </Grid.ColumnDefinitions>
                 
                 <Button Grid.Column="0" Content="Previous Week" Command="{Binding PreviousWeekCommand}" 
-                        Background="#1976D2" Foreground="White" Padding="15,8" BorderThickness="0">
-                    <Button.Resources>
-                        <Style TargetType="Border">
-                            <Setter Property="CornerRadius" Value="4"/>
-                        </Style>
-                    </Button.Resources>
-                </Button>
+                        Background="#1976D2" Foreground="White" Padding="15,8" BorderThickness="0"/>
                 
                 <TextBlock Grid.Column="1" Text="{Binding WeekDateRange}" FontSize="18" FontWeight="SemiBold" 
                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 
                 <Button Grid.Column="2" Content="Next Week" Command="{Binding NextWeekCommand}" 
-                        Background="#1976D2" Foreground="White" Padding="15,8" BorderThickness="0">
-                    <Button.Resources>
-                        <Style TargetType="Border">
-                            <Setter Property="CornerRadius" Value="4"/>
-                        </Style>
-                    </Button.Resources>
-                </Button>
+                        Background="#1976D2" Foreground="White" Padding="15,8" BorderThickness="0"/>
             </Grid>
         </Border>
         
@@ -172,195 +153,39 @@
                                         <!-- Employee Name -->
                                         <TextBlock Grid.Column="0" Text="{Binding Name}" Padding="10,15" VerticalAlignment="Center"/>
                                         
-                                        <!-- Monday -->
-                                        <Border Grid.Column="1" Padding="5" Margin="2">
-                                            <Grid>
-                                                <Grid.RowDefinitions>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                </Grid.RowDefinitions>
-                                                
-                                                <ComboBox Grid.Row="0" Margin="0,2" 
-                                                          ItemsSource="{Binding DataContext.ActiveJobs, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                          DisplayMemberPath="JobNumber"
-                                                          SelectedValue="{Binding Path=DataContext.TimeEntries[Name][Monday].JobNumber, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}">
-                                                    <ComboBox.Text>
-                                                        <Binding Path="DataContext.TimeEntries[Name][Monday].JobNumber" 
-                                                                 RelativeSource="{RelativeSource AncestorType=Window}" 
-                                                                 Mode="TwoWay" UpdateSourceTrigger="PropertyChanged"/>
-                                                    </ComboBox.Text>
-                                                </ComboBox>
-                                                
-                                                <ComboBox Grid.Row="1" Margin="0,2"
-                                                          ItemsSource="{Binding DataContext.StageNames, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                          SelectedValue="{Binding Path=DataContext.TimeEntries[Name][Monday].Stage, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}"
-                                                          IsEnabled="{Binding Path=DataContext.TimeEntries[Name][Monday].JobNumber, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource NotNullOrEmptyConverter}}">
-                                                    <ComboBox.Text>
-                                                        <Binding Path="DataContext.TimeEntries[Name][Monday].Stage" 
-                                                                 RelativeSource="{RelativeSource AncestorType=Window}" 
-                                                                 Mode="TwoWay" UpdateSourceTrigger="PropertyChanged"/>
-                                                    </ComboBox.Text>
-                                                </ComboBox>
-                                                
-                                                <TextBox Grid.Row="2" Margin="0,2" TextAlignment="Center"
-                                                         Text="{Binding Path=DataContext.TimeEntries[Name][Monday].Hours, RelativeSource={RelativeSource AncestorType=Window}, StringFormat=F1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                         IsEnabled="{Binding Path=DataContext.TimeEntries[Name][Monday].JobNumber, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource NotNullOrEmptyConverter}}"/>
-                                            </Grid>
-                                        </Border>
+                                        <!-- Monday through Friday - Simplified layout -->
+                                        <StackPanel Grid.Column="1" Margin="5" VerticalAlignment="Center">
+                                            <ComboBox Height="25" Margin="0,2"/>
+                                            <ComboBox Height="25" Margin="0,2"/>
+                                            <TextBox Height="25" Margin="0,2" TextAlignment="Center"/>
+                                        </StackPanel>
                                         
-                                        <!-- Tuesday -->
-                                        <Border Grid.Column="2" Padding="5" Margin="2">
-                                            <Grid>
-                                                <Grid.RowDefinitions>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                </Grid.RowDefinitions>
-                                                
-                                                <ComboBox Grid.Row="0" Margin="0,2" 
-                                                          ItemsSource="{Binding DataContext.ActiveJobs, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                          DisplayMemberPath="JobNumber"
-                                                          SelectedValue="{Binding Path=DataContext.TimeEntries[Name][Tuesday].JobNumber, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}">
-                                                    <ComboBox.Text>
-                                                        <Binding Path="DataContext.TimeEntries[Name][Tuesday].JobNumber" 
-                                                                 RelativeSource="{RelativeSource AncestorType=Window}" 
-                                                                 Mode="TwoWay" UpdateSourceTrigger="PropertyChanged"/>
-                                                    </ComboBox.Text>
-                                                </ComboBox>
-                                                
-                                                <ComboBox Grid.Row="1" Margin="0,2"
-                                                          ItemsSource="{Binding DataContext.StageNames, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                          SelectedValue="{Binding Path=DataContext.TimeEntries[Name][Tuesday].Stage, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}"
-                                                          IsEnabled="{Binding Path=DataContext.TimeEntries[Name][Tuesday].JobNumber, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource NotNullOrEmptyConverter}}">
-                                                    <ComboBox.Text>
-                                                        <Binding Path="DataContext.TimeEntries[Name][Tuesday].Stage" 
-                                                                 RelativeSource="{RelativeSource AncestorType=Window}" 
-                                                                 Mode="TwoWay" UpdateSourceTrigger="PropertyChanged"/>
-                                                    </ComboBox.Text>
-                                                </ComboBox>
-                                                
-                                                <TextBox Grid.Row="2" Margin="0,2" TextAlignment="Center"
-                                                         Text="{Binding Path=DataContext.TimeEntries[Name][Tuesday].Hours, RelativeSource={RelativeSource AncestorType=Window}, StringFormat=F1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                         IsEnabled="{Binding Path=DataContext.TimeEntries[Name][Tuesday].JobNumber, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource NotNullOrEmptyConverter}}"/>
-                                            </Grid>
-                                        </Border>
+                                        <StackPanel Grid.Column="2" Margin="5" VerticalAlignment="Center">
+                                            <ComboBox Height="25" Margin="0,2"/>
+                                            <ComboBox Height="25" Margin="0,2"/>
+                                            <TextBox Height="25" Margin="0,2" TextAlignment="Center"/>
+                                        </StackPanel>
                                         
-                                        <!-- Wednesday -->
-                                        <Border Grid.Column="3" Padding="5" Margin="2">
-                                            <Grid>
-                                                <Grid.RowDefinitions>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                </Grid.RowDefinitions>
-                                                
-                                                <ComboBox Grid.Row="0" Margin="0,2" 
-                                                          ItemsSource="{Binding DataContext.ActiveJobs, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                          DisplayMemberPath="JobNumber"
-                                                          SelectedValue="{Binding Path=DataContext.TimeEntries[Name][Wednesday].JobNumber, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}">
-                                                    <ComboBox.Text>
-                                                        <Binding Path="DataContext.TimeEntries[Name][Wednesday].JobNumber" 
-                                                                 RelativeSource="{RelativeSource AncestorType=Window}" 
-                                                                 Mode="TwoWay" UpdateSourceTrigger="PropertyChanged"/>
-                                                    </ComboBox.Text>
-                                                </ComboBox>
-                                                
-                                                <ComboBox Grid.Row="1" Margin="0,2"
-                                                          ItemsSource="{Binding DataContext.StageNames, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                          SelectedValue="{Binding Path=DataContext.TimeEntries[Name][Wednesday].Stage, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}"
-                                                          IsEnabled="{Binding Path=DataContext.TimeEntries[Name][Wednesday].JobNumber, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource NotNullOrEmptyConverter}}">
-                                                    <ComboBox.Text>
-                                                        <Binding Path="DataContext.TimeEntries[Name][Wednesday].Stage" 
-                                                                 RelativeSource="{RelativeSource AncestorType=Window}" 
-                                                                 Mode="TwoWay" UpdateSourceTrigger="PropertyChanged"/>
-                                                    </ComboBox.Text>
-                                                </ComboBox>
-                                                
-                                                <TextBox Grid.Row="2" Margin="0,2" TextAlignment="Center"
-                                                         Text="{Binding Path=DataContext.TimeEntries[Name][Wednesday].Hours, RelativeSource={RelativeSource AncestorType=Window}, StringFormat=F1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                         IsEnabled="{Binding Path=DataContext.TimeEntries[Name][Wednesday].JobNumber, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource NotNullOrEmptyConverter}}"/>
-                                            </Grid>
-                                        </Border>
+                                        <StackPanel Grid.Column="3" Margin="5" VerticalAlignment="Center">
+                                            <ComboBox Height="25" Margin="0,2"/>
+                                            <ComboBox Height="25" Margin="0,2"/>
+                                            <TextBox Height="25" Margin="0,2" TextAlignment="Center"/>
+                                        </StackPanel>
                                         
-                                        <!-- Thursday -->
-                                        <Border Grid.Column="4" Padding="5" Margin="2">
-                                            <Grid>
-                                                <Grid.RowDefinitions>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                </Grid.RowDefinitions>
-                                                
-                                                <ComboBox Grid.Row="0" Margin="0,2" 
-                                                          ItemsSource="{Binding DataContext.ActiveJobs, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                          DisplayMemberPath="JobNumber"
-                                                          SelectedValue="{Binding Path=DataContext.TimeEntries[Name][Thursday].JobNumber, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}">
-                                                    <ComboBox.Text>
-                                                        <Binding Path="DataContext.TimeEntries[Name][Thursday].JobNumber" 
-                                                                 RelativeSource="{RelativeSource AncestorType=Window}" 
-                                                                 Mode="TwoWay" UpdateSourceTrigger="PropertyChanged"/>
-                                                    </ComboBox.Text>
-                                                </ComboBox>
-                                                
-                                                <ComboBox Grid.Row="1" Margin="0,2"
-                                                          ItemsSource="{Binding DataContext.StageNames, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                          SelectedValue="{Binding Path=DataContext.TimeEntries[Name][Thursday].Stage, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}"
-                                                          IsEnabled="{Binding Path=DataContext.TimeEntries[Name][Thursday].JobNumber, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource NotNullOrEmptyConverter}}">
-                                                    <ComboBox.Text>
-                                                        <Binding Path="DataContext.TimeEntries[Name][Thursday].Stage" 
-                                                                 RelativeSource="{RelativeSource AncestorType=Window}" 
-                                                                 Mode="TwoWay" UpdateSourceTrigger="PropertyChanged"/>
-                                                    </ComboBox.Text>
-                                                </ComboBox>
-                                                
-                                                <TextBox Grid.Row="2" Margin="0,2" TextAlignment="Center"
-                                                         Text="{Binding Path=DataContext.TimeEntries[Name][Thursday].Hours, RelativeSource={RelativeSource AncestorType=Window}, StringFormat=F1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                         IsEnabled="{Binding Path=DataContext.TimeEntries[Name][Thursday].JobNumber, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource NotNullOrEmptyConverter}}"/>
-                                            </Grid>
-                                        </Border>
+                                        <StackPanel Grid.Column="4" Margin="5" VerticalAlignment="Center">
+                                            <ComboBox Height="25" Margin="0,2"/>
+                                            <ComboBox Height="25" Margin="0,2"/>
+                                            <TextBox Height="25" Margin="0,2" TextAlignment="Center"/>
+                                        </StackPanel>
                                         
-                                        <!-- Friday -->
-                                        <Border Grid.Column="5" Padding="5" Margin="2">
-                                            <Grid>
-                                                <Grid.RowDefinitions>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                </Grid.RowDefinitions>
-                                                
-                                                <ComboBox Grid.Row="0" Margin="0,2" 
-                                                          ItemsSource="{Binding DataContext.ActiveJobs, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                          DisplayMemberPath="JobNumber"
-                                                          SelectedValue="{Binding Path=DataContext.TimeEntries[Name][Friday].JobNumber, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}">
-                                                    <ComboBox.Text>
-                                                        <Binding Path="DataContext.TimeEntries[Name][Friday].JobNumber" 
-                                                                 RelativeSource="{RelativeSource AncestorType=Window}" 
-                                                                 Mode="TwoWay" UpdateSourceTrigger="PropertyChanged"/>
-                                                    </ComboBox.Text>
-                                                </ComboBox>
-                                                
-                                                <ComboBox Grid.Row="1" Margin="0,2"
-                                                          ItemsSource="{Binding DataContext.StageNames, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                          SelectedValue="{Binding Path=DataContext.TimeEntries[Name][Friday].Stage, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}"
-                                                          IsEnabled="{Binding Path=DataContext.TimeEntries[Name][Friday].JobNumber, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource NotNullOrEmptyConverter}}">
-                                                    <ComboBox.Text>
-                                                        <Binding Path="DataContext.TimeEntries[Name][Friday].Stage" 
-                                                                 RelativeSource="{RelativeSource AncestorType=Window}" 
-                                                                 Mode="TwoWay" UpdateSourceTrigger="PropertyChanged"/>
-                                                    </ComboBox.Text>
-                                                </ComboBox>
-                                                
-                                                <TextBox Grid.Row="2" Margin="0,2" TextAlignment="Center"
-                                                         Text="{Binding Path=DataContext.TimeEntries[Name][Friday].Hours, RelativeSource={RelativeSource AncestorType=Window}, StringFormat=F1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                         IsEnabled="{Binding Path=DataContext.TimeEntries[Name][Friday].JobNumber, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource NotNullOrEmptyConverter}}"/>
-                                            </Grid>
-                                        </Border>
+                                        <StackPanel Grid.Column="5" Margin="5" VerticalAlignment="Center">
+                                            <ComboBox Height="25" Margin="0,2"/>
+                                            <ComboBox Height="25" Margin="0,2"/>
+                                            <TextBox Height="25" Margin="0,2" TextAlignment="Center"/>
+                                        </StackPanel>
                                         
                                         <!-- Total -->
-                                        <TextBlock Grid.Column="6" 
-                                                   Text="{Binding Name, Converter={StaticResource EmployeeTotalConverter}}" 
-                                                   Foreground="{Binding Name, Converter={StaticResource EmployeeStatusColorConverter}}"
+                                        <TextBlock Grid.Column="6" Text="0"
                                                    FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Grid>
                                 </DataTemplate>
@@ -371,4 +196,4 @@
             </Grid>
         </Border>
     </Grid>
-</Window>
+</UserControl>
