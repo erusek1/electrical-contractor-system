@@ -11,23 +11,6 @@
     <UserControl.Resources>
         <helpers:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <helpers:StringEqualityToVisibilityConverter x:Key="StringEqualityToVisibilityConverter"/>
-        
-        <!-- Tab Button Style -->
-        <Style x:Key="TabButtonStyle" TargetType="Button">
-            <Setter Property="Padding" Value="15,10"/>
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Foreground" Value="Gray"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#F0F0F0"/>
-                </Trigger>
-                <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Background" Value="DarkSlateGray"/>
-                    <Setter Property="Foreground" Value="White"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
     </UserControl.Resources>
     
     <Grid Background="#F5F5F5">
@@ -53,7 +36,7 @@
         
         <!-- Basic Job Information Form -->
         <Border Grid.Row="1" Background="White" Margin="20,10" Padding="20" 
-                BorderBrush="#E0E0E0" BorderThickness="1">
+                BorderBrush="LightGray" BorderThickness="1">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -68,7 +51,7 @@
                 
                 <!-- Job Number -->
                 <StackPanel Grid.Column="0" Grid.Row="0" Margin="0,0,10,15">
-                    <TextBlock Text="Job Number" FontSize="12" Foreground="#757575" Margin="0,0,0,5"/>
+                    <TextBlock Text="Job Number" FontSize="12" Foreground="Gray" Margin="0,0,0,5"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -84,7 +67,7 @@
                 
                 <!-- Customer -->
                 <StackPanel Grid.Column="1" Grid.Row="0" Margin="10,0,10,15">
-                    <TextBlock Text="Customer" FontSize="12" Foreground="#757575" Margin="0,0,0,5"/>
+                    <TextBlock Text="Customer" FontSize="12" Foreground="Gray" Margin="0,0,0,5"/>
                     <ComboBox ItemsSource="{Binding Customers}" 
                               SelectedItem="{Binding SelectedCustomer}"
                               DisplayMemberPath="Name"
@@ -93,7 +76,7 @@
                 
                 <!-- Status -->
                 <StackPanel Grid.Column="2" Grid.Row="0" Margin="10,0,0,15">
-                    <TextBlock Text="Status" FontSize="12" Foreground="#757575" Margin="0,0,0,5"/>
+                    <TextBlock Text="Status" FontSize="12" Foreground="Gray" Margin="0,0,0,5"/>
                     <ComboBox SelectedValue="{Binding CurrentJob.Status}" Padding="5">
                         <ComboBoxItem Content="Estimate"/>
                         <ComboBoxItem Content="In Progress"/>
@@ -103,13 +86,13 @@
                 
                 <!-- Address -->
                 <StackPanel Grid.Column="0" Grid.Row="1" Margin="0,0,10,15">
-                    <TextBlock Text="Address" FontSize="12" Foreground="#757575" Margin="0,0,0,5"/>
+                    <TextBlock Text="Address" FontSize="12" Foreground="Gray" Margin="0,0,0,5"/>
                     <TextBox Text="{Binding CurrentJob.Address}" Padding="5"/>
                 </StackPanel>
                 
                 <!-- City -->
                 <StackPanel Grid.Column="1" Grid.Row="1" Margin="10,0,10,15">
-                    <TextBlock Text="City" FontSize="12" Foreground="#757575" Margin="0,0,0,5"/>
+                    <TextBlock Text="City" FontSize="12" Foreground="Gray" Margin="0,0,0,5"/>
                     <TextBox Text="{Binding CurrentJob.City}" Padding="5"/>
                 </StackPanel>
                 
@@ -121,33 +104,33 @@
                     </Grid.ColumnDefinitions>
                     
                     <StackPanel Grid.Column="0" Margin="0,0,5,0">
-                        <TextBlock Text="State" FontSize="12" Foreground="#757575" Margin="0,0,0,5"/>
+                        <TextBlock Text="State" FontSize="12" Foreground="Gray" Margin="0,0,0,5"/>
                         <TextBox Text="{Binding CurrentJob.State}" Padding="5"/>
                     </StackPanel>
                     
                     <StackPanel Grid.Column="1" Margin="5,0,0,0">
-                        <TextBlock Text="Zip" FontSize="12" Foreground="#757575" Margin="0,0,0,5"/>
+                        <TextBlock Text="Zip" FontSize="12" Foreground="Gray" Margin="0,0,0,5"/>
                         <TextBox Text="{Binding CurrentJob.Zip}" Padding="5"/>
                     </StackPanel>
                 </Grid>
                 
                 <!-- Square Footage -->
                 <StackPanel Grid.Column="0" Grid.Row="2" Margin="0,0,10,0">
-                    <TextBlock Text="Square Footage" FontSize="12" Foreground="#757575" Margin="0,0,0,5"/>
+                    <TextBlock Text="Square Footage" FontSize="12" Foreground="Gray" Margin="0,0,0,5"/>
                     <TextBox Text="{Binding CurrentJob.SquareFootage}" Padding="5"/>
                 </StackPanel>
                 
                 <!-- Number of Floors -->
                 <StackPanel Grid.Column="1" Grid.Row="2" Margin="10,0,10,0">
-                    <TextBlock Text="Number of Floors" FontSize="12" Foreground="#757575" Margin="0,0,0,5"/>
+                    <TextBlock Text="Number of Floors" FontSize="12" Foreground="Gray" Margin="0,0,0,5"/>
                     <TextBox Text="{Binding CurrentJob.NumFloors}" Padding="5"/>
                 </StackPanel>
                 
                 <!-- Total Estimate (Read Only) -->
                 <StackPanel Grid.Column="2" Grid.Row="2" Margin="10,0,0,0">
-                    <TextBlock Text="Total Estimate" FontSize="12" Foreground="#757575" Margin="0,0,0,5"/>
+                    <TextBlock Text="Total Estimate" FontSize="12" Foreground="Gray" Margin="0,0,0,5"/>
                     <TextBox Text="{Binding TotalEstimate, StringFormat=C}" IsReadOnly="True" 
-                             Background="#F5F5F5" Padding="5" FontWeight="Bold"/>
+                             Background="LightGray" Padding="5" FontWeight="Bold"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -160,25 +143,23 @@
             </Grid.RowDefinitions>
             
             <!-- Tab Buttons -->
-            <StackPanel Grid.Row="0" Orientation="Horizontal" Background="White" 
-                        BorderBrush="#E0E0E0" BorderThickness="1,1,1,0">
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Background="White">
                 <Button Content="Job Details" 
                         Command="{Binding ChangeTabCommand}" CommandParameter="details"
-                        Style="{StaticResource TabButtonStyle}"/>
+                        Padding="15,10" Background="Transparent" BorderThickness="0" Foreground="Gray"/>
                 <Button Content="Stages" 
                         Command="{Binding ChangeTabCommand}" CommandParameter="stages"
-                        Style="{StaticResource TabButtonStyle}"/>
+                        Padding="15,10" Background="Transparent" BorderThickness="0" Foreground="Gray"/>
                 <Button Content="Room Specifications" 
                         Command="{Binding ChangeTabCommand}" CommandParameter="rooms"
-                        Style="{StaticResource TabButtonStyle}"/>
+                        Padding="15,10" Background="Transparent" BorderThickness="0" Foreground="Gray"/>
                 <Button Content="Permit Items" 
                         Command="{Binding ChangeTabCommand}" CommandParameter="permits"
-                        Style="{StaticResource TabButtonStyle}"/>
+                        Padding="15,10" Background="Transparent" BorderThickness="0" Foreground="Gray"/>
             </StackPanel>
             
             <!-- Tab Content -->
-            <Border Grid.Row="1" Background="White" 
-                    BorderBrush="#E0E0E0" BorderThickness="1">
+            <Border Grid.Row="1" Background="White" BorderBrush="LightGray" BorderThickness="1">
                 
                 <!-- Details Tab (Job Notes) -->
                 <Grid Visibility="{Binding ActiveTab, Converter={StaticResource StringEqualityToVisibilityConverter}, ConverterParameter=details}"
@@ -189,7 +170,7 @@
                     </Grid.RowDefinitions>
                     
                     <TextBlock Grid.Row="0" Text="Job Notes" FontSize="16" FontWeight="SemiBold" 
-                               Foreground="#424242" Margin="0,0,0,10"/>
+                               Foreground="Black" Margin="0,0,0,10"/>
                     
                     <TextBox Grid.Row="1" Text="{Binding CurrentJob.Notes}" TextWrapping="Wrap" AcceptsReturn="True" 
                              VerticalScrollBarVisibility="Auto"/>
