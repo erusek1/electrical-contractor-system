@@ -1,24 +1,23 @@
 using System;
 using System.Globalization;
+using System.Windows;
 using System.Windows.Data;
 
 namespace ElectricalContractorSystem.Helpers
 {
+    /// <summary>
+    /// Converts string equality to visibility
+    /// </summary>
     public class StringEqualityToVisibilityConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if (value == null || parameter == null)
-                return System.Windows.Visibility.Collapsed;
-            
-            if (value is string stringValue && parameter is string parameterValue)
-            {
-                return stringValue.Equals(parameterValue, StringComparison.OrdinalIgnoreCase) 
-                    ? System.Windows.Visibility.Visible 
-                    : System.Windows.Visibility.Collapsed;
-            }
-            
-            return System.Windows.Visibility.Collapsed;
+                return Visibility.Collapsed;
+
+            return value.ToString().Equals(parameter.ToString(), StringComparison.OrdinalIgnoreCase) 
+                ? Visibility.Visible 
+                : Visibility.Collapsed;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
