@@ -91,12 +91,12 @@ namespace ElectricalContractorSystem.Models
         private static int GetISOWeekOfYear(DateTime date)
         {
             Calendar cal = CultureInfo.InvariantCulture.Calendar;
-            DayOfWeek day = cal.GetDayOfWeek(date);
-            if (day >= DayOfWeek.Monday && day <= DayOfWeek.Wednesday)
+            System.DayOfWeek day = cal.GetDayOfWeek(date);
+            if (day >= System.DayOfWeek.Monday && day <= System.DayOfWeek.Wednesday)
             {
                 date = date.AddDays(3);
             }
-            return cal.GetWeekOfYear(date, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
+            return cal.GetWeekOfYear(date, CalendarWeekRule.FirstFourDayWeek, System.DayOfWeek.Monday);
         }
 
         /// <summary>
