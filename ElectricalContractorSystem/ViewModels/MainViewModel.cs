@@ -32,37 +32,37 @@ namespace ElectricalContractorSystem.ViewModels
             _databaseService = new DatabaseService();
 
             // Initialize navigation commands
-            NavigateToJobManagementCommand = new RelayCommand(NavigateToJobManagement);
-            NavigateToWeeklyLaborEntryCommand = new RelayCommand(NavigateToWeeklyLaborEntry);
-            NavigateToMaterialEntryCommand = new RelayCommand(NavigateToMaterialEntry);
-            NavigateToJobCostTrackingCommand = new RelayCommand(NavigateToJobCostTracking);
-            NavigateToSettingsCommand = new RelayCommand(NavigateToSettings);
+            NavigateToJobManagementCommand = new RelayCommand(() => NavigateToJobManagement());
+            NavigateToWeeklyLaborEntryCommand = new RelayCommand(() => NavigateToWeeklyLaborEntry());
+            NavigateToMaterialEntryCommand = new RelayCommand(() => NavigateToMaterialEntry());
+            NavigateToJobCostTrackingCommand = new RelayCommand(() => NavigateToJobCostTracking());
+            NavigateToSettingsCommand = new RelayCommand(() => NavigateToSettings());
 
             // Default view
-            NavigateToJobManagement(null);
+            NavigateToJobManagement();
         }
 
-        private void NavigateToJobManagement(object parameter)
+        private void NavigateToJobManagement()
         {
             CurrentView = new JobManagementViewModel(_databaseService);
         }
 
-        private void NavigateToWeeklyLaborEntry(object parameter)
+        private void NavigateToWeeklyLaborEntry()
         {
             CurrentView = new WeeklyLaborEntryViewModel(_databaseService);
         }
 
-        private void NavigateToMaterialEntry(object parameter)
+        private void NavigateToMaterialEntry()
         {
             CurrentView = new MaterialEntryViewModel(_databaseService);
         }
 
-        private void NavigateToJobCostTracking(object parameter)
+        private void NavigateToJobCostTracking()
         {
             CurrentView = new JobCostTrackingViewModel(_databaseService);
         }
 
-        private void NavigateToSettings(object parameter)
+        private void NavigateToSettings()
         {
             // TODO: Implement settings view
             // CurrentView = new SettingsViewModel(_databaseService);
