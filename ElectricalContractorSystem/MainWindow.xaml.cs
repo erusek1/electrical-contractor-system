@@ -3,7 +3,6 @@ using System.Configuration;
 using MySql.Data.MySqlClient;
 using System.Windows;
 using ElectricalContractorSystem.ViewModels;
-using ElectricalContractorSystem.Services;
 
 namespace ElectricalContractorSystem
 {
@@ -14,7 +13,7 @@ namespace ElectricalContractorSystem
             InitializeComponent();
             
             // Test database connection on startup
-            Services.DatabaseConnectionTest.TestConnection();
+            DatabaseConnectionTest.TestConnection();
             
             // Set up main view model
             this.DataContext = new MainViewModel();
@@ -23,12 +22,12 @@ namespace ElectricalContractorSystem
         // Menu event handlers for testing
         private void TestConnection_Click(object sender, RoutedEventArgs e)
         {
-            Services.DatabaseConnectionTest.TestConnection();
+            DatabaseConnectionTest.TestConnection();
         }
         
         private void CreateSampleData_Click(object sender, RoutedEventArgs e)
         {
-            Services.DatabaseConnectionTest.CreateSampleData();
+            DatabaseConnectionTest.CreateSampleData();
         }
         
         private void About_Click(object sender, RoutedEventArgs e)
