@@ -33,10 +33,10 @@ namespace ElectricalContractorSystem.ViewModels
             LoadWeekEntries();
 
             // Create commands
-            PreviousWeekCommand = new RelayCommand(ExecutePreviousWeek);
-            NextWeekCommand = new RelayCommand(ExecuteNextWeek);
-            SaveAllEntriesCommand = new RelayCommand(ExecuteSaveAllEntries);
-            EntryChangedCommand = new RelayCommand<EntryChangeArgs>(ExecuteEntryChanged);
+            PreviousWeekCommand = new RelayCommand(() => ExecutePreviousWeek());
+            NextWeekCommand = new RelayCommand(() => ExecuteNextWeek());
+            SaveAllEntriesCommand = new RelayCommand(() => ExecuteSaveAllEntries());
+            EntryChangedCommand = new RelayCommand<EntryChangeArgs>(args => ExecuteEntryChanged(args));
         }
 
         public DateTime CurrentWeekStart
@@ -104,7 +104,7 @@ namespace ElectricalContractorSystem.ViewModels
         private void LoadActiveJobs()
         {
             ActiveJobs = new ObservableCollection<Job>(
-                _databaseService.GetJobsByStatus(new[] { "Estimate", "In Progress" })
+                _databaseService.GetJobsByStatus("Estimate", "In Progress")
             );
         }
 
@@ -138,7 +138,8 @@ namespace ElectricalContractorSystem.ViewModels
             // Load entries from database for current week
             foreach (var dateInfo in weekDates)
             {
-                var entries = _databaseService.GetLaborEntriesByDate(dateInfo.Date);
+                DateTime endDate = dateInfo.Date.AddDays(1); // Next day for range query
+                var entries = _databaseService.GetLaborEntriesByDate(dateInfo.Date, endDate);
                 
                 foreach (var entry in entries)
                 {
@@ -148,7 +149,7 @@ namespace ElectricalContractorSystem.ViewModels
                         if (job != null)
                         {
                             // Get the stage name
-                            var stage = _databaseService.GetJobStage(entry.StageId);
+                            var stage = _databaseService.GetJobStage(entry.JobId, entry.StageId.ToString());
                             if (stage != null)
                             {
                                 TimeEntries[employeeName][dateInfo.Day] = new LaborEntryDay
@@ -199,7 +200,8 @@ namespace ElectricalContractorSystem.ViewModels
             for (int i = 0; i < 5; i++)
             {
                 DateTime date = CurrentWeekStart.AddDays(i);
-                _databaseService.DeleteLaborEntriesByDate(date);
+                DateTime endDate = date.AddDays(1);
+                _databaseService.DeleteLaborEntriesByDate(date, endDate, 0); // 0 for all employees
             }
             
             // Add new entries
@@ -261,7 +263,7 @@ namespace ElectricalContractorSystem.ViewModels
                     _databaseService.AddLaborEntry(laborEntry);
                     
                     // Update actual hours in stage
-                    var stage = _databaseService.GetJobStage(stageId);
+                    var stage = _databaseService.GetJobStage(jobId, stageId.ToString());
                     if (stage != null)
                     {
                         stage.ActualHours += entry.Hours;
