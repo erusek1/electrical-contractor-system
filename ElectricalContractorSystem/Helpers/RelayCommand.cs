@@ -6,12 +6,20 @@ namespace ElectricalContractorSystem.Helpers
     public class RelayCommand : ICommand
     {
         private readonly Action _execute;
+        private readonly Action<object> _executeWithParameter;
         private readonly Func<bool> _canExecute;
+        private readonly Predicate<object> _canExecuteWithParameter;
 
         public RelayCommand(Action execute, Func<bool> canExecute = null)
         {
             _execute = execute ?? throw new ArgumentNullException(nameof(execute));
             _canExecute = canExecute;
+        }
+
+        public RelayCommand(Action<object> execute, Predicate<object> canExecute = null)
+        {
+            _executeWithParameter = execute ?? throw new ArgumentNullException(nameof(execute));
+            _canExecuteWithParameter = canExecute;
         }
 
         public event EventHandler CanExecuteChanged
@@ -22,12 +30,19 @@ namespace ElectricalContractorSystem.Helpers
 
         public bool CanExecute(object parameter)
         {
-            return _canExecute == null || _canExecute();
+            if (_canExecute != null)
+                return _canExecute();
+            if (_canExecuteWithParameter != null)
+                return _canExecuteWithParameter(parameter);
+            return true;
         }
 
         public void Execute(object parameter)
         {
-            _execute();
+            if (_execute != null)
+                _execute();
+            else if (_executeWithParameter != null)
+                _executeWithParameter(parameter);
         }
     }
 
