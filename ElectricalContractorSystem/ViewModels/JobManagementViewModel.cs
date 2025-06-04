@@ -59,10 +59,10 @@ namespace ElectricalContractorSystem.ViewModels
                 if (SetProperty(ref _selectedJob, value))
                 {
                     // Enable command execution state to be re-evaluated
-                    EditJobCommand.RaiseCanExecuteChanged();
-                    DeleteJobCommand.RaiseCanExecuteChanged();
-                    ViewJobDetailsCommand.RaiseCanExecuteChanged();
-                    EnterJobDataCommand.RaiseCanExecuteChanged();
+                    ((RelayCommandWithCanExecute)EditJobCommand).RaiseCanExecuteChanged();
+                    ((RelayCommandWithCanExecute)DeleteJobCommand).RaiseCanExecuteChanged();
+                    ((RelayCommandWithCanExecute)ViewJobDetailsCommand).RaiseCanExecuteChanged();
+                    ((RelayCommandWithCanExecute)EnterJobDataCommand).RaiseCanExecuteChanged();
                 }
             }
         }
@@ -165,52 +165,52 @@ namespace ElectricalContractorSystem.ViewModels
         /// <summary>
         /// Command to create a new job
         /// </summary>
-        public RelayCommand NewJobCommand { get; }
+        public ICommand NewJobCommand { get; }
 
         /// <summary>
         /// Command to edit the selected job
         /// </summary>
-        public RelayCommandWithCanExecute EditJobCommand { get; }
+        public ICommand EditJobCommand { get; }
 
         /// <summary>
         /// Command to delete the selected job
         /// </summary>
-        public RelayCommandWithCanExecute DeleteJobCommand { get; }
+        public ICommand DeleteJobCommand { get; }
 
         /// <summary>
         /// Command to view details of the selected job
         /// </summary>
-        public RelayCommandWithCanExecute ViewJobDetailsCommand { get; }
+        public ICommand ViewJobDetailsCommand { get; }
 
         /// <summary>
         /// Command to enter data for the selected job
         /// </summary>
-        public RelayCommandWithCanExecute EnterJobDataCommand { get; }
+        public ICommand EnterJobDataCommand { get; }
 
         /// <summary>
         /// Command to refresh the job list
         /// </summary>
-        public RelayCommand RefreshJobsCommand { get; }
+        public ICommand RefreshJobsCommand { get; }
 
         /// <summary>
         /// Command to filter jobs by "Active" status
         /// </summary>
-        public RelayCommand ShowActiveJobsCommand { get; }
+        public ICommand ShowActiveJobsCommand { get; }
 
         /// <summary>
         /// Command to filter jobs by "Completed" status
         /// </summary>
-        public RelayCommand ShowCompletedJobsCommand { get; }
+        public ICommand ShowCompletedJobsCommand { get; }
 
         /// <summary>
         /// Command to show all jobs (no status filter)
         /// </summary>
-        public RelayCommand ShowAllJobsCommand { get; }
+        public ICommand ShowAllJobsCommand { get; }
 
         /// <summary>
         /// Command to clear the search text
         /// </summary>
-        public RelayCommand ClearSearchCommand { get; }
+        public ICommand ClearSearchCommand { get; }
 
         #endregion
 
@@ -233,16 +233,16 @@ namespace ElectricalContractorSystem.ViewModels
             FilteredJobs = new ObservableCollection<Job>();
 
             // Initialize commands
-            NewJobCommand = new RelayCommand(CreateNewJob);
-            EditJobCommand = new RelayCommandWithCanExecute(EditJob, CanEditJob);
-            DeleteJobCommand = new RelayCommandWithCanExecute(DeleteJob, CanDeleteJob);
-            ViewJobDetailsCommand = new RelayCommandWithCanExecute(ViewJobDetails, CanViewJobDetails);
-            EnterJobDataCommand = new RelayCommandWithCanExecute(EnterJobData, CanEnterJobData);
-            RefreshJobsCommand = new RelayCommand(LoadJobs);
-            ShowActiveJobsCommand = new RelayCommand(ShowActiveJobs);
-            ShowCompletedJobsCommand = new RelayCommand(ShowCompletedJobs);
-            ShowAllJobsCommand = new RelayCommand(ShowAllJobs);
-            ClearSearchCommand = new RelayCommand(ClearSearch);
+            NewJobCommand = new RelayCommand(() => CreateNewJob());
+            EditJobCommand = new RelayCommandWithCanExecute(param => EditJob(), param => CanEditJob());
+            DeleteJobCommand = new RelayCommandWithCanExecute(param => DeleteJob(), param => CanDeleteJob());
+            ViewJobDetailsCommand = new RelayCommandWithCanExecute(param => ViewJobDetails(), param => CanViewJobDetails());
+            EnterJobDataCommand = new RelayCommandWithCanExecute(param => EnterJobData(), param => CanEnterJobData());
+            RefreshJobsCommand = new RelayCommand(() => LoadJobs());
+            ShowActiveJobsCommand = new RelayCommand(() => ShowActiveJobs());
+            ShowCompletedJobsCommand = new RelayCommand(() => ShowCompletedJobs());
+            ShowAllJobsCommand = new RelayCommand(() => ShowAllJobs());
+            ClearSearchCommand = new RelayCommand(() => ClearSearch());
 
             // Load data
             LoadJobs();
@@ -367,14 +367,14 @@ namespace ElectricalContractorSystem.ViewModels
 
         #region Command Handlers
 
-        private void CreateNewJob(object parameter)
+        private void CreateNewJob()
         {
             // In a real implementation, this would navigate to a job creation screen
             // For now, just output a message
             System.Windows.MessageBox.Show("Create New Job functionality will be implemented next. This will open a job details form.");
         }
 
-        private void EditJob(object parameter)
+        private void EditJob()
         {
             if (SelectedJob == null)
                 return;
@@ -383,12 +383,12 @@ namespace ElectricalContractorSystem.ViewModels
             System.Windows.MessageBox.Show($"Edit Job {SelectedJob.JobNumber} functionality will be implemented next. This will open the job details form in edit mode.");
         }
 
-        private bool CanEditJob(object parameter)
+        private bool CanEditJob()
         {
             return SelectedJob != null;
         }
 
-        private void DeleteJob(object parameter)
+        private void DeleteJob()
         {
             if (SelectedJob == null)
                 return;
@@ -419,12 +419,12 @@ namespace ElectricalContractorSystem.ViewModels
             }
         }
 
-        private bool CanDeleteJob(object parameter)
+        private bool CanDeleteJob()
         {
             return SelectedJob != null;
         }
 
-        private void ViewJobDetails(object parameter)
+        private void ViewJobDetails()
         {
             if (SelectedJob == null)
                 return;
@@ -433,12 +433,12 @@ namespace ElectricalContractorSystem.ViewModels
             System.Windows.MessageBox.Show($"View Job {SelectedJob.JobNumber} Details functionality will be implemented next. This will show the job cost tracking view.");
         }
 
-        private bool CanViewJobDetails(object parameter)
+        private bool CanViewJobDetails()
         {
             return SelectedJob != null;
         }
 
-        private void EnterJobData(object parameter)
+        private void EnterJobData()
         {
             if (SelectedJob == null)
                 return;
@@ -447,27 +447,27 @@ namespace ElectricalContractorSystem.ViewModels
             System.Windows.MessageBox.Show($"Enter Data for Job {SelectedJob.JobNumber} functionality will be implemented next. This will open the weekly labor entry or material entry forms.");
         }
 
-        private bool CanEnterJobData(object parameter)
+        private bool CanEnterJobData()
         {
             return SelectedJob != null && SelectedJob.Status != "Complete";
         }
 
-        private void ShowActiveJobs(object parameter)
+        private void ShowActiveJobs()
         {
             ActiveFilter = "active";
         }
 
-        private void ShowCompletedJobs(object parameter)
+        private void ShowCompletedJobs()
         {
             ActiveFilter = "completed";
         }
 
-        private void ShowAllJobs(object parameter)
+        private void ShowAllJobs()
         {
             ActiveFilter = "all";
         }
 
-        private void ClearSearch(object parameter)
+        private void ClearSearch()
         {
             SearchText = string.Empty;
         }
