@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 
 namespace ElectricalContractorSystem.Models
 {
@@ -85,14 +86,27 @@ namespace ElectricalContractorSystem.Models
         }
 
         /// <summary>
+        /// Helper method to calculate ISO week of year for .NET Framework compatibility
+        /// </summary>
+        private static int GetISOWeekOfYear(DateTime date)
+        {
+            Calendar cal = CultureInfo.InvariantCulture.Calendar;
+            DayOfWeek day = cal.GetDayOfWeek(date);
+            if (day >= DayOfWeek.Monday && day <= DayOfWeek.Wednesday)
+            {
+                date = date.AddDays(3);
+            }
+            return cal.GetWeekOfYear(date, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
+        }
+
+        /// <summary>
         /// Gets the week number within the year (ISO standard)
         /// </summary>
         public int WeekNumber
         {
             get
             {
-                // ISO 8601 week date system
-                return System.Globalization.ISOWeek.GetWeekOfYear(Date);
+                return GetISOWeekOfYear(Date);
             }
         }
 
@@ -103,9 +117,10 @@ namespace ElectricalContractorSystem.Models
         {
             get
             {
-                int year = System.Globalization.ISOWeek.GetYear(Date);
-                int week = System.Globalization.ISOWeek.GetWeekOfYear(Date);
-                return $"{year}-W{week:D2}";
+                int weekNumber = GetISOWeekOfYear(Date);
+                int year = weekNumber == 1 && Date.Month == 12 ? Date.Year + 1 : 
+                          weekNumber >= 52 && Date.Month == 1 ? Date.Year - 1 : Date.Year;
+                return $"{year}-W{weekNumber:D2}";
             }
         }
     }
