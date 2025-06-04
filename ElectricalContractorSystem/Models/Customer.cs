@@ -1,79 +1,92 @@
-using System.Collections.Generic;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace ElectricalContractorSystem.Models
 {
     /// <summary>
-    /// Represents a customer in the electrical contracting business
+    /// Customer model representing customer information
     /// </summary>
-    public class Customer
+    public class Customer : INotifyPropertyChanged
     {
-        /// <summary>
-        /// Database ID of the customer
-        /// </summary>
-        public int CustomerId { get; set; }
+        private int _customerId;
+        private string _name;
+        private string _address;
+        private string _city;
+        private string _state;
+        private string _zip;
+        private string _email;
+        private string _phone;
+        private string _notes;
 
-        /// <summary>
-        /// Customer name (individual or business)
-        /// </summary>
-        public string Name { get; set; }
-
-        /// <summary>
-        /// Street address
-        /// </summary>
-        public string Address { get; set; }
-
-        /// <summary>
-        /// City
-        /// </summary>
-        public string City { get; set; }
-
-        /// <summary>
-        /// State (2-letter code)
-        /// </summary>
-        public string State { get; set; }
-
-        /// <summary>
-        /// Zip code
-        /// </summary>
-        public string Zip { get; set; }
-
-        /// <summary>
-        /// Email address
-        /// </summary>
-        public string Email { get; set; }
-
-        /// <summary>
-        /// Phone number
-        /// </summary>
-        public string Phone { get; set; }
-
-        /// <summary>
-        /// Additional notes
-        /// </summary>
-        public string Notes { get; set; }
-
-        /// <summary>
-        /// Navigation property to collection of Jobs
-        /// </summary>
-        public ICollection<Job> Jobs { get; set; }
-
-        /// <summary>
-        /// Gets the full address as a single string
-        /// </summary>
-        public string FullAddress
+        public int CustomerId
         {
-            get
-            {
-                return $"{Address}, {City}, {State} {Zip}".Trim();
-            }
+            get => _customerId;
+            set => SetProperty(ref _customerId, value);
         }
 
-        /// <summary>
-        /// Returns a string representation of the customer (name + city)
-        /// </summary>
-        public override string ToString()
+        public string Name
         {
-            return $"{Name} ({City})";
+            get => _name;
+            set => SetProperty(ref _name, value);
+        }
+
+        public string Address
+        {
+            get => _address;
+            set => SetProperty(ref _address, value);
+        }
+
+        public string City
+        {
+            get => _city;
+            set => SetProperty(ref _city, value);
+        }
+
+        public string State
+        {
+            get => _state;
+            set => SetProperty(ref _state, value);
+        }
+
+        public string Zip
+        {
+            get => _zip;
+            set => SetProperty(ref _zip, value);
+        }
+
+        public string Email
+        {
+            get => _email;
+            set => SetProperty(ref _email, value);
+        }
+
+        public string Phone
+        {
+            get => _phone;
+            set => SetProperty(ref _phone, value);
+        }
+
+        public string Notes
+        {
+            get => _notes;
+            set => SetProperty(ref _notes, value);
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        protected bool SetProperty<T>(ref T backingStore, T value, [CallerMemberName] string propertyName = "")
+        {
+            if (EqualityComparer<T>.Default.Equals(backingStore, value))
+                return false;
+
+            backingStore = value;
+            OnPropertyChanged(propertyName);
+            return true;
         }
     }
 }
