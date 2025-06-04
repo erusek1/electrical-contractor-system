@@ -35,8 +35,8 @@ namespace ElectricalContractorSystem.ViewModels
             LoadRecentEntries();
 
             // Initialize commands
-            SaveEntryCommand = new RelayCommand(ExecuteSaveEntry, CanExecuteSaveEntry);
-            ClearFormCommand = new RelayCommand(ExecuteClearForm);
+            SaveEntryCommand = new RelayCommand(() => ExecuteSaveEntry(), () => CanExecuteSaveEntry());
+            ClearFormCommand = new RelayCommand(() => ExecuteClearForm());
         }
 
         public ObservableCollection<Job> ActiveJobs
@@ -134,7 +134,7 @@ namespace ElectricalContractorSystem.ViewModels
         {
             // Get all jobs with status "Estimate" or "In Progress"
             ActiveJobs = new ObservableCollection<Job>(
-                _databaseService.GetJobsByStatus(new[] { "Estimate", "In Progress" })
+                _databaseService.GetJobsByStatus("Estimate", "In Progress")
             );
         }
 
