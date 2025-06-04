@@ -27,7 +27,7 @@ namespace ElectricalContractorSystem.Helpers
                 // Filter by stage if specified
                 if (!string.IsNullOrEmpty(stageName))
                 {
-                    employeeEntries = employeeEntries.Where(e => e.JobStage?.StageName == stageName);
+                    employeeEntries = employeeEntries.Where(e => e.Stage?.StageName == stageName);
                 }
 
                 // Sum the hours
