@@ -2,6 +2,7 @@ using System;
 using System.Windows.Input;
 using ElectricalContractorSystem.Helpers;
 using ElectricalContractorSystem.Services;
+using ElectricalContractorSystem.Views;
 
 namespace ElectricalContractorSystem.ViewModels
 {
@@ -44,28 +45,38 @@ namespace ElectricalContractorSystem.ViewModels
 
         private void NavigateToJobManagement()
         {
-            CurrentView = new JobManagementViewModel(_databaseService);
+            var view = new JobManagementView();
+            view.DataContext = new JobManagementViewModel(_databaseService);
+            CurrentView = view;
         }
 
         private void NavigateToWeeklyLaborEntry()
         {
-            CurrentView = new WeeklyLaborEntryViewModel(_databaseService);
+            var view = new WeeklyLaborEntryView();
+            view.DataContext = new WeeklyLaborEntryViewModel(_databaseService);
+            CurrentView = view;
         }
 
         private void NavigateToMaterialEntry()
         {
-            CurrentView = new MaterialEntryViewModel(_databaseService);
+            var view = new MaterialEntryView();
+            view.DataContext = new MaterialEntryViewModel(_databaseService);
+            CurrentView = view;
         }
 
         private void NavigateToJobCostTracking()
         {
-            CurrentView = new JobCostTrackingViewModel(_databaseService);
+            var view = new JobCostTrackingView();
+            view.DataContext = new JobCostTrackingViewModel(_databaseService);
+            CurrentView = view;
         }
 
         private void NavigateToSettings()
         {
             // TODO: Implement settings view
-            // CurrentView = new SettingsViewModel(_databaseService);
+            // var view = new SettingsView();
+            // view.DataContext = new SettingsViewModel(_databaseService);
+            // CurrentView = view;
         }
     }
 }
