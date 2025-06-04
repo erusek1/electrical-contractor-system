@@ -6,6 +6,7 @@ using System.Windows.Input;
 using ElectricalContractorSystem.Helpers;
 using ElectricalContractorSystem.Models;
 using ElectricalContractorSystem.Services;
+using ElectricalContractorSystem.Views;
 
 namespace ElectricalContractorSystem.ViewModels
 {
@@ -376,9 +377,39 @@ namespace ElectricalContractorSystem.ViewModels
 
         private void CreateNewJob()
         {
-            // In a real implementation, this would navigate to a job creation screen
-            // For now, just output a message
-            System.Windows.MessageBox.Show("Create New Job functionality will be implemented next. This will open a job details form.");
+            try
+            {
+                // Open the New Job dialog
+                var dialog = new NewJobDialog();
+                var result = dialog.ShowDialog();
+
+                if (result == true && dialog.NewJob != null)
+                {
+                    // Add the new job to the collection
+                    Jobs.Add(dialog.NewJob);
+                    
+                    // Refresh the filtered list and statistics
+                    ApplyFilters();
+                    UpdateSummaryStatistics();
+                    
+                    // TODO: Save to database
+                    // _databaseService.CreateJob(dialog.NewJob);
+                    
+                    System.Windows.MessageBox.Show(
+                        $"Job {dialog.NewJob.JobNumber} created successfully!", 
+                        "Job Created", 
+                        System.Windows.MessageBoxButton.OK, 
+                        System.Windows.MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(
+                    $"Error creating new job: {ex.Message}", 
+                    "Error", 
+                    System.Windows.MessageBoxButton.OK, 
+                    System.Windows.MessageBoxImage.Error);
+            }
         }
 
         private void EditJob()
