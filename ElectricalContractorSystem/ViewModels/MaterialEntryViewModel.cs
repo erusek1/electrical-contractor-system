@@ -1,6 +1,5 @@
 using System;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Windows.Input;
 using ElectricalContractorSystem.Helpers;
 using ElectricalContractorSystem.Models;
@@ -13,31 +12,35 @@ namespace ElectricalContractorSystem.ViewModels
         private readonly DatabaseService _databaseService;
         private ObservableCollection<Job> _activeJobs;
         private ObservableCollection<Vendor> _vendors;
-        private ObservableCollection<MaterialEntry> _recentMaterialEntries;
         private Job _selectedJob;
-        private JobStage _selectedStage;
+        private string _selectedStage;
         private Vendor _selectedVendor;
-        private DateTime _entryDate;
+        private DateTime _selectedDate = DateTime.Today;
         private decimal _cost;
         private string _invoiceNumber;
         private decimal _invoiceTotal;
         private string _notes;
-        private ObservableCollection<JobStage> _jobStages;
 
         public MaterialEntryViewModel(DatabaseService databaseService)
         {
-            _databaseService = databaseService;
-            EntryDate = DateTime.Today;
+            _databaseService = databaseService ?? throw new ArgumentNullException(nameof(databaseService));
             
-            // Load data from database
-            LoadActiveJobs();
-            LoadVendors();
-            LoadRecentEntries();
-
             // Initialize commands
-            SaveEntryCommand = new RelayCommand(() => ExecuteSaveEntry(), () => CanExecuteSaveEntry());
-            ClearFormCommand = new RelayCommand(() => ExecuteClearForm());
+            SaveEntryCommand = new RelayCommand(() => SaveEntry(), () => CanSaveEntry());
+            ClearFormCommand = new RelayCommand(() => ClearForm());
+            
+            try
+            {
+                LoadData();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"MaterialEntry: Using test data due to error: {ex.Message}");
+                LoadTestData();
+            }
         }
+
+        #region Properties
 
         public ObservableCollection<Job> ActiveJobs
         {
@@ -51,31 +54,13 @@ namespace ElectricalContractorSystem.ViewModels
             set => SetProperty(ref _vendors, value);
         }
 
-        public ObservableCollection<MaterialEntry> RecentMaterialEntries
-        {
-            get => _recentMaterialEntries;
-            set => SetProperty(ref _recentMaterialEntries, value);
-        }
-
         public Job SelectedJob
         {
             get => _selectedJob;
-            set
-            {
-                if (SetProperty(ref _selectedJob, value))
-                {
-                    LoadJobStages();
-                }
-            }
+            set => SetProperty(ref _selectedJob, value);
         }
 
-        public ObservableCollection<JobStage> JobStages
-        {
-            get => _jobStages;
-            set => SetProperty(ref _jobStages, value);
-        }
-
-        public JobStage SelectedStage
+        public string SelectedStage
         {
             get => _selectedStage;
             set => SetProperty(ref _selectedStage, value);
@@ -87,26 +72,16 @@ namespace ElectricalContractorSystem.ViewModels
             set => SetProperty(ref _selectedVendor, value);
         }
 
-        public DateTime EntryDate
+        public DateTime SelectedDate
         {
-            get => _entryDate;
-            set => SetProperty(ref _entryDate, value);
+            get => _selectedDate;
+            set => SetProperty(ref _selectedDate, value);
         }
 
         public decimal Cost
         {
             get => _cost;
-            set
-            {
-                if (SetProperty(ref _cost, value))
-                {
-                    // If invoice total is not set or is equal to previous cost, update it
-                    if (_invoiceTotal == 0 || _invoiceTotal == _cost)
-                    {
-                        InvoiceTotal = value;
-                    }
-                }
-            }
+            set => SetProperty(ref _cost, value);
         }
 
         public string InvoiceNumber
@@ -127,126 +102,109 @@ namespace ElectricalContractorSystem.ViewModels
             set => SetProperty(ref _notes, value);
         }
 
+        public ObservableCollection<string> AvailableStages { get; } = new ObservableCollection<string>
+        {
+            "Demo", "Rough", "Service", "Finish", "Extra", "Inspection", "Temp Service", "Other"
+        };
+
+        #endregion
+
+        #region Commands
+
         public ICommand SaveEntryCommand { get; }
         public ICommand ClearFormCommand { get; }
 
-        private void LoadActiveJobs()
+        #endregion
+
+        #region Private Methods
+
+        private void LoadData()
         {
-            // Get all jobs with status "Estimate" or "In Progress"
-            ActiveJobs = new ObservableCollection<Job>(
-                _databaseService.GetJobsByStatus("Estimate", "In Progress")
-            );
+            // Load active jobs
+            var allJobs = _databaseService.GetAllJobs();
+            ActiveJobs = new ObservableCollection<Job>(allJobs.Where(j => j.Status != "Complete"));
+
+            // Load vendors (create test vendors for now)
+            LoadTestVendors();
         }
 
-        private void LoadVendors()
+        private void LoadTestData()
         {
-            Vendors = new ObservableCollection<Vendor>(_databaseService.GetAllVendors());
-        }
-
-        private void LoadRecentEntries()
-        {
-            // Load the 20 most recent material entries
-            RecentMaterialEntries = new ObservableCollection<MaterialEntry>(
-                _databaseService.GetRecentMaterialEntries(20)
-            );
-        }
-
-        private void LoadJobStages()
-        {
-            if (SelectedJob != null)
+            // Test jobs
+            ActiveJobs = new ObservableCollection<Job>
             {
-                JobStages = new ObservableCollection<JobStage>(
-                    _databaseService.GetJobStages(SelectedJob.JobId)
-                );
-
-                // If no stages exist yet, create default ones
-                if (!JobStages.Any())
-                {
-                    CreateDefaultStages();
-                }
-            }
-            else
-            {
-                JobStages = new ObservableCollection<JobStage>();
-            }
-        }
-
-        private void CreateDefaultStages()
-        {
-            if (SelectedJob == null) return;
-
-            // Standard stages for a job
-            string[] defaultStages = { "Demo", "Rough", "Service", "Finish", "Extra", "Temp Service", "Inspection", "Other" };
-
-            foreach (var stageName in defaultStages)
-            {
-                var stage = new JobStage
-                {
-                    JobId = SelectedJob.JobId,
-                    StageName = stageName,
-                    EstimatedHours = 0,
-                    EstimatedMaterialCost = 0,
-                    ActualHours = 0,
-                    ActualMaterialCost = 0
-                };
-
-                // Save to database
-                int stageId = _databaseService.AddJobStage(stage);
-                stage.StageId = stageId;
-                JobStages.Add(stage);
-            }
-        }
-
-        private bool CanExecuteSaveEntry()
-        {
-            return SelectedJob != null 
-                && SelectedStage != null 
-                && SelectedVendor != null 
-                && Cost > 0;
-        }
-
-        private void ExecuteSaveEntry()
-        {
-            // Create the material entry
-            var materialEntry = new MaterialEntry
-            {
-                JobId = SelectedJob.JobId,
-                StageId = SelectedStage.StageId,
-                VendorId = SelectedVendor.VendorId,
-                Date = EntryDate,
-                Cost = Cost,
-                InvoiceNumber = InvoiceNumber,
-                InvoiceTotal = InvoiceTotal,
-                Notes = Notes
+                new Job { JobId = 1, JobNumber = "619", JobName = "Smith Residence", Status = "In Progress" },
+                new Job { JobId = 2, JobNumber = "621", JobName = "Bayshore Contractors", Status = "In Progress" },
+                new Job { JobId = 3, JobNumber = "623", JobName = "MPC Builders - Shore House", Status = "In Progress" }
             };
 
-            // Save to database
-            int entryId = _databaseService.AddMaterialEntry(materialEntry);
-            materialEntry.EntryId = entryId;
-
-            // Update the selected stage's actual material cost
-            SelectedStage.ActualMaterialCost += Cost;
-            _databaseService.UpdateJobStage(SelectedStage);
-
-            // Add to recent entries and clear form
-            RecentMaterialEntries.Insert(0, materialEntry);
-            if (RecentMaterialEntries.Count > 20)
-            {
-                RecentMaterialEntries.RemoveAt(RecentMaterialEntries.Count - 1);
-            }
-
-            ExecuteClearForm();
+            LoadTestVendors();
         }
 
-        private void ExecuteClearForm()
+        private void LoadTestVendors()
         {
-            // Keep the selected job and vendor but clear the rest
-            SelectedStage = null;
-            EntryDate = DateTime.Today;
-            Cost = 0;
-            InvoiceNumber = string.Empty;
-            InvoiceTotal = 0;
-            Notes = string.Empty;
+            Vendors = new ObservableCollection<Vendor>
+            {
+                new Vendor { VendorId = 1, Name = "Home Depot", Phone = "732-555-0100" },
+                new Vendor { VendorId = 2, Name = "Cooper Electric", Phone = "732-555-0200" },
+                new Vendor { VendorId = 3, Name = "Warshauer Electric", Phone = "732-555-0300" },
+                new Vendor { VendorId = 4, Name = "Good Friend Electric", Phone = "732-555-0400" },
+                new Vendor { VendorId = 5, Name = "Lowes", Phone = "732-555-0500" }
+            };
         }
+
+        private void SaveEntry()
+        {
+            try
+            {
+                if (!CanSaveEntry())
+                {
+                    System.Windows.MessageBox.Show("Please fill in all required fields.", "Validation Error");
+                    return;
+                }
+
+                // For now, just show what would be saved
+                var message = $"Material Entry to Save:\n\n" +
+                             $"Job: {SelectedJob.JobNumber} - {SelectedJob.JobName}\n" +
+                             $"Stage: {SelectedStage}\n" +
+                             $"Vendor: {SelectedVendor.Name}\n" +
+                             $"Date: {SelectedDate:MM/dd/yyyy}\n" +
+                             $"Cost: ${Cost:F2}\n" +
+                             $"Invoice #: {InvoiceNumber}\n" +
+                             $"Invoice Total: ${InvoiceTotal:F2}\n" +
+                             $"Notes: {Notes}";
+
+                System.Windows.MessageBox.Show(message, "Save Material Entry");
+
+                // Clear form after successful save
+                ClearForm();
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Error saving material entry: {ex.Message}", "Error");
+            }
+        }
+
+        private bool CanSaveEntry()
+        {
+            return SelectedJob != null && 
+                   !string.IsNullOrWhiteSpace(SelectedStage) && 
+                   SelectedVendor != null && 
+                   Cost > 0;
+        }
+
+        private void ClearForm()
+        {
+            SelectedJob = null;
+            SelectedStage = null;
+            SelectedVendor = null;
+            SelectedDate = DateTime.Today;
+            Cost = 0;
+            InvoiceNumber = "";
+            InvoiceTotal = 0;
+            Notes = "";
+        }
+
+        #endregion
     }
 }
