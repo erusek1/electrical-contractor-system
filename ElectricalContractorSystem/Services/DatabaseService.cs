@@ -153,11 +153,20 @@ namespace ElectricalContractorSystem.Services
             return jobs;
         }
 
-        public List<Job> GetJobsByStatus(string status)
+        public List<Job> GetJobsByStatus(params string[] statuses)
         {
             var jobs = new List<Job>();
-            var parameters = new Dictionary<string, object> { { "@status", status } };
-            string query = @"SELECT j.*, c.name as customer_name FROM Jobs j LEFT JOIN Customers c ON j.customer_id = c.customer_id WHERE j.status = @status ORDER BY j.job_number DESC";
+            var statusParams = new List<string>();
+            var parameters = new Dictionary<string, object>();
+            
+            for (int i = 0; i < statuses.Length; i++)
+            {
+                var paramName = $"@status{i}";
+                statusParams.Add(paramName);
+                parameters[paramName] = statuses[i];
+            }
+            
+            string query = $@"SELECT j.*, c.name as customer_name FROM Jobs j LEFT JOIN Customers c ON j.customer_id = c.customer_id WHERE j.status IN ({string.Join(",", statusParams)}) ORDER BY j.job_number DESC";
             var dataTable = ExecuteQuery(query, parameters);
             foreach (DataRow row in dataTable.Rows)
             {
@@ -204,8 +213,8 @@ namespace ElectricalContractorSystem.Services
                 Status = row["status"].ToString(),
                 CreateDate = Convert.ToDateTime(row["create_date"]),
                 CompletionDate = row["completion_date"] != DBNull.Value ? Convert.ToDateTime(row["completion_date"]) : (DateTime?)null,
-                TotalEstimate = row["total_estimate"] != DBNull.Value ? Convert.ToDecimal(row["total_estimate"]) : (decimal?)null,
-                TotalActual = row["total_actual"] != DBNull.Value ? Convert.ToDecimal(row["total_actual"]) : (decimal?)null,
+                TotalEstimate = row["total_estimate"] != DBNull.Value ? Convert.ToDecimal(row["total_estimate"]) : 0m,
+                TotalActual = row["total_actual"] != DBNull.Value ? Convert.ToDecimal(row["total_actual"]) : 0m,
                 Notes = row["notes"]?.ToString()
             };
         }
@@ -241,7 +250,15 @@ namespace ElectricalContractorSystem.Services
 
         public int SaveJob(Job job)
         {
-            return job.JobId == 0 ? AddJob(job) : (UpdateJob(job), job.JobId).Item2;
+            if (job.JobId == 0)
+            {
+                return AddJob(job);
+            }
+            else
+            {
+                UpdateJob(job);
+                return job.JobId;
+            }
         }
 
         public string GetNextJobNumber()
@@ -357,10 +374,10 @@ namespace ElectricalContractorSystem.Services
                 StageId = Convert.ToInt32(row["stage_id"]),
                 JobId = Convert.ToInt32(row["job_id"]),
                 StageName = row["stage_name"].ToString(),
-                EstimatedHours = row["estimated_hours"] != DBNull.Value ? Convert.ToDecimal(row["estimated_hours"]) : (decimal?)null,
-                EstimatedMaterialCost = row["estimated_material_cost"] != DBNull.Value ? Convert.ToDecimal(row["estimated_material_cost"]) : (decimal?)null,
-                ActualHours = row["actual_hours"] != DBNull.Value ? Convert.ToDecimal(row["actual_hours"]) : (decimal?)null,
-                ActualMaterialCost = row["actual_material_cost"] != DBNull.Value ? Convert.ToDecimal(row["actual_material_cost"]) : (decimal?)null,
+                EstimatedHours = row["estimated_hours"] != DBNull.Value ? Convert.ToDecimal(row["estimated_hours"]) : 0m,
+                EstimatedMaterialCost = row["estimated_material_cost"] != DBNull.Value ? Convert.ToDecimal(row["estimated_material_cost"]) : 0m,
+                ActualHours = row["actual_hours"] != DBNull.Value ? Convert.ToDecimal(row["actual_hours"]) : 0m,
+                ActualMaterialCost = row["actual_material_cost"] != DBNull.Value ? Convert.ToDecimal(row["actual_material_cost"]) : 0m,
                 Notes = row["notes"]?.ToString()
             };
         }
@@ -454,7 +471,18 @@ namespace ElectricalContractorSystem.Services
         public void DeleteLaborEntriesByDate(DateTime startDate, DateTime endDate, int employeeId)
         {
             var parameters = new Dictionary<string, object> { { "@startDate", startDate }, { "@endDate", endDate }, { "@employeeId", employeeId } };
-            ExecuteNonQuery("DELETE FROM LaborEntries WHERE date BETWEEN @startDate AND @endDate AND employee_id = @employeeId", parameters);
+            
+            if (employeeId == 0)
+            {
+                // Delete all employees for the date range
+                ExecuteNonQuery("DELETE FROM LaborEntries WHERE date BETWEEN @startDate AND @endDate", 
+                    new Dictionary<string, object> { { "@startDate", startDate }, { "@endDate", endDate } });
+            }
+            else
+            {
+                // Delete specific employee for the date range
+                ExecuteNonQuery("DELETE FROM LaborEntries WHERE date BETWEEN @startDate AND @endDate AND employee_id = @employeeId", parameters);
+            }
         }
         #endregion
 
