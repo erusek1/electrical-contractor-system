@@ -1,4 +1,5 @@
 using System;
+using System.Windows;
 using System.Windows.Input;
 using ElectricalContractorSystem.Helpers;
 using ElectricalContractorSystem.Services;
@@ -32,15 +33,51 @@ namespace ElectricalContractorSystem.ViewModels
             // Initialize database service
             _databaseService = new DatabaseService();
 
-            // Initialize navigation commands
-            NavigateToJobManagementCommand = new RelayCommand(() => NavigateToJobManagement());
-            NavigateToWeeklyLaborEntryCommand = new RelayCommand(() => NavigateToWeeklyLaborEntry());
-            NavigateToMaterialEntryCommand = new RelayCommand(() => NavigateToMaterialEntry());
-            NavigateToJobCostTrackingCommand = new RelayCommand(() => NavigateToJobCostTracking());
-            NavigateToSettingsCommand = new RelayCommand(() => NavigateToSettings());
+            // Initialize navigation commands with error handling
+            NavigateToJobManagementCommand = new RelayCommand(() => SafeNavigate(NavigateToJobManagement));
+            NavigateToWeeklyLaborEntryCommand = new RelayCommand(() => SafeNavigate(NavigateToWeeklyLaborEntry));
+            NavigateToMaterialEntryCommand = new RelayCommand(() => SafeNavigate(NavigateToMaterialEntry));
+            NavigateToJobCostTrackingCommand = new RelayCommand(() => SafeNavigate(NavigateToJobCostTracking));
+            NavigateToSettingsCommand = new RelayCommand(() => SafeNavigate(NavigateToSettings));
 
-            // Default view
-            NavigateToJobManagement();
+            // Default view - start with Job Management
+            SafeNavigate(NavigateToJobManagement);
+        }
+
+        /// <summary>
+        /// Safe navigation wrapper that handles exceptions
+        /// </summary>
+        private void SafeNavigate(Action navigationAction)
+        {
+            try
+            {
+                navigationAction?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Navigation error: {ex.Message}\n\nPlease try again. If the problem persists, restart the application.", 
+                    "Navigation Error", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Warning);
+                    
+                // Try to fallback to a safe view
+                try
+                {
+                    NavigateToJobManagement();
+                }
+                catch
+                {
+                    // If even the fallback fails, show a minimal error view
+                    CurrentView = new System.Windows.Controls.TextBlock 
+                    { 
+                        Text = "Error loading views. Please restart the application.", 
+                        HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
+                        VerticalAlignment = System.Windows.VerticalAlignment.Center,
+                        FontSize = 16
+                    };
+                }
+            }
         }
 
         private void NavigateToJobManagement()
@@ -74,9 +111,7 @@ namespace ElectricalContractorSystem.ViewModels
         private void NavigateToSettings()
         {
             // TODO: Implement settings view
-            // var view = new SettingsView();
-            // view.DataContext = new SettingsViewModel(_databaseService);
-            // CurrentView = view;
+            MessageBox.Show("Settings functionality will be implemented in a future update.", "Settings", MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
 }
