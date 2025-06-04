@@ -262,6 +262,13 @@ namespace ElectricalContractorSystem.ViewModels
                 if (!_databaseService.TestConnection())
                 {
                     ErrorMessage = "Unable to connect to database. Please check your connection settings.";
+                    
+                    // Fallback to test data
+                    var testJobs = GetTestJobs();
+                    Jobs = new ObservableCollection<Job>(testJobs);
+                    ApplyFilters();
+                    UpdateSummaryStatistics();
+                    ErrorMessage += " (Using test data)";
                     return;
                 }
 
@@ -579,21 +586,5 @@ namespace ElectricalContractorSystem.ViewModels
         }
 
         #endregion
-    }
-
-    /// <summary>
-    /// Extended RelayCommand that can raise CanExecuteChanged
-    /// </summary>
-    public class RelayCommandWithCanExecute : RelayCommand
-    {
-        public RelayCommandWithCanExecute(Action<object> execute, Predicate<object> canExecute) 
-            : base(execute, canExecute)
-        {
-        }
-
-        public void RaiseCanExecuteChanged()
-        {
-            CommandManager.InvalidateRequerySuggested();
-        }
     }
 }
