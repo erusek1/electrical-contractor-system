@@ -107,11 +107,20 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="DatabaseConnectionTest.cs" />
     <Compile Include="Helpers\BooleanToVisibilityConverter.cs" />
+    <Compile Include="Helpers\EmployeeHoursConverter.cs" />
+    <Compile Include="Helpers\HoursStatusConverter.cs" />
+    <Compile Include="Helpers\HoursStatusTextConverter.cs" />
+    <Compile Include="Helpers\InverseBooleanConverter.cs" />
+    <Compile Include="Helpers\NotNullOrEmptyConverter.cs" />
     <Compile Include="Helpers\RelayCommand.cs" />
     <Compile Include="Helpers\StatusToColorConverter.cs" />
     <Compile Include="Helpers\StatusToVisibilityConverter.cs" />
     <Compile Include="Helpers\StringEqualityConverter.cs" />
+    <Compile Include="Helpers\StringEqualityToVisibilityConverter.cs" />
+    <Compile Include="Helpers\StringNotEqualityConverter.cs" />
+    <Compile Include="Helpers\TextConverter.cs" />
     <Compile Include="Models\Customer.cs" />
     <Compile Include="Models\Employee.cs" />
     <Compile Include="Models\Job.cs" />
@@ -122,6 +131,7 @@
     <Compile Include="Models\PriceList.cs" />
     <Compile Include="Models\RoomSpecification.cs" />
     <Compile Include="Models\Vendor.cs" />
+    <Compile Include="Services\DatabaseConnectionTest.cs" />
     <Compile Include="Services\DatabaseService.cs" />
     <Compile Include="ViewModels\JobCostTrackingViewModel.cs" />
     <Compile Include="ViewModels\JobDetailsViewModel.cs" />
