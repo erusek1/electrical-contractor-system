@@ -55,17 +55,7 @@ namespace ElectricalContractorSystem.ViewModels
         public Job SelectedJob
         {
             get => _selectedJob;
-            set
-            {
-                if (SetProperty(ref _selectedJob, value))
-                {
-                    // Enable command execution state to be re-evaluated
-                    ((RelayCommandWithCanExecute)EditJobCommand).RaiseCanExecuteChanged();
-                    ((RelayCommandWithCanExecute)DeleteJobCommand).RaiseCanExecuteChanged();
-                    ((RelayCommandWithCanExecute)ViewJobDetailsCommand).RaiseCanExecuteChanged();
-                    ((RelayCommandWithCanExecute)EnterJobDataCommand).RaiseCanExecuteChanged();
-                }
-            }
+            set => SetProperty(ref _selectedJob, value);
         }
 
         /// <summary>
@@ -233,12 +223,12 @@ namespace ElectricalContractorSystem.ViewModels
             Jobs = new ObservableCollection<Job>();
             FilteredJobs = new ObservableCollection<Job>();
 
-            // Initialize commands
+            // Initialize commands - using simple RelayCommand for now
             NewJobCommand = new RelayCommand(() => CreateNewJob());
-            EditJobCommand = new RelayCommandWithCanExecute(param => EditJob(), param => CanEditJob());
-            DeleteJobCommand = new RelayCommandWithCanExecute(param => DeleteJob(), param => CanDeleteJob());
-            ViewJobDetailsCommand = new RelayCommandWithCanExecute(param => ViewJobDetails(), param => CanViewJobDetails());
-            EnterJobDataCommand = new RelayCommandWithCanExecute(param => EnterJobData(), param => CanEnterJobData());
+            EditJobCommand = new RelayCommand(() => EditJob(), () => CanEditJob());
+            DeleteJobCommand = new RelayCommand(() => DeleteJob(), () => CanDeleteJob());
+            ViewJobDetailsCommand = new RelayCommand(() => ViewJobDetails(), () => CanViewJobDetails());
+            EnterJobDataCommand = new RelayCommand(() => EnterJobData(), () => CanEnterJobData());
             RefreshJobsCommand = new RelayCommand(() => LoadJobs());
             ShowActiveJobsCommand = new RelayCommand(() => ShowActiveJobs());
             ShowCompletedJobsCommand = new RelayCommand(() => ShowCompletedJobs());
@@ -379,36 +369,38 @@ namespace ElectricalContractorSystem.ViewModels
         {
             try
             {
-                // Open the New Job dialog
-                var dialog = new NewJobDialog();
-                var result = dialog.ShowDialog();
+                // Create a simple dialog window for now
+                var result = System.Windows.MessageBox.Show(
+                    "This will open the New Job dialog.\n\nFor now, would you like to add a test job?", 
+                    "New Job", 
+                    System.Windows.MessageBoxButton.YesNo, 
+                    System.Windows.MessageBoxImage.Question);
 
-                if (result == true && dialog.NewJob != null)
+                if (result == System.Windows.MessageBoxResult.Yes)
                 {
-                    // Add the new job to the collection
-                    Jobs.Add(dialog.NewJob);
-                    
-                    // Refresh the filtered list and statistics
+                    // Create a test job
+                    var newJob = new Job
+                    {
+                        JobNumber = (Jobs.Count + 1000).ToString(),
+                        JobName = "Test Job " + DateTime.Now.ToString("MMdd"),
+                        Address = "123 Test Street",
+                        Status = "Estimate",
+                        CreateDate = DateTime.Now,
+                        TotalEstimate = 15000,
+                        TotalActual = 0,
+                        Customer = new Customer { Name = "Test Customer " + DateTime.Now.ToString("MMdd") }
+                    };
+
+                    Jobs.Add(newJob);
                     ApplyFilters();
                     UpdateSummaryStatistics();
-                    
-                    // TODO: Save to database
-                    // _databaseService.CreateJob(dialog.NewJob);
-                    
-                    System.Windows.MessageBox.Show(
-                        $"Job {dialog.NewJob.JobNumber} created successfully!", 
-                        "Job Created", 
-                        System.Windows.MessageBoxButton.OK, 
-                        System.Windows.MessageBoxImage.Information);
+
+                    System.Windows.MessageBox.Show($"Test job {newJob.JobNumber} added successfully!", "Job Created");
                 }
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show(
-                    $"Error creating new job: {ex.Message}", 
-                    "Error", 
-                    System.Windows.MessageBoxButton.OK, 
-                    System.Windows.MessageBoxImage.Error);
+                System.Windows.MessageBox.Show($"Error creating new job: {ex.Message}", "Error");
             }
         }
 
@@ -417,8 +409,7 @@ namespace ElectricalContractorSystem.ViewModels
             if (SelectedJob == null)
                 return;
 
-            // In a real implementation, this would navigate to a job editing screen
-            System.Windows.MessageBox.Show($"Edit Job {SelectedJob.JobNumber} functionality will be implemented next. This will open the job details form in edit mode.");
+            System.Windows.MessageBox.Show($"Edit Job {SelectedJob.JobNumber} functionality will be implemented next.");
         }
 
         private bool CanEditJob()
@@ -431,7 +422,6 @@ namespace ElectricalContractorSystem.ViewModels
             if (SelectedJob == null)
                 return;
 
-            // Confirm deletion
             var result = System.Windows.MessageBox.Show(
                 $"Are you sure you want to delete job {SelectedJob.JobNumber}?",
                 "Confirm Deletion",
@@ -440,20 +430,9 @@ namespace ElectricalContractorSystem.ViewModels
 
             if (result == System.Windows.MessageBoxResult.Yes)
             {
-                try
-                {
-                    // TODO: Implement actual job deletion in database
-                    System.Windows.MessageBox.Show($"Delete Job {SelectedJob.JobNumber} functionality will be implemented next.");
-                    
-                    // For now, remove from local collection
-                    Jobs.Remove(SelectedJob);
-                    ApplyFilters();
-                    UpdateSummaryStatistics();
-                }
-                catch (Exception ex)
-                {
-                    ErrorMessage = $"Error deleting job: {ex.Message}";
-                }
+                Jobs.Remove(SelectedJob);
+                ApplyFilters();
+                UpdateSummaryStatistics();
             }
         }
 
@@ -467,8 +446,7 @@ namespace ElectricalContractorSystem.ViewModels
             if (SelectedJob == null)
                 return;
 
-            // In a real implementation, this would navigate to a job details screen
-            System.Windows.MessageBox.Show($"View Job {SelectedJob.JobNumber} Details functionality will be implemented next. This will show the job cost tracking view.");
+            System.Windows.MessageBox.Show($"View Job {SelectedJob.JobNumber} Details functionality will be implemented next.");
         }
 
         private bool CanViewJobDetails()
@@ -481,8 +459,7 @@ namespace ElectricalContractorSystem.ViewModels
             if (SelectedJob == null)
                 return;
 
-            // In a real implementation, this would navigate to a job data entry screen
-            System.Windows.MessageBox.Show($"Enter Data for Job {SelectedJob.JobNumber} functionality will be implemented next. This will open the weekly labor entry or material entry forms.");
+            System.Windows.MessageBox.Show($"Enter Data for Job {SelectedJob.JobNumber} functionality will be implemented next.");
         }
 
         private bool CanEnterJobData()
