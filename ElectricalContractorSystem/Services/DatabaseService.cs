@@ -292,6 +292,198 @@ namespace ElectricalContractorSystem.Services
         }
         #endregion
 
+        #region JobStage Operations
+        public List<JobStage> GetJobStages(int jobId)
+        {
+            var stages = new List<JobStage>();
+            string query = "SELECT * FROM JobStages WHERE job_id = @jobId";
+            var parameters = new Dictionary<string, object> { { "@jobId", jobId } };
+            var dataTable = ExecuteQuery(query, parameters);
+            
+            foreach (DataRow row in dataTable.Rows)
+            {
+                stages.Add(new JobStage
+                {
+                    StageId = Convert.ToInt32(row["stage_id"]),
+                    JobId = Convert.ToInt32(row["job_id"]),
+                    StageName = row["stage_name"].ToString(),
+                    EstimatedHours = row["estimated_hours"] != DBNull.Value ? Convert.ToDecimal(row["estimated_hours"]) : 0m,
+                    EstimatedMaterialCost = row["estimated_material_cost"] != DBNull.Value ? Convert.ToDecimal(row["estimated_material_cost"]) : 0m,
+                    ActualHours = row["actual_hours"] != DBNull.Value ? Convert.ToDecimal(row["actual_hours"]) : 0m,
+                    ActualMaterialCost = row["actual_material_cost"] != DBNull.Value ? Convert.ToDecimal(row["actual_material_cost"]) : 0m,
+                    Notes = row["notes"]?.ToString()
+                });
+            }
+            return stages;
+        }
+
+        public int AddJobStage(JobStage stage)
+        {
+            string query = @"INSERT INTO JobStages (job_id, stage_name, estimated_hours, estimated_material_cost, actual_hours, actual_material_cost, notes) VALUES (@jobId, @stageName, @estimatedHours, @estimatedMaterialCost, @actualHours, @actualMaterialCost, @notes)";
+            var parameters = new Dictionary<string, object>
+            {
+                { "@jobId", stage.JobId },
+                { "@stageName", stage.StageName },
+                { "@estimatedHours", stage.EstimatedHours },
+                { "@estimatedMaterialCost", stage.EstimatedMaterialCost },
+                { "@actualHours", stage.ActualHours },
+                { "@actualMaterialCost", stage.ActualMaterialCost },
+                { "@notes", stage.Notes }
+            };
+            ExecuteNonQuery(query, parameters);
+            return (int)GetLastInsertedId();
+        }
+
+        public void UpdateJobStage(JobStage stage)
+        {
+            string query = @"UPDATE JobStages SET stage_name = @stageName, estimated_hours = @estimatedHours, estimated_material_cost = @estimatedMaterialCost, actual_hours = @actualHours, actual_material_cost = @actualMaterialCost, notes = @notes WHERE stage_id = @stageId";
+            var parameters = new Dictionary<string, object>
+            {
+                { "@stageId", stage.StageId },
+                { "@stageName", stage.StageName },
+                { "@estimatedHours", stage.EstimatedHours },
+                { "@estimatedMaterialCost", stage.EstimatedMaterialCost },
+                { "@actualHours", stage.ActualHours },
+                { "@actualMaterialCost", stage.ActualMaterialCost },
+                { "@notes", stage.Notes }
+            };
+            ExecuteNonQuery(query, parameters);
+        }
+
+        public void DeleteJobStage(int stageId)
+        {
+            string query = "DELETE FROM JobStages WHERE stage_id = @stageId";
+            var parameters = new Dictionary<string, object> { { "@stageId", stageId } };
+            ExecuteNonQuery(query, parameters);
+        }
+        #endregion
+
+        #region RoomSpecification Operations
+        public List<RoomSpecification> GetRoomSpecifications(int jobId)
+        {
+            var specs = new List<RoomSpecification>();
+            string query = "SELECT * FROM RoomSpecifications WHERE job_id = @jobId ORDER BY room_name";
+            var parameters = new Dictionary<string, object> { { "@jobId", jobId } };
+            var dataTable = ExecuteQuery(query, parameters);
+            
+            foreach (DataRow row in dataTable.Rows)
+            {
+                specs.Add(new RoomSpecification
+                {
+                    SpecId = Convert.ToInt32(row["spec_id"]),
+                    JobId = Convert.ToInt32(row["job_id"]),
+                    RoomName = row["room_name"].ToString(),
+                    ItemDescription = row["item_description"].ToString(),
+                    Quantity = Convert.ToInt32(row["quantity"]),
+                    ItemCode = row["item_code"]?.ToString(),
+                    UnitPrice = Convert.ToDecimal(row["unit_price"]),
+                    TotalPrice = Convert.ToDecimal(row["total_price"])
+                });
+            }
+            return specs;
+        }
+
+        public int AddRoomSpecification(RoomSpecification spec)
+        {
+            string query = @"INSERT INTO RoomSpecifications (job_id, room_name, item_description, quantity, item_code, unit_price, total_price) VALUES (@jobId, @roomName, @itemDescription, @quantity, @itemCode, @unitPrice, @totalPrice)";
+            var parameters = new Dictionary<string, object>
+            {
+                { "@jobId", spec.JobId },
+                { "@roomName", spec.RoomName },
+                { "@itemDescription", spec.ItemDescription },
+                { "@quantity", spec.Quantity },
+                { "@itemCode", spec.ItemCode },
+                { "@unitPrice", spec.UnitPrice },
+                { "@totalPrice", spec.TotalPrice }
+            };
+            ExecuteNonQuery(query, parameters);
+            return (int)GetLastInsertedId();
+        }
+
+        public void UpdateRoomSpecification(RoomSpecification spec)
+        {
+            string query = @"UPDATE RoomSpecifications SET room_name = @roomName, item_description = @itemDescription, quantity = @quantity, item_code = @itemCode, unit_price = @unitPrice, total_price = @totalPrice WHERE spec_id = @specId";
+            var parameters = new Dictionary<string, object>
+            {
+                { "@specId", spec.SpecId },
+                { "@roomName", spec.RoomName },
+                { "@itemDescription", spec.ItemDescription },
+                { "@quantity", spec.Quantity },
+                { "@itemCode", spec.ItemCode },
+                { "@unitPrice", spec.UnitPrice },
+                { "@totalPrice", spec.TotalPrice }
+            };
+            ExecuteNonQuery(query, parameters);
+        }
+
+        public void DeleteRoomSpecification(int specId)
+        {
+            string query = "DELETE FROM RoomSpecifications WHERE spec_id = @specId";
+            var parameters = new Dictionary<string, object> { { "@specId", specId } };
+            ExecuteNonQuery(query, parameters);
+        }
+        #endregion
+
+        #region PermitItem Operations
+        public List<PermitItem> GetPermitItems(int jobId)
+        {
+            var items = new List<PermitItem>();
+            string query = "SELECT * FROM PermitItems WHERE job_id = @jobId ORDER BY category";
+            var parameters = new Dictionary<string, object> { { "@jobId", jobId } };
+            var dataTable = ExecuteQuery(query, parameters);
+            
+            foreach (DataRow row in dataTable.Rows)
+            {
+                items.Add(new PermitItem
+                {
+                    PermitId = Convert.ToInt32(row["permit_id"]),
+                    JobId = Convert.ToInt32(row["job_id"]),
+                    Category = row["category"].ToString(),
+                    Quantity = Convert.ToInt32(row["quantity"]),
+                    Description = row["description"]?.ToString(),
+                    Notes = row["notes"]?.ToString()
+                });
+            }
+            return items;
+        }
+
+        public int AddPermitItem(PermitItem item)
+        {
+            string query = @"INSERT INTO PermitItems (job_id, category, quantity, description, notes) VALUES (@jobId, @category, @quantity, @description, @notes)";
+            var parameters = new Dictionary<string, object>
+            {
+                { "@jobId", item.JobId },
+                { "@category", item.Category },
+                { "@quantity", item.Quantity },
+                { "@description", item.Description },
+                { "@notes", item.Notes }
+            };
+            ExecuteNonQuery(query, parameters);
+            return (int)GetLastInsertedId();
+        }
+
+        public void UpdatePermitItem(PermitItem item)
+        {
+            string query = @"UPDATE PermitItems SET category = @category, quantity = @quantity, description = @description, notes = @notes WHERE permit_id = @permitId";
+            var parameters = new Dictionary<string, object>
+            {
+                { "@permitId", item.PermitId },
+                { "@category", item.Category },
+                { "@quantity", item.Quantity },
+                { "@description", item.Description },
+                { "@notes", item.Notes }
+            };
+            ExecuteNonQuery(query, parameters);
+        }
+
+        public void DeletePermitItem(int permitId)
+        {
+            string query = "DELETE FROM PermitItems WHERE permit_id = @permitId";
+            var parameters = new Dictionary<string, object> { { "@permitId", permitId } };
+            ExecuteNonQuery(query, parameters);
+        }
+        #endregion
+
         #region Customer Operations
         public List<Customer> GetAllCustomers()
         {
