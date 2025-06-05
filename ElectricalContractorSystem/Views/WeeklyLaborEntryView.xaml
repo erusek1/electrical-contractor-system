@@ -11,6 +11,9 @@
     <UserControl.Resources>
         <helpers:HoursStatusConverter x:Key="HoursStatusConverter"/>
         <helpers:HoursStatusTextConverter x:Key="HoursStatusTextConverter"/>
+        <helpers:EmployeeTotalConverter x:Key="EmployeeTotalConverter"/>
+        <helpers:EmployeeStatusConverter x:Key="EmployeeStatusConverter"/>
+        <helpers:EmployeeStatusTextConverter x:Key="EmployeeStatusTextConverter"/>
     </UserControl.Resources>
     
     <Grid Background="#F5F5F5">
