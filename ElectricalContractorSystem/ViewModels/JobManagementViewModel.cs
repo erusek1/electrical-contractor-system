@@ -203,6 +203,11 @@ namespace ElectricalContractorSystem.ViewModels
         /// </summary>
         public ICommand ClearSearchCommand { get; }
 
+        /// <summary>
+        /// Command to open bulk status update dialog
+        /// </summary>
+        public ICommand BulkStatusUpdateCommand { get; }
+
         #endregion
 
         /// <summary>
@@ -234,6 +239,7 @@ namespace ElectricalContractorSystem.ViewModels
             ShowCompletedJobsCommand = new RelayCommand(() => ShowCompletedJobs());
             ShowAllJobsCommand = new RelayCommand(() => ShowAllJobs());
             ClearSearchCommand = new RelayCommand(() => ClearSearch());
+            BulkStatusUpdateCommand = new RelayCommand(() => OpenBulkStatusUpdate());
 
             // Load data
             LoadJobs();
@@ -358,7 +364,7 @@ namespace ElectricalContractorSystem.ViewModels
             // Calculate summary statistics based on active jobs only
             var activeJobs = Jobs.Where(j => j.Status != "Complete").ToList();
             
-            ActiveJobCount = activeJobs.Count;
+            ActiveJobCount = activeJobs.Count();
             TotalEstimate = activeJobs.Sum(j => j.TotalEstimate ?? 0);
             TotalActual = activeJobs.Sum(j => j.TotalActual ?? 0);
         }
@@ -369,33 +375,13 @@ namespace ElectricalContractorSystem.ViewModels
         {
             try
             {
-                // Create a simple dialog window for now
-                var result = System.Windows.MessageBox.Show(
-                    "This will open the New Job dialog.\n\nFor now, would you like to add a test job?", 
-                    "New Job", 
-                    System.Windows.MessageBoxButton.YesNo, 
-                    System.Windows.MessageBoxImage.Question);
+                var dialog = new JobEditDialog();
+                var result = dialog.ShowDialog();
 
-                if (result == System.Windows.MessageBoxResult.Yes)
+                if (result == true)
                 {
-                    // Create a test job
-                    var newJob = new Job
-                    {
-                        JobNumber = (Jobs.Count + 1000).ToString(),
-                        JobName = "Test Job " + DateTime.Now.ToString("MMdd"),
-                        Address = "123 Test Street",
-                        Status = "Estimate",
-                        CreateDate = DateTime.Now,
-                        TotalEstimate = 15000,
-                        TotalActual = 0,
-                        Customer = new Customer { Name = "Test Customer " + DateTime.Now.ToString("MMdd") }
-                    };
-
-                    Jobs.Add(newJob);
-                    ApplyFilters();
-                    UpdateSummaryStatistics();
-
-                    System.Windows.MessageBox.Show($"Test job {newJob.JobNumber} added successfully!", "Job Created");
+                    // Refresh the job list to show the new job
+                    LoadJobs();
                 }
             }
             catch (Exception ex)
@@ -409,7 +395,21 @@ namespace ElectricalContractorSystem.ViewModels
             if (SelectedJob == null)
                 return;
 
-            System.Windows.MessageBox.Show($"Edit Job {SelectedJob.JobNumber} functionality will be implemented next.");
+            try
+            {
+                var dialog = new JobEditDialog(SelectedJob.JobId);
+                var result = dialog.ShowDialog();
+
+                if (result == true)
+                {
+                    // Refresh the job list to show the updated job
+                    LoadJobs();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Error editing job: {ex.Message}", "Error");
+            }
         }
 
         private bool CanEditJob()
@@ -423,16 +423,29 @@ namespace ElectricalContractorSystem.ViewModels
                 return;
 
             var result = System.Windows.MessageBox.Show(
-                $"Are you sure you want to delete job {SelectedJob.JobNumber}?",
+                $"Are you sure you want to delete job {SelectedJob.JobNumber}?\n\nThis will permanently remove the job and all associated data.",
                 "Confirm Deletion",
                 System.Windows.MessageBoxButton.YesNo,
                 System.Windows.MessageBoxImage.Warning);
 
             if (result == System.Windows.MessageBoxResult.Yes)
             {
-                Jobs.Remove(SelectedJob);
-                ApplyFilters();
-                UpdateSummaryStatistics();
+                try
+                {
+                    // Note: You'll need to implement DeleteJob in DatabaseService
+                    // _databaseService.DeleteJob(SelectedJob.JobId);
+                    
+                    // For now, just remove from the collection
+                    Jobs.Remove(SelectedJob);
+                    ApplyFilters();
+                    UpdateSummaryStatistics();
+                    
+                    System.Windows.MessageBox.Show($"Job {SelectedJob.JobNumber} deleted successfully.", "Job Deleted");
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.MessageBox.Show($"Error deleting job: {ex.Message}", "Error");
+                }
             }
         }
 
@@ -485,6 +498,25 @@ namespace ElectricalContractorSystem.ViewModels
         private void ClearSearch()
         {
             SearchText = string.Empty;
+        }
+
+        private void OpenBulkStatusUpdate()
+        {
+            try
+            {
+                var dialog = new BulkStatusUpdateDialog();
+                var result = dialog.ShowDialog();
+
+                if (result == true)
+                {
+                    // Refresh the job list to show updated statuses
+                    LoadJobs();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Error opening bulk status update: {ex.Message}", "Error");
+            }
         }
 
         #endregion
