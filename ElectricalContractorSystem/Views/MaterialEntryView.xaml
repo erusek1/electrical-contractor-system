@@ -8,6 +8,10 @@
         xmlns:helpers="clr-namespace:ElectricalContractorSystem.Helpers"
         mc:Ignorable="d">
     
+    <UserControl.Resources>
+        <helpers:NotNullConverter x:Key="NotNullConverter"/>
+    </UserControl.Resources>
+    
     <Grid Background="#F5F5F5">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -47,9 +51,8 @@
                     
                     <!-- Stage Selection -->
                     <TextBlock Text="Select Stage" FontSize="12" Foreground="#757575" Margin="0,0,0,5"/>
-                    <ComboBox ItemsSource="{Binding JobStages}" 
+                    <ComboBox ItemsSource="{Binding AvailableStages}" 
                               SelectedItem="{Binding SelectedStage}"
-                              DisplayMemberPath="StageName"
                               IsEnabled="{Binding SelectedJob, Converter={StaticResource NotNullConverter}}"
                               Margin="0,0,0,15"/>
                     
@@ -62,7 +65,7 @@
                     
                     <!-- Date -->
                     <TextBlock Text="Date" FontSize="12" Foreground="#757575" Margin="0,0,0,5"/>
-                    <DatePicker SelectedDate="{Binding EntryDate}" Margin="0,0,0,15"/>
+                    <DatePicker SelectedDate="{Binding SelectedDate}" Margin="0,0,0,15"/>
                     
                     <!-- Cost -->
                     <TextBlock Text="Cost" FontSize="12" Foreground="#757575" Margin="0,0,0,5"/>
@@ -127,17 +130,17 @@
                     <TextBlock Grid.Row="0" Text="Recent Material Entries" FontSize="18" FontWeight="SemiBold" 
                                Foreground="#424242" Margin="0,0,0,20"/>
                     
-                    <DataGrid Grid.Row="1" ItemsSource="{Binding RecentMaterialEntries}" AutoGenerateColumns="False" 
+                    <DataGrid Grid.Row="1" AutoGenerateColumns="False" 
                               HeadersVisibility="Column" GridLinesVisibility="Horizontal" 
                               RowHeaderWidth="0" Background="Transparent" BorderThickness="0" IsReadOnly="True">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=d}" Width="100"/>
-                            <DataGridTextColumn Header="Job" Binding="{Binding Job.JobNumber}" Width="80"/>
-                            <DataGridTextColumn Header="Stage" Binding="{Binding JobStage.StageName}" Width="100"/>
-                            <DataGridTextColumn Header="Vendor" Binding="{Binding Vendor.Name}" Width="150"/>
-                            <DataGridTextColumn Header="Cost" Binding="{Binding Cost, StringFormat=\${0:N2}}" Width="100"/>
-                            <DataGridTextColumn Header="Invoice #" Binding="{Binding InvoiceNumber}" Width="120"/>
-                            <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="*"/>
+                            <DataGridTextColumn Header="Date" Width="100"/>
+                            <DataGridTextColumn Header="Job" Width="80"/>
+                            <DataGridTextColumn Header="Stage" Width="100"/>
+                            <DataGridTextColumn Header="Vendor" Width="150"/>
+                            <DataGridTextColumn Header="Cost" Width="100"/>
+                            <DataGridTextColumn Header="Invoice #" Width="120"/>
+                            <DataGridTextColumn Header="Notes" Width="*"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
