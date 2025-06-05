@@ -16,7 +16,7 @@
         <TextBlock Grid.Row="0" Text="Create New Job" FontSize="18" FontWeight="Bold" Margin="0,0,0,20"/>
         
         <!-- Form Fields -->
-        <StackPanel Grid.Row="1" Spacing="10">
+        <StackPanel Grid.Row="1">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="120"/>
