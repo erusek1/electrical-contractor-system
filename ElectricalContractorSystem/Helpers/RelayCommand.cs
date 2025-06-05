@@ -44,6 +44,14 @@ namespace ElectricalContractorSystem.Helpers
             else if (_executeWithParameter != null)
                 _executeWithParameter(parameter);
         }
+
+        /// <summary>
+        /// Method to raise CanExecuteChanged event manually
+        /// </summary>
+        public void RaiseCanExecuteChanged()
+        {
+            CommandManager.InvalidateRequerySuggested();
+        }
     }
 
     public class RelayCommand<T> : ICommand
@@ -71,6 +79,14 @@ namespace ElectricalContractorSystem.Helpers
         public void Execute(object parameter)
         {
             _execute((T)parameter);
+        }
+
+        /// <summary>
+        /// Method to raise CanExecuteChanged event manually
+        /// </summary>
+        public void RaiseCanExecuteChanged()
+        {
+            CommandManager.InvalidateRequerySuggested();
         }
     }
 }
