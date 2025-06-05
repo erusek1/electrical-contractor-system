@@ -110,11 +110,16 @@
     <Compile Include="DatabaseConnectionTest.cs" />
     <Compile Include="Helpers\BooleanToVisibilityConverter.cs" />
     <Compile Include="Helpers\EmployeeHoursConverter.cs" />
+    <Compile Include="Helpers\EmployeeStatusConverter.cs" />
+    <Compile Include="Helpers\EmployeeStatusTextConverter.cs" />
+    <Compile Include="Helpers\EmployeeTotalConverter.cs" />
     <Compile Include="Helpers\HoursStatusConverter.cs" />
     <Compile Include="Helpers\HoursStatusTextConverter.cs" />
     <Compile Include="Helpers\InverseBooleanConverter.cs" />
+    <Compile Include="Helpers\NotNullConverter.cs" />
     <Compile Include="Helpers\NotNullOrEmptyConverter.cs" />
     <Compile Include="Helpers\RelayCommand.cs" />
+    <Compile Include="Helpers\RelayCommandWithCanExecute.cs" />
     <Compile Include="Helpers\StatusToColorConverter.cs" />
     <Compile Include="Helpers\StatusToVisibilityConverter.cs" />
     <Compile Include="Helpers\StringEqualityConverter.cs" />
@@ -152,6 +157,9 @@
     <Compile Include="Views\MaterialEntryView.xaml.cs">
       <DependentUpon>MaterialEntryView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\NewJobDialog.xaml.cs">
+      <DependentUpon>NewJobDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\WeeklyLaborEntryView.xaml.cs">
       <DependentUpon>WeeklyLaborEntryView.xaml</DependentUpon>
     </Compile>
@@ -180,6 +188,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\MaterialEntryView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\NewJobDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
