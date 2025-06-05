@@ -126,6 +126,7 @@
     <Compile Include="Helpers\StringEqualityToVisibilityConverter.cs" />
     <Compile Include="Helpers\StringNotEqualityConverter.cs" />
     <Compile Include="Helpers\TextConverter.cs" />
+    <Compile Include="Models\BulkUpdateJobItem.cs" />
     <Compile Include="Models\Customer.cs" />
     <Compile Include="Models\Employee.cs" />
     <Compile Include="Models\Job.cs" />
@@ -136,20 +137,29 @@
     <Compile Include="Models\PriceList.cs" />
     <Compile Include="Models\RoomSpecification.cs" />
     <Compile Include="Models\Vendor.cs" />
+    <Compile Include="Services\BulkUpdateService.cs" />
     <Compile Include="Services\DatabaseConnectionTest.cs" />
     <Compile Include="Services\DatabaseService.cs" />
+    <Compile Include="ViewModels\BulkStatusUpdateDialogViewModel.cs" />
     <Compile Include="ViewModels\JobCostTrackingViewModel.cs" />
     <Compile Include="ViewModels\JobDetailsViewModel.cs" />
+    <Compile Include="ViewModels\JobEditDialogViewModel.cs" />
     <Compile Include="ViewModels\JobManagementViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
     <Compile Include="ViewModels\MaterialEntryViewModel.cs" />
     <Compile Include="ViewModels\ViewModelBase.cs" />
     <Compile Include="ViewModels\WeeklyLaborEntryViewModel.cs" />
+    <Compile Include="Views\BulkStatusUpdateDialog.xaml.cs">
+      <DependentUpon>BulkStatusUpdateDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\JobCostTrackingView.xaml.cs">
       <DependentUpon>JobCostTrackingView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\JobDetailsView.xaml.cs">
       <DependentUpon>JobDetailsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\JobEditDialog.xaml.cs">
+      <DependentUpon>JobEditDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\JobManagementView.xaml.cs">
       <DependentUpon>JobManagementView.xaml</DependentUpon>
@@ -175,11 +185,19 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Views\BulkStatusUpdateDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\JobCostTrackingView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\JobDetailsView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\JobEditDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
