@@ -10,10 +10,15 @@
         </Grid.RowDefinitions>
         
         <!-- Header -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="20" HorizontalAlignment="SpaceBetween">
-            <TextBlock Text="Job Cost Tracking" FontSize="24" FontWeight="Bold" VerticalAlignment="Center"/>
-            <Button Content="Print Report" Background="#1976D2" Foreground="White" Padding="15,8"/>
-        </StackPanel>
+        <Grid Grid.Row="0" Margin="20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            
+            <TextBlock Grid.Column="0" Text="Job Cost Tracking" FontSize="24" FontWeight="Bold" VerticalAlignment="Center"/>
+            <Button Grid.Column="1" Content="Print Report" Background="#1976D2" Foreground="White" Padding="15,8"/>
+        </Grid>
         
         <!-- Job Selection -->
         <Border Grid.Row="1" Background="White" Margin="20,0,20,20" Padding="20">
