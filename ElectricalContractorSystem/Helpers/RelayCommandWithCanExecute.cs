@@ -20,8 +20,15 @@ namespace ElectricalContractorSystem.Helpers
 
         public RelayCommandWithCanExecute(Action execute, Func<bool> canExecute = null)
         {
-            _execute = execute != null ? _ => execute() : throw new ArgumentNullException(nameof(execute));
-            _canExecute = canExecute != null ? _ => canExecute() : null;
+            if (execute == null)
+                throw new ArgumentNullException(nameof(execute));
+
+            _execute = _ => execute();
+            
+            if (canExecute != null)
+                _canExecute = _ => canExecute();
+            else
+                _canExecute = null;
         }
 
         public event EventHandler CanExecuteChanged
