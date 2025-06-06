@@ -5,10 +5,15 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:ElectricalContractorSystem.Views"
              mc:Ignorable="d" 
-             d:DesignHeight="600" d:DesignWidth="1000">
+             d:DesignHeight="700" d:DesignWidth="1200">
     
-    <Grid Background="White">
+    <UserControl.Resources>
+        <!-- Converters from App.xaml will be available here -->
+    </UserControl.Resources>
+    
+    <Grid Background="#F5F5F5">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -29,7 +34,7 @@
         </Border>
         
         <!-- Week Selection -->
-        <Border Grid.Row="1" Background="#F5F5F5" Padding="20" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1">
+        <Border Grid.Row="1" Background="White" Padding="20" Margin="0,0,0,10">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -40,150 +45,217 @@
                 
                 <Button Grid.Column="0" Content="◀ Previous Week" 
                         Command="{Binding PreviousWeekCommand}"
-                        Width="120" Height="30" Margin="0,0,10,0"/>
+                        Width="120" Height="35" Margin="0,0,10,0"/>
                 
                 <TextBlock Grid.Column="1" 
-                           Text="{Binding CurrentWeekDisplay}" 
-                           FontSize="16" FontWeight="Bold"
+                           Text="{Binding WeekDateRange}" 
+                           FontSize="18" FontWeight="Bold"
                            VerticalAlignment="Center" HorizontalAlignment="Center"/>
                 
                 <Button Grid.Column="2" Content="Next Week ▶" 
                         Command="{Binding NextWeekCommand}"
-                        Width="120" Height="30" Margin="10,0,20,0"/>
+                        Width="120" Height="35" Margin="10,0,20,0"/>
                 
                 <Button Grid.Column="3" Content="Save All Entries" 
-                        Command="{Binding SaveAllCommand}"
+                        Command="{Binding SaveAllEntriesCommand}"
                         Background="#4CAF50" Foreground="White"
-                        Width="120" Height="30"/>
+                        Width="120" Height="35" FontWeight="Bold"/>
             </Grid>
         </Border>
         
+        <!-- Weekly Summary -->
+        <Border Grid.Row="2" Background="White" Padding="20" Margin="0,0,0,10">
+            <StackPanel>
+                <TextBlock Text="Weekly Summary" FontSize="16" FontWeight="Bold" Margin="0,0,0,10"/>
+                <DataGrid ItemsSource="{Binding EmployeeWeeklySummaries}" 
+                          AutoGenerateColumns="False" 
+                          CanUserAddRows="False"
+                          Height="200">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Employee" Binding="{Binding EmployeeName}" Width="150"/>
+                        <DataGridTextColumn Header="Total Hours" Binding="{Binding TotalHours}" Width="100">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100"/>
+                        <DataGridTextColumn Header="Total Pay" Binding="{Binding TotalPay, StringFormat=C}" Width="100">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="HorizontalAlignment" Value="Right"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                    </DataGrid.Columns>
+                    <DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow">
+                            <Setter Property="Background" Value="{Binding StatusColor}"/>
+                        </Style>
+                    </DataGrid.RowStyle>
+                </DataGrid>
+            </StackPanel>
+        </Border>
+        
         <!-- Labor Entry Grid -->
-        <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-            <ItemsControl ItemsSource="{Binding EmployeeLaborEntries}" Margin="20">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Border Background="White" BorderBrush="#E0E0E0" BorderThickness="1" Margin="0,0,0,10">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
-                                
-                                <!-- Employee Header -->
-                                <Border Grid.Row="0" Background="#2196F3" Padding="15,10">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        
-                                        <TextBlock Grid.Column="0" 
-                                                   Text="{Binding EmployeeName}" 
-                                                   FontSize="16" FontWeight="Bold" 
-                                                   Foreground="White"/>
-                                        
-                                        <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                            <TextBlock Text="Total Hours: " 
-                                                       Foreground="White" VerticalAlignment="Center"/>
-                                            <TextBlock Text="{Binding TotalHours}" 
-                                                       FontWeight="Bold" Foreground="White" VerticalAlignment="Center">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="Foreground" Value="Yellow"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding TotalHours}" Value="40">
-                                                                <Setter Property="Foreground" Value="LightGreen"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
+        <Border Grid.Row="3" Background="White" Padding="20">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                
+                <TextBlock Grid.Row="0" Text="Time Entries" FontSize="16" FontWeight="Bold" Margin="0,0,0,10"/>
+                
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                    <DataGrid ItemsSource="{Binding EmployeeTimeEntries}" 
+                              AutoGenerateColumns="False" 
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              GridLinesVisibility="All">
+                        <DataGrid.Columns>
+                            <!-- Employee Name Column -->
+                            <DataGridTextColumn Header="Employee" 
+                                                Binding="{Binding EmployeeName}" 
+                                                Width="120" 
+                                                IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                        <Setter Property="Padding" Value="5"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            
+                            <!-- Monday -->
+                            <DataGridTemplateColumn Header="Monday" Width="200">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="2">
+                                            <ComboBox ItemsSource="{Binding DataContext.ActiveJobs, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      SelectedValue="{Binding Monday.JobNumber, UpdateSourceTrigger=PropertyChanged}"
+                                                      DisplayMemberPath="JobName"
+                                                      SelectedValuePath="JobNumber"
+                                                      Height="25" Margin="1"/>
+                                            <ComboBox ItemsSource="{Binding DataContext.StageNames, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      SelectedItem="{Binding Monday.Stage, UpdateSourceTrigger=PropertyChanged}"
+                                                      Height="25" Margin="1"/>
+                                            <TextBox Text="{Binding Monday.Hours, UpdateSourceTrigger=PropertyChanged}"
+                                                     Height="25" Margin="1"
+                                                     HorizontalContentAlignment="Center"/>
                                         </StackPanel>
-                                    </Grid>
-                                </Border>
-                                
-                                <!-- Daily Entry Grid -->
-                                <Grid Grid.Row="1" Margin="15">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="100"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="80"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
-                                    
-                                    <!-- Day Headers -->
-                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Employee" FontWeight="Bold" HorizontalAlignment="Center" Margin="5"/>
-                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="Monday" FontWeight="Bold" HorizontalAlignment="Center" Margin="5"/>
-                                    <TextBlock Grid.Row="0" Grid.Column="2" Text="Tuesday" FontWeight="Bold" HorizontalAlignment="Center" Margin="5"/>
-                                    <TextBlock Grid.Row="0" Grid.Column="3" Text="Wednesday" FontWeight="Bold" HorizontalAlignment="Center" Margin="5"/>
-                                    <TextBlock Grid.Row="0" Grid.Column="4" Text="Thursday" FontWeight="Bold" HorizontalAlignment="Center" Margin="5"/>
-                                    <TextBlock Grid.Row="0" Grid.Column="5" Text="Friday" FontWeight="Bold" HorizontalAlignment="Center" Margin="5"/>
-                                    <TextBlock Grid.Row="0" Grid.Column="6" Text="Total" FontWeight="Bold" HorizontalAlignment="Center" Margin="5"/>
-                                    
-                                    <!-- Employee Name -->
-                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding EmployeeName}" 
-                                               FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    
-                                    <!-- Daily Entry Controls -->
-                                    <ItemsControl Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="5" 
-                                                  ItemsSource="{Binding DailyEntries}">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <UniformGrid Columns="5"/>
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <StackPanel Margin="5">
-                                                    <!-- Job Selection -->
-                                                    <ComboBox ItemsSource="{Binding DataContext.Jobs, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                              SelectedValue="{Binding JobId}"
-                                                              DisplayMemberPath="DisplayName"
-                                                              SelectedValuePath="JobId"
-                                                              Height="25" Margin="0,2"/>
-                                                    
-                                                    <!-- Stage Selection -->
-                                                    <ComboBox ItemsSource="{Binding DataContext.Stages, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                              SelectedValue="{Binding Stage}"
-                                                              Height="25" Margin="0,2"/>
-                                                    
-                                                    <!-- Hours Input -->
-                                                    <TextBox Text="{Binding Hours, UpdateSourceTrigger=PropertyChanged}"
-                                                             Height="25" Margin="0,2"
-                                                             HorizontalContentAlignment="Center"/>
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                    
-                                    <!-- Total Hours -->
-                                    <TextBlock Grid.Row="1" Grid.Column="6" Text="{Binding TotalHours}"
-                                               FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Foreground" Value="#F44336"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding TotalHours}" Value="40">
-                                                        <Setter Property="Foreground" Value="#4CAF50"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                </Grid>
-                            </Grid>
-                        </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </ScrollViewer>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            
+                            <!-- Tuesday -->
+                            <DataGridTemplateColumn Header="Tuesday" Width="200">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="2">
+                                            <ComboBox ItemsSource="{Binding DataContext.ActiveJobs, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      SelectedValue="{Binding Tuesday.JobNumber, UpdateSourceTrigger=PropertyChanged}"
+                                                      DisplayMemberPath="JobName"
+                                                      SelectedValuePath="JobNumber"
+                                                      Height="25" Margin="1"/>
+                                            <ComboBox ItemsSource="{Binding DataContext.StageNames, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      SelectedItem="{Binding Tuesday.Stage, UpdateSourceTrigger=PropertyChanged}"
+                                                      Height="25" Margin="1"/>
+                                            <TextBox Text="{Binding Tuesday.Hours, UpdateSourceTrigger=PropertyChanged}"
+                                                     Height="25" Margin="1"
+                                                     HorizontalContentAlignment="Center"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            
+                            <!-- Wednesday -->
+                            <DataGridTemplateColumn Header="Wednesday" Width="200">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="2">
+                                            <ComboBox ItemsSource="{Binding DataContext.ActiveJobs, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      SelectedValue="{Binding Wednesday.JobNumber, UpdateSourceTrigger=PropertyChanged}"
+                                                      DisplayMemberPath="JobName"
+                                                      SelectedValuePath="JobNumber"
+                                                      Height="25" Margin="1"/>
+                                            <ComboBox ItemsSource="{Binding DataContext.StageNames, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      SelectedItem="{Binding Wednesday.Stage, UpdateSourceTrigger=PropertyChanged}"
+                                                      Height="25" Margin="1"/>
+                                            <TextBox Text="{Binding Wednesday.Hours, UpdateSourceTrigger=PropertyChanged}"
+                                                     Height="25" Margin="1"
+                                                     HorizontalContentAlignment="Center"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            
+                            <!-- Thursday -->
+                            <DataGridTemplateColumn Header="Thursday" Width="200">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="2">
+                                            <ComboBox ItemsSource="{Binding DataContext.ActiveJobs, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      SelectedValue="{Binding Thursday.JobNumber, UpdateSourceTrigger=PropertyChanged}"
+                                                      DisplayMemberPath="JobName"
+                                                      SelectedValuePath="JobNumber"
+                                                      Height="25" Margin="1"/>
+                                            <ComboBox ItemsSource="{Binding DataContext.StageNames, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      SelectedItem="{Binding Thursday.Stage, UpdateSourceTrigger=PropertyChanged}"
+                                                      Height="25" Margin="1"/>
+                                            <TextBox Text="{Binding Thursday.Hours, UpdateSourceTrigger=PropertyChanged}"
+                                                     Height="25" Margin="1"
+                                                     HorizontalContentAlignment="Center"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            
+                            <!-- Friday -->
+                            <DataGridTemplateColumn Header="Friday" Width="200">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="2">
+                                            <ComboBox ItemsSource="{Binding DataContext.ActiveJobs, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      SelectedValue="{Binding Friday.JobNumber, UpdateSourceTrigger=PropertyChanged}"
+                                                      DisplayMemberPath="JobName"
+                                                      SelectedValuePath="JobNumber"
+                                                      Height="25" Margin="1"/>
+                                            <ComboBox ItemsSource="{Binding DataContext.StageNames, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      SelectedItem="{Binding Friday.Stage, UpdateSourceTrigger=PropertyChanged}"
+                                                      Height="25" Margin="1"/>
+                                            <TextBox Text="{Binding Friday.Hours, UpdateSourceTrigger=PropertyChanged}"
+                                                     Height="25" Margin="1"
+                                                     HorizontalContentAlignment="Center"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            
+                            <!-- Total Hours Column -->
+                            <DataGridTextColumn Header="Total" 
+                                                Binding="{Binding TotalHours}" 
+                                                Width="80" 
+                                                IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                        <Setter Property="Foreground" Value="#F44336"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding TotalHours}" Value="40">
+                                                <Setter Property="Foreground" Value="#4CAF50"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </ScrollViewer>
+            </Grid>
+        </Border>
     </Grid>
 </UserControl>
