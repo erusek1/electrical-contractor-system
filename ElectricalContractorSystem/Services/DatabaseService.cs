@@ -492,20 +492,84 @@ namespace ElectricalContractorSystem.Services
             var dataTable = ExecuteQuery(query);
             foreach (DataRow row in dataTable.Rows)
             {
-                customers.Add(new Customer
-                {
-                    CustomerId = Convert.ToInt32(row["customer_id"]),
-                    Name = row["name"].ToString(),
-                    Address = row["address"]?.ToString(),
-                    City = row["city"]?.ToString(),
-                    State = row["state"]?.ToString(),
-                    Zip = row["zip"]?.ToString(),
-                    Email = row["email"]?.ToString(),
-                    Phone = row["phone"]?.ToString(),
-                    Notes = row["notes"]?.ToString()
-                });
+                customers.Add(CreateCustomerFromRow(row));
             }
             return customers;
+        }
+
+        public Customer GetCustomerById(int customerId)
+        {
+            var parameters = new Dictionary<string, object> { { "@customerId", customerId } };
+            string query = "SELECT * FROM Customers WHERE customer_id = @customerId";
+            var dataTable = ExecuteQuery(query, parameters);
+            return dataTable.Rows.Count == 0 ? null : CreateCustomerFromRow(dataTable.Rows[0]);
+        }
+
+        public Customer GetCustomerByName(string name)
+        {
+            var parameters = new Dictionary<string, object> { { "@name", name } };
+            string query = "SELECT * FROM Customers WHERE name = @name";
+            var dataTable = ExecuteQuery(query, parameters);
+            return dataTable.Rows.Count == 0 ? null : CreateCustomerFromRow(dataTable.Rows[0]);
+        }
+
+        public int AddCustomer(Customer customer)
+        {
+            string query = @"INSERT INTO Customers (name, address, city, state, zip, email, phone, notes) VALUES (@name, @address, @city, @state, @zip, @email, @phone, @notes)";
+            var parameters = new Dictionary<string, object>
+            {
+                { "@name", customer.Name },
+                { "@address", customer.Address },
+                { "@city", customer.City },
+                { "@state", customer.State },
+                { "@zip", customer.Zip },
+                { "@email", customer.Email },
+                { "@phone", customer.Phone },
+                { "@notes", customer.Notes }
+            };
+            ExecuteNonQuery(query, parameters);
+            return (int)GetLastInsertedId();
+        }
+
+        public void UpdateCustomer(Customer customer)
+        {
+            string query = @"UPDATE Customers SET name = @name, address = @address, city = @city, state = @state, zip = @zip, email = @email, phone = @phone, notes = @notes WHERE customer_id = @customerId";
+            var parameters = new Dictionary<string, object>
+            {
+                { "@customerId", customer.CustomerId },
+                { "@name", customer.Name },
+                { "@address", customer.Address },
+                { "@city", customer.City },
+                { "@state", customer.State },
+                { "@zip", customer.Zip },
+                { "@email", customer.Email },
+                { "@phone", customer.Phone },
+                { "@notes", customer.Notes }
+            };
+            ExecuteNonQuery(query, parameters);
+        }
+
+        public void DeleteCustomer(int customerId)
+        {
+            string query = "DELETE FROM Customers WHERE customer_id = @customerId";
+            var parameters = new Dictionary<string, object> { { "@customerId", customerId } };
+            ExecuteNonQuery(query, parameters);
+        }
+
+        private Customer CreateCustomerFromRow(DataRow row)
+        {
+            return new Customer
+            {
+                CustomerId = Convert.ToInt32(row["customer_id"]),
+                Name = row["name"].ToString(),
+                Address = row["address"]?.ToString(),
+                City = row["city"]?.ToString(),
+                State = row["state"]?.ToString(),
+                Zip = row["zip"]?.ToString(),
+                Email = row["email"]?.ToString(),
+                Phone = row["phone"]?.ToString(),
+                Notes = row["notes"]?.ToString()
+            };
         }
         #endregion
 
