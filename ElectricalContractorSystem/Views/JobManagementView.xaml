@@ -61,6 +61,14 @@
                         Padding="15,8"
                         Margin="5,0"/>
                 
+                <Button Content="Import from Excel" 
+                        Command="{Binding ImportJobsCommand}"
+                        Background="#4CAF50"
+                        Foreground="White"
+                        Padding="15,8"
+                        Margin="5,0"
+                        ToolTip="Import jobs from Excel file"/>
+                
                 <Button Content="Bulk Status Update" 
                         Command="{Binding BulkStatusUpdateCommand}"
                         Background="#FF9800"
