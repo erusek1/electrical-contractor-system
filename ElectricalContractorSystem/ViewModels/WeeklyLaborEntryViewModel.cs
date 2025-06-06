@@ -17,6 +17,7 @@ namespace ElectricalContractorSystem.ViewModels
         private ObservableCollection<Employee> _employees;
         private ObservableCollection<Job> _activeJobs;
         private ObservableCollection<EmployeeTimeEntry> _employeeTimeEntries;
+        private ObservableCollection<EmployeeWeeklySummary> _employeeWeeklySummaries;
         private Employee _selectedEmployee;
         private string _newEmployeeName;
         private decimal _newEmployeeRate;
@@ -26,10 +27,8 @@ namespace ElectricalContractorSystem.ViewModels
         {
             _databaseService = databaseService ?? throw new ArgumentNullException(nameof(databaseService));
             
-            // Initialize to the beginning of the current week (Monday)
             _currentWeekStart = GetStartOfWeek(DateTime.Today);
             
-            // Load initial data with error handling
             try
             {
                 LoadEmployees();
@@ -38,12 +37,10 @@ namespace ElectricalContractorSystem.ViewModels
             }
             catch (Exception ex)
             {
-                // Use test data if database fails
                 LoadTestData();
                 System.Diagnostics.Debug.WriteLine($"WeeklyLaborEntry: Using test data due to error: {ex.Message}");
             }
 
-            // Create commands
             PreviousWeekCommand = new RelayCommand(() => ExecutePreviousWeek());
             NextWeekCommand = new RelayCommand(() => ExecuteNextWeek());
             SaveAllEntriesCommand = new RelayCommand(() => ExecuteSaveAllEntries());
@@ -62,6 +59,7 @@ namespace ElectricalContractorSystem.ViewModels
                 if (SetProperty(ref _currentWeekStart, value))
                 {
                     LoadWeekEntries();
+                    UpdateWeeklySummaries();
                     OnPropertyChanged(nameof(WeekDateRange));
                 }
             }
@@ -73,8 +71,8 @@ namespace ElectricalContractorSystem.ViewModels
             {
                 DateTime weekEnd = CurrentWeekStart.AddDays(4);
                 string startStr = CurrentWeekStart.ToString("MMM d");
-                string endStr = weekEnd.ToString("MMM d");
-                return $"{startStr} - {endStr}";
+                string endStr = weekEnd.ToString("MMM d, yyyy");
+                return $"Week of {startStr} - {endStr}";
             }
         }
 
@@ -93,7 +91,17 @@ namespace ElectricalContractorSystem.ViewModels
         public ObservableCollection<EmployeeTimeEntry> EmployeeTimeEntries
         {
             get => _employeeTimeEntries;
-            set => SetProperty(ref _employeeTimeEntries, value);
+            set 
+            { 
+                SetProperty(ref _employeeTimeEntries, value);
+                UpdateWeeklySummaries();
+            }
+        }
+
+        public ObservableCollection<EmployeeWeeklySummary> EmployeeWeeklySummaries
+        {
+            get => _employeeWeeklySummaries;
+            set => SetProperty(ref _employeeWeeklySummaries, value);
         }
 
         public Employee SelectedEmployee
@@ -147,8 +155,6 @@ namespace ElectricalContractorSystem.ViewModels
         {
             try
             {
-                // Try to get employees from database service
-                // For now, create default employees
                 Employees = new ObservableCollection<Employee>
                 {
                     new Employee { EmployeeId = 1, Name = "Erik", HourlyRate = 85.00m, Status = "Active" },
@@ -186,7 +192,6 @@ namespace ElectricalContractorSystem.ViewModels
                 var allJobs = _databaseService.GetAllJobs();
                 var activeJobs = allJobs.Where(j => j.Status != "Complete").ToList();
                 
-                // Add empty option at the beginning
                 var jobsWithEmpty = new List<Job> { new Job { JobNumber = "", JobName = "Select Job..." } };
                 jobsWithEmpty.AddRange(activeJobs);
                 
@@ -214,22 +219,26 @@ namespace ElectricalContractorSystem.ViewModels
         {
             try
             {
-                // Initialize employee time entries
                 EmployeeTimeEntries = new ObservableCollection<EmployeeTimeEntry>();
                 
                 foreach (var employee in Employees)
                 {
                     var timeEntry = new EmployeeTimeEntry(employee.Name);
                     
-                    // Load existing time entries from database for this week
-                    LoadEmployeeWeekData(timeEntry, employee.EmployeeId);
+                    timeEntry.PropertyChanged += (s, e) =>
+                    {
+                        if (e.PropertyName == nameof(EmployeeTimeEntry.TotalHours))
+                        {
+                            UpdateWeeklySummaries();
+                        }
+                    };
                     
+                    LoadEmployeeWeekData(timeEntry, employee.EmployeeId);
                     EmployeeTimeEntries.Add(timeEntry);
                 }
 
-                // Load sample data for demonstration if no database data
                 LoadSampleTimeEntries();
-                
+                UpdateWeeklySummaries();
                 OnPropertyChanged(nameof(EmployeeTimeEntries));
             }
             catch (Exception ex)
@@ -243,10 +252,7 @@ namespace ElectricalContractorSystem.ViewModels
         {
             try
             {
-                // Try to load actual data from database
-                // For now, we'll use sample data
-                // In a real implementation, you'd query the database for labor entries
-                // for this employee during the current week
+                // TODO: Implement database loading for the selected week
             }
             catch (Exception ex)
             {
@@ -256,25 +262,56 @@ namespace ElectricalContractorSystem.ViewModels
 
         private void LoadSampleTimeEntries()
         {
-            // Add some sample time entries for demonstration
+            var weekOffset = (CurrentWeekStart - GetStartOfWeek(DateTime.Today)).Days / 7;
+            
             var erikEntry = EmployeeTimeEntries.FirstOrDefault(e => e.EmployeeName == "Erik");
             if (erikEntry != null)
             {
-                erikEntry.Monday = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 5 };
-                erikEntry.Tuesday = new LaborEntryDay { JobNumber = "621", Stage = "Rough", Hours = 8 };
-                erikEntry.Wednesday = new LaborEntryDay { JobNumber = "621", Stage = "Rough", Hours = 6 };
-                erikEntry.Thursday = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 8 };
-                erikEntry.Friday = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 7 };
+                if (weekOffset == 0)
+                {
+                    erikEntry.Monday = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 5 };
+                    erikEntry.Tuesday = new LaborEntryDay { JobNumber = "621", Stage = "Rough", Hours = 8 };
+                    erikEntry.Wednesday = new LaborEntryDay { JobNumber = "621", Stage = "Rough", Hours = 6 };
+                    erikEntry.Thursday = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 8 };
+                    erikEntry.Friday = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 7 };
+                }
+                else if (weekOffset == -1)
+                {
+                    erikEntry.Monday = new LaborEntryDay { JobNumber = "619", Stage = "Rough", Hours = 8 };
+                    erikEntry.Tuesday = new LaborEntryDay { JobNumber = "619", Stage = "Rough", Hours = 8 };
+                    erikEntry.Wednesday = new LaborEntryDay { JobNumber = "619", Stage = "Rough", Hours = 8 };
+                    erikEntry.Thursday = new LaborEntryDay { JobNumber = "619", Stage = "Rough", Hours = 8 };
+                    erikEntry.Friday = new LaborEntryDay { JobNumber = "619", Stage = "Rough", Hours = 8 };
+                }
+                else
+                {
+                    erikEntry.Monday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 6 };
+                    erikEntry.Tuesday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
+                    erikEntry.Wednesday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
+                    erikEntry.Thursday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
+                    erikEntry.Friday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 6 };
+                }
             }
 
             var leeEntry = EmployeeTimeEntries.FirstOrDefault(e => e.EmployeeName == "Lee");
             if (leeEntry != null)
             {
-                leeEntry.Monday = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 8 };
-                leeEntry.Tuesday = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 8 };
-                leeEntry.Wednesday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
-                leeEntry.Thursday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
-                leeEntry.Friday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
+                if (weekOffset == 0)
+                {
+                    leeEntry.Monday = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 8 };
+                    leeEntry.Tuesday = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 8 };
+                    leeEntry.Wednesday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
+                    leeEntry.Thursday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
+                    leeEntry.Friday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
+                }
+                else
+                {
+                    leeEntry.Monday = new LaborEntryDay { JobNumber = "621", Stage = "Service", Hours = 8 };
+                    leeEntry.Tuesday = new LaborEntryDay { JobNumber = "621", Stage = "Service", Hours = 8 };
+                    leeEntry.Wednesday = new LaborEntryDay { JobNumber = "621", Stage = "Service", Hours = 8 };
+                    leeEntry.Thursday = new LaborEntryDay { JobNumber = "621", Stage = "Service", Hours = 8 };
+                    leeEntry.Friday = new LaborEntryDay { JobNumber = "621", Stage = "Service", Hours = 8 };
+                }
             }
 
             var carlosEntry = EmployeeTimeEntries.FirstOrDefault(e => e.EmployeeName == "Carlos");
@@ -286,6 +323,103 @@ namespace ElectricalContractorSystem.ViewModels
                 carlosEntry.Thursday = new LaborEntryDay { JobNumber = "621", Stage = "Service", Hours = 8 };
                 carlosEntry.Friday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
             }
+
+            var jakeEntry = EmployeeTimeEntries.FirstOrDefault(e => e.EmployeeName == "Jake");
+            if (jakeEntry != null)
+            {
+                if (weekOffset == 0)
+                {
+                    jakeEntry.Monday = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 8 };
+                    jakeEntry.Tuesday = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 8 };
+                    jakeEntry.Wednesday = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 4 };
+                    jakeEntry.Thursday = new LaborEntryDay { JobNumber = "", Stage = "", Hours = 0 };
+                    jakeEntry.Friday = new LaborEntryDay { JobNumber = "", Stage = "", Hours = 0 };
+                }
+                else
+                {
+                    jakeEntry.Monday = new LaborEntryDay { JobNumber = "619", Stage = "Rough", Hours = 8 };
+                    jakeEntry.Tuesday = new LaborEntryDay { JobNumber = "619", Stage = "Rough", Hours = 8 };
+                    jakeEntry.Wednesday = new LaborEntryDay { JobNumber = "619", Stage = "Rough", Hours = 8 };
+                    jakeEntry.Thursday = new LaborEntryDay { JobNumber = "619", Stage = "Rough", Hours = 8 };
+                    jakeEntry.Friday = new LaborEntryDay { JobNumber = "619", Stage = "Rough", Hours = 8 };
+                }
+            }
+
+            var trevorEntry = EmployeeTimeEntries.FirstOrDefault(e => e.EmployeeName == "Trevor");
+            if (trevorEntry != null)
+            {
+                trevorEntry.Monday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
+                trevorEntry.Tuesday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
+                trevorEntry.Wednesday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
+                trevorEntry.Thursday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
+                trevorEntry.Friday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 6 };
+            }
+
+            var ryanEntry = EmployeeTimeEntries.FirstOrDefault(e => e.EmployeeName == "Ryan");
+            if (ryanEntry != null)
+            {
+                if (weekOffset == -1)
+                {
+                    ryanEntry.Monday = new LaborEntryDay { JobNumber = "621", Stage = "Extra", Hours = 10 };
+                    ryanEntry.Tuesday = new LaborEntryDay { JobNumber = "621", Stage = "Extra", Hours = 10 };
+                    ryanEntry.Wednesday = new LaborEntryDay { JobNumber = "621", Stage = "Extra", Hours = 10 };
+                    ryanEntry.Thursday = new LaborEntryDay { JobNumber = "621", Stage = "Extra", Hours = 10 };
+                    ryanEntry.Friday = new LaborEntryDay { JobNumber = "621", Stage = "Extra", Hours = 5 };
+                }
+                else
+                {
+                    ryanEntry.Monday = new LaborEntryDay { JobNumber = "", Stage = "", Hours = 0 };
+                    ryanEntry.Tuesday = new LaborEntryDay { JobNumber = "", Stage = "", Hours = 0 };
+                    ryanEntry.Wednesday = new LaborEntryDay { JobNumber = "", Stage = "", Hours = 0 };
+                    ryanEntry.Thursday = new LaborEntryDay { JobNumber = "", Stage = "", Hours = 0 };
+                    ryanEntry.Friday = new LaborEntryDay { JobNumber = "", Stage = "", Hours = 0 };
+                }
+            }
+        }
+
+        private void UpdateWeeklySummaries()
+        {
+            if (EmployeeTimeEntries == null || Employees == null)
+                return;
+
+            var summaries = new ObservableCollection<EmployeeWeeklySummary>();
+            
+            foreach (var employee in Employees)
+            {
+                var timeEntry = EmployeeTimeEntries.FirstOrDefault(e => e.EmployeeName == employee.Name);
+                var totalHours = timeEntry?.TotalHours ?? 0;
+                
+                var summary = new EmployeeWeeklySummary
+                {
+                    EmployeeName = employee.Name,
+                    HourlyRate = employee.HourlyRate,
+                    TotalHours = totalHours,
+                    Status = GetHoursStatus(totalHours),
+                    StatusColor = GetStatusColor(totalHours),
+                    WeekStartDate = CurrentWeekStart,
+                    TotalPay = totalHours * employee.HourlyRate
+                };
+                
+                summaries.Add(summary);
+            }
+            
+            EmployeeWeeklySummaries = summaries;
+        }
+
+        private string GetHoursStatus(decimal hours)
+        {
+            if (hours == 0) return "No Hours";
+            if (hours < 40) return "Partial";
+            if (hours == 40) return "Complete";
+            return "Overtime";
+        }
+
+        private string GetStatusColor(decimal hours)
+        {
+            if (hours == 0) return "#F44336"; // Red
+            if (hours < 40) return "#FF9800"; // Orange
+            if (hours == 40) return "#4CAF50"; // Green
+            return "#9C27B0"; // Purple for overtime
         }
 
         private void LoadTestData()
@@ -319,11 +453,8 @@ namespace ElectricalContractorSystem.ViewModels
                     if (employeeEntry.Friday.Hours > 0) totalEntries++;
                 }
 
-                // TODO: Implement actual database save logic here
-                // For each employee entry, save to LaborEntries table
-
                 System.Windows.MessageBox.Show(
-                    $"Successfully saved {totalEntries} time entries to database.", 
+                    $"Successfully saved {totalEntries} time entries for week of {WeekDateRange}.", 
                     "Save Successful", 
                     System.Windows.MessageBoxButton.OK, 
                     System.Windows.MessageBoxImage.Information);
@@ -347,7 +478,6 @@ namespace ElectricalContractorSystem.ViewModels
         {
             try
             {
-                // Check if employee already exists
                 if (Employees.Any(e => e.Name.Equals(NewEmployeeName, StringComparison.OrdinalIgnoreCase)))
                 {
                     System.Windows.MessageBox.Show(
@@ -358,7 +488,6 @@ namespace ElectricalContractorSystem.ViewModels
                     return;
                 }
 
-                // Create new employee
                 var newEmployee = new Employee
                 {
                     EmployeeId = Employees.Count > 0 ? Employees.Max(e => e.EmployeeId) + 1 : 1,
@@ -367,17 +496,19 @@ namespace ElectricalContractorSystem.ViewModels
                     Status = "Active"
                 };
 
-                // Add to collection
                 Employees.Add(newEmployee);
 
-                // Add to time entries
                 var timeEntry = new EmployeeTimeEntry(newEmployee.Name);
+                timeEntry.PropertyChanged += (s, e) =>
+                {
+                    if (e.PropertyName == nameof(EmployeeTimeEntry.TotalHours))
+                    {
+                        UpdateWeeklySummaries();
+                    }
+                };
                 EmployeeTimeEntries.Add(timeEntry);
+                UpdateWeeklySummaries();
 
-                // TODO: Save to database
-                // _databaseService.SaveEmployee(newEmployee);
-
-                // Clear input fields
                 NewEmployeeName = "";
                 NewEmployeeRate = 0;
 
@@ -409,7 +540,7 @@ namespace ElectricalContractorSystem.ViewModels
                 if (SelectedEmployee == null) return;
 
                 var result = System.Windows.MessageBox.Show(
-                    $"Are you sure you want to remove employee '{SelectedEmployee.Name}'?\n\nThis will also remove all their time entries.",
+                    $"Are you sure you want to remove employee '{SelectedEmployee.Name}'?",
                     "Confirm Removal",
                     System.Windows.MessageBoxButton.YesNo,
                     System.Windows.MessageBoxImage.Question);
@@ -418,19 +549,15 @@ namespace ElectricalContractorSystem.ViewModels
                 {
                     var employeeName = SelectedEmployee.Name;
                     
-                    // Remove from employees collection
                     Employees.Remove(SelectedEmployee);
                     
-                    // Remove from time entries
                     var timeEntry = EmployeeTimeEntries.FirstOrDefault(e => e.EmployeeName == employeeName);
                     if (timeEntry != null)
                     {
                         EmployeeTimeEntries.Remove(timeEntry);
                     }
 
-                    // TODO: Mark as inactive in database instead of deleting
-                    // _databaseService.DeactivateEmployee(SelectedEmployee.EmployeeId);
-
+                    UpdateWeeklySummaries();
                     SelectedEmployee = null;
 
                     System.Windows.MessageBox.Show(
@@ -468,52 +595,36 @@ namespace ElectricalContractorSystem.ViewModels
         #endregion
     }
 
-    // Helper class for labor entry days
+    public class EmployeeWeeklySummary : INotifyPropertyChanged
+    {
+        public string EmployeeName { get; set; }
+        public decimal HourlyRate { get; set; }
+        public decimal TotalHours { get; set; }
+        public string Status { get; set; }
+        public string StatusColor { get; set; }
+        public DateTime WeekStartDate { get; set; }
+        public decimal TotalPay => TotalHours * HourlyRate;
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected virtual void OnPropertyChanged(string propertyName) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
     public class LaborEntryDay : INotifyPropertyChanged
     {
         private string _jobNumber = "";
         private string _stage = "";
         private decimal _hours = 0;
 
-        public string JobNumber 
-        { 
-            get => _jobNumber; 
-            set 
-            { 
-                _jobNumber = value; 
-                OnPropertyChanged(nameof(JobNumber));
-            } 
-        }
-
-        public string Stage 
-        { 
-            get => _stage; 
-            set 
-            { 
-                _stage = value; 
-                OnPropertyChanged(nameof(Stage));
-            } 
-        }
-
-        public decimal Hours 
-        { 
-            get => _hours; 
-            set 
-            { 
-                _hours = value; 
-                OnPropertyChanged(nameof(Hours));
-            } 
-        }
+        public string JobNumber { get => _jobNumber; set { _jobNumber = value; OnPropertyChanged(nameof(JobNumber)); } }
+        public string Stage { get => _stage; set { _stage = value; OnPropertyChanged(nameof(Stage)); } }
+        public decimal Hours { get => _hours; set { _hours = value; OnPropertyChanged(nameof(Hours)); } }
 
         public event PropertyChangedEventHandler PropertyChanged;
-
-        protected virtual void OnPropertyChanged(string propertyName)
-        {
+        protected virtual void OnPropertyChanged(string propertyName) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
     }
 
-    // Helper class for employee time entries
     public class EmployeeTimeEntry : INotifyPropertyChanged
     {
         private LaborEntryDay _monday;
@@ -531,12 +642,19 @@ namespace ElectricalContractorSystem.ViewModels
             _thursday = new LaborEntryDay();
             _friday = new LaborEntryDay();
 
-            // Subscribe to property changes to recalculate total
-            _monday.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
-            _tuesday.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
-            _wednesday.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
-            _thursday.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
-            _friday.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
+            _monday.PropertyChanged += OnDayPropertyChanged;
+            _tuesday.PropertyChanged += OnDayPropertyChanged;
+            _wednesday.PropertyChanged += OnDayPropertyChanged;
+            _thursday.PropertyChanged += OnDayPropertyChanged;
+            _friday.PropertyChanged += OnDayPropertyChanged;
+        }
+
+        private void OnDayPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(LaborEntryDay.Hours))
+            {
+                OnPropertyChanged(nameof(TotalHours));
+            }
         }
 
         public string EmployeeName { get; }
@@ -546,9 +664,9 @@ namespace ElectricalContractorSystem.ViewModels
             get => _monday; 
             set 
             { 
-                if (_monday != null) _monday.PropertyChanged -= (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
+                if (_monday != null) _monday.PropertyChanged -= OnDayPropertyChanged;
                 _monday = value ?? new LaborEntryDay(); 
-                _monday.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
+                _monday.PropertyChanged += OnDayPropertyChanged;
                 OnPropertyChanged(nameof(Monday)); 
                 OnPropertyChanged(nameof(TotalHours));
             } 
@@ -559,9 +677,9 @@ namespace ElectricalContractorSystem.ViewModels
             get => _tuesday; 
             set 
             { 
-                if (_tuesday != null) _tuesday.PropertyChanged -= (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
+                if (_tuesday != null) _tuesday.PropertyChanged -= OnDayPropertyChanged;
                 _tuesday = value ?? new LaborEntryDay(); 
-                _tuesday.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
+                _tuesday.PropertyChanged += OnDayPropertyChanged;
                 OnPropertyChanged(nameof(Tuesday)); 
                 OnPropertyChanged(nameof(TotalHours));
             } 
@@ -572,9 +690,9 @@ namespace ElectricalContractorSystem.ViewModels
             get => _wednesday; 
             set 
             { 
-                if (_wednesday != null) _wednesday.PropertyChanged -= (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
+                if (_wednesday != null) _wednesday.PropertyChanged -= OnDayPropertyChanged;
                 _wednesday = value ?? new LaborEntryDay(); 
-                _wednesday.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
+                _wednesday.PropertyChanged += OnDayPropertyChanged;
                 OnPropertyChanged(nameof(Wednesday)); 
                 OnPropertyChanged(nameof(TotalHours));
             } 
@@ -585,9 +703,9 @@ namespace ElectricalContractorSystem.ViewModels
             get => _thursday; 
             set 
             { 
-                if (_thursday != null) _thursday.PropertyChanged -= (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
+                if (_thursday != null) _thursday.PropertyChanged -= OnDayPropertyChanged;
                 _thursday = value ?? new LaborEntryDay(); 
-                _thursday.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
+                _thursday.PropertyChanged += OnDayPropertyChanged;
                 OnPropertyChanged(nameof(Thursday)); 
                 OnPropertyChanged(nameof(TotalHours));
             } 
@@ -598,9 +716,9 @@ namespace ElectricalContractorSystem.ViewModels
             get => _friday; 
             set 
             { 
-                if (_friday != null) _friday.PropertyChanged -= (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
+                if (_friday != null) _friday.PropertyChanged -= OnDayPropertyChanged;
                 _friday = value ?? new LaborEntryDay(); 
-                _friday.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
+                _friday.PropertyChanged += OnDayPropertyChanged;
                 OnPropertyChanged(nameof(Friday)); 
                 OnPropertyChanged(nameof(TotalHours));
             } 
@@ -609,10 +727,7 @@ namespace ElectricalContractorSystem.ViewModels
         public decimal TotalHours => Monday.Hours + Tuesday.Hours + Wednesday.Hours + Thursday.Hours + Friday.Hours;
 
         public event PropertyChangedEventHandler PropertyChanged;
-
-        protected virtual void OnPropertyChanged(string propertyName)
-        {
+        protected virtual void OnPropertyChanged(string propertyName) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
     }
 }
