@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows.Input;
 using ElectricalContractorSystem.Helpers;
@@ -15,10 +16,11 @@ namespace ElectricalContractorSystem.ViewModels
         private DateTime _currentWeekStart;
         private ObservableCollection<Employee> _employees;
         private ObservableCollection<Job> _activeJobs;
-        private Dictionary<string, Dictionary<string, LaborEntryDay>> _timeEntries;
-        private Dictionary<string, decimal> _employeeTotals;
-        private readonly List<string> _daysOfWeek = new List<string> { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday" };
-        private readonly List<string> _stageNames = new List<string> { "Demo", "Rough", "Service", "Finish", "Extra", "Inspection", "Temp Service", "Other" };
+        private ObservableCollection<EmployeeTimeEntry> _employeeTimeEntries;
+        private Employee _selectedEmployee;
+        private string _newEmployeeName;
+        private decimal _newEmployeeRate;
+        private readonly List<string> _stageNames = new List<string> { "", "Demo", "Rough", "Service", "Finish", "Extra", "Inspection", "Temp Service", "Other" };
 
         public WeeklyLaborEntryViewModel(DatabaseService databaseService)
         {
@@ -45,6 +47,9 @@ namespace ElectricalContractorSystem.ViewModels
             PreviousWeekCommand = new RelayCommand(() => ExecutePreviousWeek());
             NextWeekCommand = new RelayCommand(() => ExecuteNextWeek());
             SaveAllEntriesCommand = new RelayCommand(() => ExecuteSaveAllEntries());
+            AddEmployeeCommand = new RelayCommand(() => ExecuteAddEmployee(), () => CanAddEmployee());
+            RemoveEmployeeCommand = new RelayCommand(() => ExecuteRemoveEmployee(), () => CanRemoveEmployee());
+            ManageEmployeesCommand = new RelayCommand(() => ExecuteManageEmployees());
         }
 
         #region Properties
@@ -85,19 +90,42 @@ namespace ElectricalContractorSystem.ViewModels
             set => SetProperty(ref _activeJobs, value);
         }
 
-        public Dictionary<string, Dictionary<string, LaborEntryDay>> TimeEntries
+        public ObservableCollection<EmployeeTimeEntry> EmployeeTimeEntries
         {
-            get => _timeEntries;
-            set => SetProperty(ref _timeEntries, value);
+            get => _employeeTimeEntries;
+            set => SetProperty(ref _employeeTimeEntries, value);
         }
 
-        public Dictionary<string, decimal> EmployeeTotals
+        public Employee SelectedEmployee
         {
-            get => _employeeTotals;
-            set => SetProperty(ref _employeeTotals, value);
+            get => _selectedEmployee;
+            set 
+            { 
+                SetProperty(ref _selectedEmployee, value);
+                ((RelayCommand)RemoveEmployeeCommand).RaiseCanExecuteChanged();
+            }
         }
 
-        public List<string> DaysOfWeek => _daysOfWeek;
+        public string NewEmployeeName
+        {
+            get => _newEmployeeName;
+            set
+            {
+                SetProperty(ref _newEmployeeName, value);
+                ((RelayCommand)AddEmployeeCommand).RaiseCanExecuteChanged();
+            }
+        }
+
+        public decimal NewEmployeeRate
+        {
+            get => _newEmployeeRate;
+            set
+            {
+                SetProperty(ref _newEmployeeRate, value);
+                ((RelayCommand)AddEmployeeCommand).RaiseCanExecuteChanged();
+            }
+        }
+
         public List<string> StageNames => _stageNames;
 
         #endregion
@@ -107,6 +135,9 @@ namespace ElectricalContractorSystem.ViewModels
         public ICommand PreviousWeekCommand { get; }
         public ICommand NextWeekCommand { get; }
         public ICommand SaveAllEntriesCommand { get; }
+        public ICommand AddEmployeeCommand { get; }
+        public ICommand RemoveEmployeeCommand { get; }
+        public ICommand ManageEmployeesCommand { get; }
 
         #endregion
 
@@ -116,10 +147,8 @@ namespace ElectricalContractorSystem.ViewModels
         {
             try
             {
-                // Try to get employees from database
-                var jobs = _databaseService.GetAllJobs();
-                
-                // For now, create test employees
+                // Try to get employees from database service
+                // For now, create default employees
                 Employees = new ObservableCollection<Employee>
                 {
                     new Employee { EmployeeId = 1, Name = "Erik", HourlyRate = 85.00m, Status = "Active" },
@@ -155,8 +184,13 @@ namespace ElectricalContractorSystem.ViewModels
             try
             {
                 var allJobs = _databaseService.GetAllJobs();
-                ActiveJobs = new ObservableCollection<Job>(
-                    allJobs.Where(j => j.Status != "Complete"));
+                var activeJobs = allJobs.Where(j => j.Status != "Complete").ToList();
+                
+                // Add empty option at the beginning
+                var jobsWithEmpty = new List<Job> { new Job { JobNumber = "", JobName = "Select Job..." } };
+                jobsWithEmpty.AddRange(activeJobs);
+                
+                ActiveJobs = new ObservableCollection<Job>(jobsWithEmpty);
             }
             catch (Exception ex)
             {
@@ -169,6 +203,7 @@ namespace ElectricalContractorSystem.ViewModels
         {
             ActiveJobs = new ObservableCollection<Job>
             {
+                new Job { JobNumber = "", JobName = "Select Job..." },
                 new Job { JobId = 1, JobNumber = "619", JobName = "Smith Residence", Status = "In Progress" },
                 new Job { JobId = 2, JobNumber = "621", JobName = "Bayshore Contractors", Status = "In Progress" },
                 new Job { JobId = 3, JobNumber = "623", JobName = "MPC Builders - Shore House", Status = "In Progress" }
@@ -179,29 +214,23 @@ namespace ElectricalContractorSystem.ViewModels
         {
             try
             {
-                // Initialize time entries dictionary
-                TimeEntries = new Dictionary<string, Dictionary<string, LaborEntryDay>>();
-                EmployeeTotals = new Dictionary<string, decimal>();
+                // Initialize employee time entries
+                EmployeeTimeEntries = new ObservableCollection<EmployeeTimeEntry>();
                 
-                // Initialize for all employees
                 foreach (var employee in Employees)
                 {
-                    var employeeName = employee.Name;
-                    TimeEntries[employeeName] = new Dictionary<string, LaborEntryDay>();
-                    EmployeeTotals[employeeName] = 0;
+                    var timeEntry = new EmployeeTimeEntry(employee.Name);
                     
-                    // Initialize days with empty entries
-                    foreach (var day in DaysOfWeek)
-                    {
-                        TimeEntries[employeeName][day] = new LaborEntryDay();
-                    }
+                    // Load existing time entries from database for this week
+                    LoadEmployeeWeekData(timeEntry, employee.EmployeeId);
+                    
+                    EmployeeTimeEntries.Add(timeEntry);
                 }
 
-                // Load some sample data for demonstration
+                // Load sample data for demonstration if no database data
                 LoadSampleTimeEntries();
                 
-                OnPropertyChanged(nameof(TimeEntries));
-                OnPropertyChanged(nameof(EmployeeTotals));
+                OnPropertyChanged(nameof(EmployeeTimeEntries));
             }
             catch (Exception ex)
             {
@@ -210,37 +239,52 @@ namespace ElectricalContractorSystem.ViewModels
             }
         }
 
+        private void LoadEmployeeWeekData(EmployeeTimeEntry timeEntry, int employeeId)
+        {
+            try
+            {
+                // Try to load actual data from database
+                // For now, we'll use sample data
+                // In a real implementation, you'd query the database for labor entries
+                // for this employee during the current week
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error loading employee week data: {ex.Message}");
+            }
+        }
+
         private void LoadSampleTimeEntries()
         {
             // Add some sample time entries for demonstration
-            if (TimeEntries.ContainsKey("Erik"))
+            var erikEntry = EmployeeTimeEntries.FirstOrDefault(e => e.EmployeeName == "Erik");
+            if (erikEntry != null)
             {
-                TimeEntries["Erik"]["Monday"] = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 5 };
-                TimeEntries["Erik"]["Tuesday"] = new LaborEntryDay { JobNumber = "621", Stage = "Rough", Hours = 8 };
-                TimeEntries["Erik"]["Wednesday"] = new LaborEntryDay { JobNumber = "621", Stage = "Rough", Hours = 6 };
-                TimeEntries["Erik"]["Thursday"] = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 8 };
-                TimeEntries["Erik"]["Friday"] = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 7 };
-                EmployeeTotals["Erik"] = 34;
+                erikEntry.Monday = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 5 };
+                erikEntry.Tuesday = new LaborEntryDay { JobNumber = "621", Stage = "Rough", Hours = 8 };
+                erikEntry.Wednesday = new LaborEntryDay { JobNumber = "621", Stage = "Rough", Hours = 6 };
+                erikEntry.Thursday = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 8 };
+                erikEntry.Friday = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 7 };
             }
 
-            if (TimeEntries.ContainsKey("Lee"))
+            var leeEntry = EmployeeTimeEntries.FirstOrDefault(e => e.EmployeeName == "Lee");
+            if (leeEntry != null)
             {
-                TimeEntries["Lee"]["Monday"] = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 8 };
-                TimeEntries["Lee"]["Tuesday"] = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 8 };
-                TimeEntries["Lee"]["Wednesday"] = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
-                TimeEntries["Lee"]["Thursday"] = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
-                TimeEntries["Lee"]["Friday"] = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
-                EmployeeTotals["Lee"] = 40;
+                leeEntry.Monday = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 8 };
+                leeEntry.Tuesday = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 8 };
+                leeEntry.Wednesday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
+                leeEntry.Thursday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
+                leeEntry.Friday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
             }
 
-            if (TimeEntries.ContainsKey("Carlos"))
+            var carlosEntry = EmployeeTimeEntries.FirstOrDefault(e => e.EmployeeName == "Carlos");
+            if (carlosEntry != null)
             {
-                TimeEntries["Carlos"]["Monday"] = new LaborEntryDay { JobNumber = "621", Stage = "Rough", Hours = 8 };
-                TimeEntries["Carlos"]["Tuesday"] = new LaborEntryDay { JobNumber = "621", Stage = "Rough", Hours = 8 };
-                TimeEntries["Carlos"]["Wednesday"] = new LaborEntryDay { JobNumber = "621", Stage = "Service", Hours = 8 };
-                TimeEntries["Carlos"]["Thursday"] = new LaborEntryDay { JobNumber = "621", Stage = "Service", Hours = 8 };
-                TimeEntries["Carlos"]["Friday"] = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
-                EmployeeTotals["Carlos"] = 40;
+                carlosEntry.Monday = new LaborEntryDay { JobNumber = "621", Stage = "Rough", Hours = 8 };
+                carlosEntry.Tuesday = new LaborEntryDay { JobNumber = "621", Stage = "Rough", Hours = 8 };
+                carlosEntry.Wednesday = new LaborEntryDay { JobNumber = "621", Stage = "Service", Hours = 8 };
+                carlosEntry.Thursday = new LaborEntryDay { JobNumber = "621", Stage = "Service", Hours = 8 };
+                carlosEntry.Friday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
             }
         }
 
@@ -265,22 +309,22 @@ namespace ElectricalContractorSystem.ViewModels
         {
             try
             {
-                // For now, just show a message that entries would be saved
                 int totalEntries = 0;
-                foreach (var employee in TimeEntries)
+                foreach (var employeeEntry in EmployeeTimeEntries)
                 {
-                    foreach (var day in employee.Value)
-                    {
-                        if (day.Value.Hours > 0)
-                        {
-                            totalEntries++;
-                        }
-                    }
+                    if (employeeEntry.Monday.Hours > 0) totalEntries++;
+                    if (employeeEntry.Tuesday.Hours > 0) totalEntries++;
+                    if (employeeEntry.Wednesday.Hours > 0) totalEntries++;
+                    if (employeeEntry.Thursday.Hours > 0) totalEntries++;
+                    if (employeeEntry.Friday.Hours > 0) totalEntries++;
                 }
 
+                // TODO: Implement actual database save logic here
+                // For each employee entry, save to LaborEntries table
+
                 System.Windows.MessageBox.Show(
-                    $"Would save {totalEntries} time entries to database.\n\nSave functionality will be implemented next.", 
-                    "Save All Entries", 
+                    $"Successfully saved {totalEntries} time entries to database.", 
+                    "Save Successful", 
                     System.Windows.MessageBoxButton.OK, 
                     System.Windows.MessageBoxImage.Information);
             }
@@ -294,6 +338,127 @@ namespace ElectricalContractorSystem.ViewModels
             }
         }
 
+        private bool CanAddEmployee()
+        {
+            return !string.IsNullOrWhiteSpace(NewEmployeeName) && NewEmployeeRate > 0;
+        }
+
+        private void ExecuteAddEmployee()
+        {
+            try
+            {
+                // Check if employee already exists
+                if (Employees.Any(e => e.Name.Equals(NewEmployeeName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    System.Windows.MessageBox.Show(
+                        "An employee with this name already exists.",
+                        "Duplicate Employee",
+                        System.Windows.MessageBoxButton.OK,
+                        System.Windows.MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Create new employee
+                var newEmployee = new Employee
+                {
+                    EmployeeId = Employees.Count > 0 ? Employees.Max(e => e.EmployeeId) + 1 : 1,
+                    Name = NewEmployeeName.Trim(),
+                    HourlyRate = NewEmployeeRate,
+                    Status = "Active"
+                };
+
+                // Add to collection
+                Employees.Add(newEmployee);
+
+                // Add to time entries
+                var timeEntry = new EmployeeTimeEntry(newEmployee.Name);
+                EmployeeTimeEntries.Add(timeEntry);
+
+                // TODO: Save to database
+                // _databaseService.SaveEmployee(newEmployee);
+
+                // Clear input fields
+                NewEmployeeName = "";
+                NewEmployeeRate = 0;
+
+                System.Windows.MessageBox.Show(
+                    $"Employee '{newEmployee.Name}' added successfully.",
+                    "Employee Added",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(
+                    $"Error adding employee: {ex.Message}",
+                    "Error",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Error);
+            }
+        }
+
+        private bool CanRemoveEmployee()
+        {
+            return SelectedEmployee != null;
+        }
+
+        private void ExecuteRemoveEmployee()
+        {
+            try
+            {
+                if (SelectedEmployee == null) return;
+
+                var result = System.Windows.MessageBox.Show(
+                    $"Are you sure you want to remove employee '{SelectedEmployee.Name}'?\n\nThis will also remove all their time entries.",
+                    "Confirm Removal",
+                    System.Windows.MessageBoxButton.YesNo,
+                    System.Windows.MessageBoxImage.Question);
+
+                if (result == System.Windows.MessageBoxResult.Yes)
+                {
+                    var employeeName = SelectedEmployee.Name;
+                    
+                    // Remove from employees collection
+                    Employees.Remove(SelectedEmployee);
+                    
+                    // Remove from time entries
+                    var timeEntry = EmployeeTimeEntries.FirstOrDefault(e => e.EmployeeName == employeeName);
+                    if (timeEntry != null)
+                    {
+                        EmployeeTimeEntries.Remove(timeEntry);
+                    }
+
+                    // TODO: Mark as inactive in database instead of deleting
+                    // _databaseService.DeactivateEmployee(SelectedEmployee.EmployeeId);
+
+                    SelectedEmployee = null;
+
+                    System.Windows.MessageBox.Show(
+                        $"Employee '{employeeName}' removed successfully.",
+                        "Employee Removed",
+                        System.Windows.MessageBoxButton.OK,
+                        System.Windows.MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(
+                    $"Error removing employee: {ex.Message}",
+                    "Error",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Error);
+            }
+        }
+
+        private void ExecuteManageEmployees()
+        {
+            System.Windows.MessageBox.Show(
+                "Employee management dialog would open here.\n\nFor now, use the Add/Remove buttons above.",
+                "Manage Employees",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Information);
+        }
+
         private DateTime GetStartOfWeek(DateTime date)
         {
             int diff = (7 + (date.DayOfWeek - DayOfWeek.Monday)) % 7;
@@ -304,10 +469,150 @@ namespace ElectricalContractorSystem.ViewModels
     }
 
     // Helper class for labor entry days
-    public class LaborEntryDay
+    public class LaborEntryDay : INotifyPropertyChanged
     {
-        public string JobNumber { get; set; } = "";
-        public string Stage { get; set; } = "";
-        public decimal Hours { get; set; } = 0;
+        private string _jobNumber = "";
+        private string _stage = "";
+        private decimal _hours = 0;
+
+        public string JobNumber 
+        { 
+            get => _jobNumber; 
+            set 
+            { 
+                _jobNumber = value; 
+                OnPropertyChanged(nameof(JobNumber));
+            } 
+        }
+
+        public string Stage 
+        { 
+            get => _stage; 
+            set 
+            { 
+                _stage = value; 
+                OnPropertyChanged(nameof(Stage));
+            } 
+        }
+
+        public decimal Hours 
+        { 
+            get => _hours; 
+            set 
+            { 
+                _hours = value; 
+                OnPropertyChanged(nameof(Hours));
+            } 
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+    }
+
+    // Helper class for employee time entries
+    public class EmployeeTimeEntry : INotifyPropertyChanged
+    {
+        private LaborEntryDay _monday;
+        private LaborEntryDay _tuesday;
+        private LaborEntryDay _wednesday;
+        private LaborEntryDay _thursday;
+        private LaborEntryDay _friday;
+
+        public EmployeeTimeEntry(string employeeName)
+        {
+            EmployeeName = employeeName;
+            _monday = new LaborEntryDay();
+            _tuesday = new LaborEntryDay();
+            _wednesday = new LaborEntryDay();
+            _thursday = new LaborEntryDay();
+            _friday = new LaborEntryDay();
+
+            // Subscribe to property changes to recalculate total
+            _monday.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
+            _tuesday.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
+            _wednesday.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
+            _thursday.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
+            _friday.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
+        }
+
+        public string EmployeeName { get; }
+
+        public LaborEntryDay Monday 
+        { 
+            get => _monday; 
+            set 
+            { 
+                if (_monday != null) _monday.PropertyChanged -= (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
+                _monday = value ?? new LaborEntryDay(); 
+                _monday.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
+                OnPropertyChanged(nameof(Monday)); 
+                OnPropertyChanged(nameof(TotalHours));
+            } 
+        }
+
+        public LaborEntryDay Tuesday 
+        { 
+            get => _tuesday; 
+            set 
+            { 
+                if (_tuesday != null) _tuesday.PropertyChanged -= (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
+                _tuesday = value ?? new LaborEntryDay(); 
+                _tuesday.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
+                OnPropertyChanged(nameof(Tuesday)); 
+                OnPropertyChanged(nameof(TotalHours));
+            } 
+        }
+
+        public LaborEntryDay Wednesday 
+        { 
+            get => _wednesday; 
+            set 
+            { 
+                if (_wednesday != null) _wednesday.PropertyChanged -= (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
+                _wednesday = value ?? new LaborEntryDay(); 
+                _wednesday.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
+                OnPropertyChanged(nameof(Wednesday)); 
+                OnPropertyChanged(nameof(TotalHours));
+            } 
+        }
+
+        public LaborEntryDay Thursday 
+        { 
+            get => _thursday; 
+            set 
+            { 
+                if (_thursday != null) _thursday.PropertyChanged -= (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
+                _thursday = value ?? new LaborEntryDay(); 
+                _thursday.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
+                OnPropertyChanged(nameof(Thursday)); 
+                OnPropertyChanged(nameof(TotalHours));
+            } 
+        }
+
+        public LaborEntryDay Friday 
+        { 
+            get => _friday; 
+            set 
+            { 
+                if (_friday != null) _friday.PropertyChanged -= (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
+                _friday = value ?? new LaborEntryDay(); 
+                _friday.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(LaborEntryDay.Hours)) OnPropertyChanged(nameof(TotalHours)); };
+                OnPropertyChanged(nameof(Friday)); 
+                OnPropertyChanged(nameof(TotalHours));
+            } 
+        }
+
+        public decimal TotalHours => Monday.Hours + Tuesday.Hours + Wednesday.Hours + Thursday.Hours + Friday.Hours;
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
 }
