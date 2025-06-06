@@ -15,16 +15,18 @@
         </Grid.RowDefinitions>
         
         <!-- Header -->
-        <StackPanel Grid.Row="0" Background="#2196F3" Padding="20">
-            <TextBlock Text="Weekly Labor Entry" 
-                       FontSize="24" 
-                       FontWeight="Bold" 
-                       Foreground="White"/>
-            <TextBlock Text="Enter employee hours by day, job, and stage" 
-                       FontSize="14" 
-                       Foreground="White" 
-                       Opacity="0.9"/>
-        </StackPanel>
+        <Border Grid.Row="0" Background="#2196F3" Padding="20">
+            <StackPanel>
+                <TextBlock Text="Weekly Labor Entry" 
+                           FontSize="24" 
+                           FontWeight="Bold" 
+                           Foreground="White"/>
+                <TextBlock Text="Enter employee hours by day, job, and stage" 
+                           FontSize="14" 
+                           Foreground="White" 
+                           Opacity="0.9"/>
+            </StackPanel>
+        </Border>
         
         <!-- Week Selection -->
         <Border Grid.Row="1" Background="#F5F5F5" Padding="20" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1">
@@ -118,13 +120,13 @@
                                     </Grid.RowDefinitions>
                                     
                                     <!-- Day Headers -->
-                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Employee" FontWeight="Bold" HorizontalAlignment="Center" Padding="5"/>
-                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="Monday" FontWeight="Bold" HorizontalAlignment="Center" Padding="5"/>
-                                    <TextBlock Grid.Row="0" Grid.Column="2" Text="Tuesday" FontWeight="Bold" HorizontalAlignment="Center" Padding="5"/>
-                                    <TextBlock Grid.Row="0" Grid.Column="3" Text="Wednesday" FontWeight="Bold" HorizontalAlignment="Center" Padding="5"/>
-                                    <TextBlock Grid.Row="0" Grid.Column="4" Text="Thursday" FontWeight="Bold" HorizontalAlignment="Center" Padding="5"/>
-                                    <TextBlock Grid.Row="0" Grid.Column="5" Text="Friday" FontWeight="Bold" HorizontalAlignment="Center" Padding="5"/>
-                                    <TextBlock Grid.Row="0" Grid.Column="6" Text="Total" FontWeight="Bold" HorizontalAlignment="Center" Padding="5"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Employee" FontWeight="Bold" HorizontalAlignment="Center" Margin="5"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="Monday" FontWeight="Bold" HorizontalAlignment="Center" Margin="5"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="2" Text="Tuesday" FontWeight="Bold" HorizontalAlignment="Center" Margin="5"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="3" Text="Wednesday" FontWeight="Bold" HorizontalAlignment="Center" Margin="5"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="4" Text="Thursday" FontWeight="Bold" HorizontalAlignment="Center" Margin="5"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="5" Text="Friday" FontWeight="Bold" HorizontalAlignment="Center" Margin="5"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="6" Text="Total" FontWeight="Bold" HorizontalAlignment="Center" Margin="5"/>
                                     
                                     <!-- Employee Name -->
                                     <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding EmployeeName}" 
