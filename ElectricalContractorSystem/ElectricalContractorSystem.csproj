@@ -141,6 +141,7 @@
     <Compile Include="Services\DatabaseConnectionTest.cs" />
     <Compile Include="Services\DatabaseService.cs" />
     <Compile Include="ViewModels\BulkStatusUpdateDialogViewModel.cs" />
+    <Compile Include="ViewModels\ImportJobsViewModel.cs" />
     <Compile Include="ViewModels\JobCostTrackingViewModel.cs" />
     <Compile Include="ViewModels\JobDetailsViewModel.cs" />
     <Compile Include="ViewModels\JobEditDialogViewModel.cs" />
@@ -151,6 +152,9 @@
     <Compile Include="ViewModels\WeeklyLaborEntryViewModel.cs" />
     <Compile Include="Views\BulkStatusUpdateDialog.xaml.cs">
       <DependentUpon>BulkStatusUpdateDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\ImportJobsWindow.xaml.cs">
+      <DependentUpon>ImportJobsWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\JobCostTrackingView.xaml.cs">
       <DependentUpon>JobCostTrackingView.xaml</DependentUpon>
@@ -186,6 +190,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="Views\BulkStatusUpdateDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\ImportJobsWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
