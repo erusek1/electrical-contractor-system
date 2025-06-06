@@ -597,14 +597,24 @@ namespace ElectricalContractorSystem.ViewModels
 
     public class EmployeeWeeklySummary : INotifyPropertyChanged
     {
+        private decimal _totalPay;
         public string EmployeeName { get; set; }
         public decimal HourlyRate { get; set; }
         public decimal TotalHours { get; set; }
         public string Status { get; set; }
         public string StatusColor { get; set; }
         public DateTime WeekStartDate { get; set; }
-        public decimal TotalPay => TotalHours * HourlyRate;
-
+        
+        public decimal TotalPay 
+        { 
+            get => _totalPay; 
+            set 
+            { 
+                _totalPay = value; 
+                OnPropertyChanged(nameof(TotalPay)); 
+            } 
+        }
+        
         public event PropertyChangedEventHandler PropertyChanged;
         protected virtual void OnPropertyChanged(string propertyName) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
