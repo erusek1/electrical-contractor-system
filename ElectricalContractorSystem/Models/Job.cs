@@ -130,6 +130,23 @@ namespace ElectricalContractorSystem.Models
         }
 
         /// <summary>
+        /// Gets job number with description for display in combo boxes
+        /// </summary>
+        public string JobNumberWithDescription
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(JobNumber))
+                    return JobName ?? "";
+                
+                if (string.IsNullOrEmpty(JobName))
+                    return JobNumber;
+                    
+                return $"{JobNumber} - {JobName}";
+            }
+        }
+
+        /// <summary>
         /// Calculate the profit (estimated - actual)
         /// </summary>
         public decimal? Profit
