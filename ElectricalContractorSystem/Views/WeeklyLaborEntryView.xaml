@@ -9,12 +9,6 @@
         mc:Ignorable="d">
     
     <UserControl.Resources>
-        <helpers:HoursStatusConverter x:Key="HoursStatusConverter"/>
-        <helpers:HoursStatusTextConverter x:Key="HoursStatusTextConverter"/>
-        <helpers:EmployeeTotalConverter x:Key="EmployeeTotalConverter"/>
-        <helpers:EmployeeStatusConverter x:Key="EmployeeStatusConverter"/>
-        <helpers:EmployeeStatusTextConverter x:Key="EmployeeStatusTextConverter"/>
-        
         <!-- Style for ComboBox to reduce default size -->
         <Style x:Key="CompactComboBox" TargetType="ComboBox">
             <Setter Property="Height" Value="22"/>
@@ -91,9 +85,11 @@
                            Foreground="#424242" Margin="0,0,0,10"/>
                 
                 <StackPanel Grid.Row="1" Orientation="Horizontal">
-                    <TextBox x:Name="NewEmployeeNameTextBox" Width="150" Height="25" Margin="0,0,10,0" 
+                    <TextBlock Text="Name:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                    <TextBox Width="150" Height="25" Margin="0,0,10,0" 
                              VerticalAlignment="Center" Text="{Binding NewEmployeeName, UpdateSourceTrigger=PropertyChanged}"/>
-                    <TextBox x:Name="NewEmployeeRateTextBox" Width="100" Height="25" Margin="0,0,10,0" 
+                    <TextBlock Text="Rate:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                    <TextBox Width="100" Height="25" Margin="0,0,10,0" 
                              VerticalAlignment="Center" Text="{Binding NewEmployeeRate, UpdateSourceTrigger=PropertyChanged}"/>
                     <Button Content="Add Employee" Command="{Binding AddEmployeeCommand}" 
                             Background="#4CAF50" Foreground="White" Padding="10,5" BorderThickness="0" Margin="0,0,10,0"/>
@@ -115,12 +111,12 @@
                 <TextBlock Grid.Row="0" Text="Weekly Summary" FontSize="16" FontWeight="SemiBold" 
                            Foreground="#424242" Margin="0,0,0,15"/>
                 
-                <DataGrid Grid.Row="1" ItemsSource="{Binding Employees}" AutoGenerateColumns="False" 
+                <DataGrid Grid.Row="1" ItemsSource="{Binding EmployeeWeeklySummaries}" AutoGenerateColumns="False" 
                           HeadersVisibility="Column" GridLinesVisibility="None" 
                           RowHeaderWidth="0" Background="Transparent" BorderThickness="0" IsReadOnly="True"
                           SelectedItem="{Binding SelectedEmployee}">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Employee" Binding="{Binding Name}" Width="200"/>
+                        <DataGridTextColumn Header="Employee" Binding="{Binding EmployeeName}" Width="150"/>
                         <DataGridTextColumn Header="Hourly Rate" Binding="{Binding HourlyRate, StringFormat=C}" Width="100">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
@@ -128,19 +124,28 @@
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
-                        <DataGridTextColumn Header="Total Hours" Binding="{Binding Name, Converter={StaticResource EmployeeTotalConverter}}" Width="100">
+                        <DataGridTextColumn Header="Total Hours" Binding="{Binding TotalHours}" Width="100">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="HorizontalAlignment" Value="Center"/>
+                                    <Setter Property="FontWeight" Value="Bold"/>
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
-                        <DataGridTemplateColumn Header="Status" Width="150">
+                        <DataGridTextColumn Header="Total Pay" Binding="{Binding TotalPay, StringFormat=C}" Width="100">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTemplateColumn Header="Status" Width="120">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Border Background="{Binding Name, Converter={StaticResource EmployeeStatusConverter}}" 
+                                    <Border Background="{Binding StatusColor}" 
                                             CornerRadius="10" Padding="8,3" HorizontalAlignment="Center">
-                                        <TextBlock Text="{Binding Name, Converter={StaticResource EmployeeStatusTextConverter}}" 
+                                        <TextBlock Text="{Binding Status}" 
                                                    Foreground="White" FontSize="11" FontWeight="SemiBold"/>
                                     </Border>
                                 </DataTemplate>
@@ -285,10 +290,13 @@
                                                        FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
-                                                        <Setter Property="Foreground" Value="Red"/>
+                                                        <Setter Property="Foreground" Value="#F44336"/>
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding TotalHours}" Value="40">
-                                                                <Setter Property="Foreground" Value="Green"/>
+                                                                <Setter Property="Foreground" Value="#4CAF50"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Path=TotalHours, Converter={x:Static helpers:GreaterThanConverter.Instance}, ConverterParameter=40}" Value="True">
+                                                                <Setter Property="Foreground" Value="#9C27B0"/>
                                                             </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>
