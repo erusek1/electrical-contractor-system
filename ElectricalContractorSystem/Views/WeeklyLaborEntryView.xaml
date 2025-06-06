@@ -73,6 +73,13 @@
                           Height="200">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Employee" Binding="{Binding EmployeeName}" Width="150"/>
+                        <DataGridTextColumn Header="Hourly Rate" Binding="{Binding HourlyRate, StringFormat=C}" Width="100">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="HorizontalAlignment" Value="Right"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
                         <DataGridTextColumn Header="Total Hours" Binding="{Binding TotalHours}" Width="100">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
@@ -86,16 +93,34 @@
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="HorizontalAlignment" Value="Right"/>
+                                    <Setter Property="FontWeight" Value="Bold"/>
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
                     </DataGrid.Columns>
                     <DataGrid.RowStyle>
                         <Style TargetType="DataGridRow">
-                            <Setter Property="Background" Value="{Binding StatusColor}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Status}" Value="No Hours">
+                                    <Setter Property="Background" Value="#FFEBEE"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Status}" Value="Partial">
+                                    <Setter Property="Background" Value="#FFF3E0"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Status}" Value="Complete">
+                                    <Setter Property="Background" Value="#E8F5E9"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Status}" Value="Overtime">
+                                    <Setter Property="Background" Value="#F3E5F5"/>
+                                </DataTrigger>
+                            </Style.Triggers>
                         </Style>
                     </DataGrid.RowStyle>
                 </DataGrid>
+                <TextBlock Text="Total Pay = Hours × Hourly Rate" 
+                           FontStyle="Italic" 
+                           Foreground="Gray" 
+                           Margin="0,5,0,0"/>
             </StackPanel>
         </Border>
         
@@ -130,15 +155,27 @@
                             </DataGridTextColumn>
                             
                             <!-- Monday -->
-                            <DataGridTemplateColumn Header="Monday" Width="200">
+                            <DataGridTemplateColumn Header="Monday" Width="250">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Margin="2">
                                             <ComboBox ItemsSource="{Binding DataContext.ActiveJobs, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                       SelectedValue="{Binding Monday.JobNumber, UpdateSourceTrigger=PropertyChanged}"
-                                                      DisplayMemberPath="JobName"
                                                       SelectedValuePath="JobNumber"
-                                                      Height="25" Margin="1"/>
+                                                      Height="25" Margin="1">
+                                                <ComboBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock>
+                                                            <TextBlock.Text>
+                                                                <MultiBinding StringFormat="{}{0} - {1}">
+                                                                    <Binding Path="JobNumber"/>
+                                                                    <Binding Path="Address"/>
+                                                                </MultiBinding>
+                                                            </TextBlock.Text>
+                                                        </TextBlock>
+                                                    </DataTemplate>
+                                                </ComboBox.ItemTemplate>
+                                            </ComboBox>
                                             <ComboBox ItemsSource="{Binding DataContext.StageNames, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                       SelectedItem="{Binding Monday.Stage, UpdateSourceTrigger=PropertyChanged}"
                                                       Height="25" Margin="1"/>
@@ -151,15 +188,27 @@
                             </DataGridTemplateColumn>
                             
                             <!-- Tuesday -->
-                            <DataGridTemplateColumn Header="Tuesday" Width="200">
+                            <DataGridTemplateColumn Header="Tuesday" Width="250">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Margin="2">
                                             <ComboBox ItemsSource="{Binding DataContext.ActiveJobs, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                       SelectedValue="{Binding Tuesday.JobNumber, UpdateSourceTrigger=PropertyChanged}"
-                                                      DisplayMemberPath="JobName"
                                                       SelectedValuePath="JobNumber"
-                                                      Height="25" Margin="1"/>
+                                                      Height="25" Margin="1">
+                                                <ComboBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock>
+                                                            <TextBlock.Text>
+                                                                <MultiBinding StringFormat="{}{0} - {1}">
+                                                                    <Binding Path="JobNumber"/>
+                                                                    <Binding Path="Address"/>
+                                                                </MultiBinding>
+                                                            </TextBlock.Text>
+                                                        </TextBlock>
+                                                    </DataTemplate>
+                                                </ComboBox.ItemTemplate>
+                                            </ComboBox>
                                             <ComboBox ItemsSource="{Binding DataContext.StageNames, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                       SelectedItem="{Binding Tuesday.Stage, UpdateSourceTrigger=PropertyChanged}"
                                                       Height="25" Margin="1"/>
@@ -172,15 +221,27 @@
                             </DataGridTemplateColumn>
                             
                             <!-- Wednesday -->
-                            <DataGridTemplateColumn Header="Wednesday" Width="200">
+                            <DataGridTemplateColumn Header="Wednesday" Width="250">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Margin="2">
                                             <ComboBox ItemsSource="{Binding DataContext.ActiveJobs, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                       SelectedValue="{Binding Wednesday.JobNumber, UpdateSourceTrigger=PropertyChanged}"
-                                                      DisplayMemberPath="JobName"
                                                       SelectedValuePath="JobNumber"
-                                                      Height="25" Margin="1"/>
+                                                      Height="25" Margin="1">
+                                                <ComboBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock>
+                                                            <TextBlock.Text>
+                                                                <MultiBinding StringFormat="{}{0} - {1}">
+                                                                    <Binding Path="JobNumber"/>
+                                                                    <Binding Path="Address"/>
+                                                                </MultiBinding>
+                                                            </TextBlock.Text>
+                                                        </TextBlock>
+                                                    </DataTemplate>
+                                                </ComboBox.ItemTemplate>
+                                            </ComboBox>
                                             <ComboBox ItemsSource="{Binding DataContext.StageNames, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                       SelectedItem="{Binding Wednesday.Stage, UpdateSourceTrigger=PropertyChanged}"
                                                       Height="25" Margin="1"/>
@@ -193,15 +254,27 @@
                             </DataGridTemplateColumn>
                             
                             <!-- Thursday -->
-                            <DataGridTemplateColumn Header="Thursday" Width="200">
+                            <DataGridTemplateColumn Header="Thursday" Width="250">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Margin="2">
                                             <ComboBox ItemsSource="{Binding DataContext.ActiveJobs, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                       SelectedValue="{Binding Thursday.JobNumber, UpdateSourceTrigger=PropertyChanged}"
-                                                      DisplayMemberPath="JobName"
                                                       SelectedValuePath="JobNumber"
-                                                      Height="25" Margin="1"/>
+                                                      Height="25" Margin="1">
+                                                <ComboBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock>
+                                                            <TextBlock.Text>
+                                                                <MultiBinding StringFormat="{}{0} - {1}">
+                                                                    <Binding Path="JobNumber"/>
+                                                                    <Binding Path="Address"/>
+                                                                </MultiBinding>
+                                                            </TextBlock.Text>
+                                                        </TextBlock>
+                                                    </DataTemplate>
+                                                </ComboBox.ItemTemplate>
+                                            </ComboBox>
                                             <ComboBox ItemsSource="{Binding DataContext.StageNames, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                       SelectedItem="{Binding Thursday.Stage, UpdateSourceTrigger=PropertyChanged}"
                                                       Height="25" Margin="1"/>
@@ -214,15 +287,27 @@
                             </DataGridTemplateColumn>
                             
                             <!-- Friday -->
-                            <DataGridTemplateColumn Header="Friday" Width="200">
+                            <DataGridTemplateColumn Header="Friday" Width="250">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Margin="2">
                                             <ComboBox ItemsSource="{Binding DataContext.ActiveJobs, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                       SelectedValue="{Binding Friday.JobNumber, UpdateSourceTrigger=PropertyChanged}"
-                                                      DisplayMemberPath="JobName"
                                                       SelectedValuePath="JobNumber"
-                                                      Height="25" Margin="1"/>
+                                                      Height="25" Margin="1">
+                                                <ComboBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock>
+                                                            <TextBlock.Text>
+                                                                <MultiBinding StringFormat="{}{0} - {1}">
+                                                                    <Binding Path="JobNumber"/>
+                                                                    <Binding Path="Address"/>
+                                                                </MultiBinding>
+                                                            </TextBlock.Text>
+                                                        </TextBlock>
+                                                    </DataTemplate>
+                                                </ComboBox.ItemTemplate>
+                                            </ComboBox>
                                             <ComboBox ItemsSource="{Binding DataContext.StageNames, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                       SelectedItem="{Binding Friday.Stage, UpdateSourceTrigger=PropertyChanged}"
                                                       Height="25" Margin="1"/>
