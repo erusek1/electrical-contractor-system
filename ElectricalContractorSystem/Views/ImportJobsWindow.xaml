@@ -1,0 +1,161 @@
+<Window x:Class="ElectricalContractorSystem.Views.ImportJobsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ElectricalContractorSystem.Views"
+        mc:Ignorable="d"
+        Title="Import Jobs from Excel" 
+        Height="600" 
+        Width="900"
+        WindowStartupLocation="CenterScreen">
+    
+    <Grid Background="#F5F5F5">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#2196F3" Padding="20">
+            <TextBlock Text="Import Jobs from Excel" 
+                       FontSize="24" 
+                       FontWeight="Bold" 
+                       Foreground="White"/>
+        </Border>
+        
+        <!-- File Selection -->
+        <Border Grid.Row="1" Background="White" Padding="20" Margin="10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <TextBlock Grid.Column="0" Text="Excel File:" 
+                           VerticalAlignment="Center" 
+                           Margin="0,0,10,0"
+                           FontWeight="Bold"/>
+                
+                <TextBox Grid.Column="1" 
+                         Text="{Binding SelectedFilePath}" 
+                         IsReadOnly="True"
+                         VerticalAlignment="Center"
+                         Padding="5"/>
+                
+                <Button Grid.Column="2" 
+                        Content="Browse..." 
+                        Command="{Binding BrowseCommand}"
+                        Width="100" 
+                        Height="30" 
+                        Margin="10,0,0,0"/>
+            </Grid>
+        </Border>
+        
+        <!-- Preview Grid -->
+        <Border Grid.Row="2" Background="White" Margin="10" Padding="10">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                
+                <TextBlock Grid.Row="0" 
+                           Text="Preview (Jobs to Import)" 
+                           FontSize="16" 
+                           FontWeight="Bold" 
+                           Margin="0,0,0,10"/>
+                
+                <DataGrid Grid.Row="1" 
+                          ItemsSource="{Binding JobsToImport}" 
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False">
+                    <DataGrid.Columns>
+                        <DataGridCheckBoxColumn Header="Import" 
+                                                Binding="{Binding Import}" 
+                                                Width="60"/>
+                        <DataGridTextColumn Header="Job #" 
+                                            Binding="{Binding JobNumber}" 
+                                            Width="80"
+                                            IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Customer" 
+                                            Binding="{Binding CustomerName}" 
+                                            Width="200"
+                                            IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Address" 
+                                            Binding="{Binding Address}" 
+                                            Width="300"
+                                            IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Status" 
+                                            Binding="{Binding Status}" 
+                                            Width="100">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Status}" Value="New">
+                                            <Setter Property="Foreground" Value="Green"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Status}" Value="Exists">
+                                            <Setter Property="Foreground" Value="Orange"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Status}" Value="Error">
+                                            <Setter Property="Foreground" Value="Red"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Notes" 
+                                            Binding="{Binding Notes}" 
+                                            Width="*"
+                                            IsReadOnly="True"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </Border>
+        
+        <!-- Action Buttons -->
+        <Border Grid.Row="3" Background="White" Padding="20">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <CheckBox IsChecked="{Binding ImportOnlyNew}" 
+                              VerticalAlignment="Center"
+                              Margin="0,0,10,0">
+                        <TextBlock Text="Import only new jobs" FontWeight="Bold"/>
+                    </CheckBox>
+                    <TextBlock Text="{Binding ImportSummary}" 
+                               VerticalAlignment="Center"
+                               Foreground="Gray"/>
+                </StackPanel>
+                
+                <Button Grid.Column="1" 
+                        Content="Import Selected" 
+                        Command="{Binding ImportCommand}"
+                        IsEnabled="{Binding CanImport}"
+                        Background="#4CAF50" 
+                        Foreground="White"
+                        Width="120" 
+                        Height="35" 
+                        Margin="0,0,10,0"
+                        FontWeight="Bold"/>
+                
+                <Button Grid.Column="2" 
+                        Content="Cancel" 
+                        Command="{Binding CancelCommand}"
+                        Width="100" 
+                        Height="35"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
