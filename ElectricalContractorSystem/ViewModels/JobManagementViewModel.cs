@@ -159,6 +159,11 @@ namespace ElectricalContractorSystem.ViewModels
         public ICommand NewJobCommand { get; }
 
         /// <summary>
+        /// Command to import jobs from Excel
+        /// </summary>
+        public ICommand ImportJobsCommand { get; }
+
+        /// <summary>
         /// Command to edit the selected job
         /// </summary>
         public ICommand EditJobCommand { get; }
@@ -230,6 +235,7 @@ namespace ElectricalContractorSystem.ViewModels
 
             // Initialize commands - using simple RelayCommand for now
             NewJobCommand = new RelayCommand(() => CreateNewJob());
+            ImportJobsCommand = new RelayCommand(() => ImportJobsFromExcel());
             EditJobCommand = new RelayCommand(() => EditJob(), () => CanEditJob());
             DeleteJobCommand = new RelayCommand(() => DeleteJob(), () => CanDeleteJob());
             ViewJobDetailsCommand = new RelayCommand(() => ViewJobDetails(), () => CanViewJobDetails());
@@ -387,6 +393,31 @@ namespace ElectricalContractorSystem.ViewModels
             catch (Exception ex)
             {
                 System.Windows.MessageBox.Show($"Error creating new job: {ex.Message}", "Error");
+            }
+        }
+
+        private void ImportJobsFromExcel()
+        {
+            try
+            {
+                var importDialog = new ImportJobsWindow();
+                var importViewModel = new ImportJobsViewModel(_databaseService, importDialog);
+                importDialog.DataContext = importViewModel;
+                
+                var result = importDialog.ShowDialog();
+
+                if (result == true)
+                {
+                    // Refresh the job list to show the imported jobs
+                    LoadJobs();
+                    System.Windows.MessageBox.Show("Jobs imported successfully!", "Import Complete", 
+                        System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Error importing jobs: {ex.Message}", "Import Error", 
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
 
