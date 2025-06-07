@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ElectricalContractorSystem"
         mc:Ignorable="d"
-        Title="Electrical Contractor Estimating System" 
+        Title="Electrical Contractor Management System" 
         Height="900" Width="1400"
         WindowStartupLocation="CenterScreen">
     <Grid>
@@ -18,23 +18,137 @@
         <Menu Grid.Row="0">
             <MenuItem Header="_File">
                 <MenuItem Header="_New Estimate" Click="NewEstimate_Click"/>
-                <MenuItem Header="_Open Estimate"/>
+                <MenuItem Header="_Open Estimate" Click="OpenEstimate_Click"/>
                 <Separator/>
                 <MenuItem Header="E_xit" Click="Exit_Click"/>
             </MenuItem>
+            
+            <MenuItem Header="_Estimates">
+                <MenuItem Header="_New Estimate" Click="NewEstimate_Click"/>
+                <MenuItem Header="_Manage Estimates" Click="ManageEstimates_Click"/>
+                <MenuItem Header="_Convert to Job" Click="ConvertToJob_Click"/>
+                <Separator/>
+                <MenuItem Header="_Room Templates" Click="RoomTemplates_Click"/>
+            </MenuItem>
+            
+            <MenuItem Header="_Jobs">
+                <MenuItem Header="_Job Management" Click="JobManagement_Click"/>
+                <MenuItem Header="_Weekly Labor Entry" Click="WeeklyLaborEntry_Click"/>
+                <MenuItem Header="_Material Entry" Click="MaterialEntry_Click"/>
+                <MenuItem Header="_Job Cost Tracking" Click="JobCostTracking_Click"/>
+                <Separator/>
+                <MenuItem Header="_Import Jobs" Click="ImportJobs_Click"/>
+            </MenuItem>
+            
             <MenuItem Header="_Customers">
-                <MenuItem Header="_Manage Customers"/>
+                <MenuItem Header="_Manage Customers" Click="ManageCustomers_Click"/>
+                <MenuItem Header="_Add New Customer" Click="AddCustomer_Click"/>
             </MenuItem>
+            
             <MenuItem Header="_Price List">
-                <MenuItem Header="_Manage Price List"/>
-                <MenuItem Header="_Import from Excel"/>
+                <MenuItem Header="_Manage Price List" Click="ManagePriceList_Click"/>
+                <MenuItem Header="_Import from Excel" Click="ImportPriceList_Click"/>
+                <MenuItem Header="_Export to Excel" Click="ExportPriceList_Click"/>
             </MenuItem>
+            
+            <MenuItem Header="_Reports">
+                <MenuItem Header="Job _Profitability" Click="JobProfitability_Click"/>
+                <MenuItem Header="_Employee Hours" Click="EmployeeHours_Click"/>
+                <MenuItem Header="_Material Usage" Click="MaterialUsage_Click"/>
+                <Separator/>
+                <MenuItem Header="_Custom Report" Click="CustomReport_Click"/>
+            </MenuItem>
+            
             <MenuItem Header="_Help">
-                <MenuItem Header="_About"/>
+                <MenuItem Header="_User Guide" Click="UserGuide_Click"/>
+                <MenuItem Header="_Keyboard Shortcuts" Click="KeyboardShortcuts_Click"/>
+                <Separator/>
+                <MenuItem Header="_About" Click="About_Click"/>
             </MenuItem>
         </Menu>
         
         <!-- Main Content Area -->
-        <ContentControl Grid.Row="1" x:Name="MainContent"/>
+        <ContentControl Grid.Row="1" x:Name="MainContent">
+            <ContentControl.Style>
+                <Style TargetType="ContentControl">
+                    <Style.Triggers>
+                        <Trigger Property="Content" Value="{x:Null}">
+                            <Setter Property="Content">
+                                <Setter.Value>
+                                    <Grid Background="#F5F5F5">
+                                        <StackPanel HorizontalAlignment="Center" 
+                                                    VerticalAlignment="Center">
+                                            <TextBlock Text="Welcome to Electrical Contractor Management System" 
+                                                       FontSize="28" 
+                                                       FontWeight="Light"
+                                                       Margin="0,0,0,20"
+                                                       HorizontalAlignment="Center"/>
+                                            
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="30"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                
+                                                <!-- Estimates Section -->
+                                                <StackPanel Grid.Column="0">
+                                                    <TextBlock Text="Estimates" 
+                                                               FontSize="20" 
+                                                               FontWeight="Medium"
+                                                               Margin="0,0,0,15"
+                                                               HorizontalAlignment="Center"/>
+                                                    
+                                                    <Button Content="New Estimate" 
+                                                            Click="NewEstimate_Click"
+                                                            Style="{StaticResource AccentButtonStyle}"
+                                                            Width="200"
+                                                            Height="50"
+                                                            FontSize="16"
+                                                            Margin="0,5"/>
+                                                    
+                                                    <Button Content="Manage Estimates" 
+                                                            Click="ManageEstimates_Click"
+                                                            Style="{StaticResource PrimaryButtonStyle}"
+                                                            Width="200"
+                                                            Height="50"
+                                                            FontSize="16"
+                                                            Margin="0,5"/>
+                                                </StackPanel>
+                                                
+                                                <!-- Jobs Section -->
+                                                <StackPanel Grid.Column="2">
+                                                    <TextBlock Text="Jobs" 
+                                                               FontSize="20" 
+                                                               FontWeight="Medium"
+                                                               Margin="0,0,0,15"
+                                                               HorizontalAlignment="Center"/>
+                                                    
+                                                    <Button Content="Job Management" 
+                                                            Click="JobManagement_Click"
+                                                            Style="{StaticResource PrimaryButtonStyle}"
+                                                            Width="200"
+                                                            Height="50"
+                                                            FontSize="16"
+                                                            Margin="0,5"/>
+                                                    
+                                                    <Button Content="Weekly Labor Entry" 
+                                                            Click="WeeklyLaborEntry_Click"
+                                                            Style="{StaticResource PrimaryButtonStyle}"
+                                                            Width="200"
+                                                            Height="50"
+                                                            FontSize="16"
+                                                            Margin="0,5"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Grid>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </ContentControl.Style>
+        </ContentControl>
     </Grid>
 </Window>
