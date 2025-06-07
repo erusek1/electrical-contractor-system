@@ -1,79 +1,39 @@
 using System;
 using System.Globalization;
-using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
+using ElectricalContractorSystem.Models;
 
 namespace ElectricalContractorSystem.Helpers
 {
-    /// <summary>
-    /// Converts job status values to corresponding colors
-    /// </summary>
     public class StatusToColorConverter : IValueConverter
     {
-        /// <summary>
-        /// Converts a job status (Estimate, In Progress, Complete) to a color
-        /// </summary>
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value == null)
-                return new SolidColorBrush(Colors.Gray);
-
-            string status = value.ToString();
-
-            switch (status.ToLower())
+            if (value is EstimateStatus status)
             {
-                case "estimate":
-                    return new SolidColorBrush((Color)Application.Current.Resources["AccentColor"]);
-                case "in progress":
-                    return new SolidColorBrush(Colors.CornflowerBlue);
-                case "complete":
-                    return new SolidColorBrush(Colors.ForestGreen);
-                default:
-                    return new SolidColorBrush(Colors.Gray);
+                switch (status)
+                {
+                    case EstimateStatus.Draft:
+                        return new SolidColorBrush(Color.FromRgb(108, 117, 125)); // Gray
+                    case EstimateStatus.Sent:
+                        return new SolidColorBrush(Color.FromRgb(52, 152, 219)); // Blue
+                    case EstimateStatus.Approved:
+                        return new SolidColorBrush(Color.FromRgb(39, 174, 96)); // Green
+                    case EstimateStatus.Rejected:
+                        return new SolidColorBrush(Color.FromRgb(231, 76, 60)); // Red
+                    case EstimateStatus.Expired:
+                        return new SolidColorBrush(Color.FromRgb(243, 156, 18)); // Orange
+                    case EstimateStatus.Converted:
+                        return new SolidColorBrush(Color.FromRgb(155, 89, 182)); // Purple
+                    default:
+                        return new SolidColorBrush(Colors.Gray);
+                }
             }
+            
+            return new SolidColorBrush(Colors.Gray);
         }
-
-        /// <summary>
-        /// Converts back - not implemented
-        /// </summary>
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    /// <summary>
-    /// Converts job status values to corresponding brush resources
-    /// </summary>
-    public class StatusToBrushConverter : IValueConverter
-    {
-        /// <summary>
-        /// Converts a job status (Estimate, In Progress, Complete) to a brush resource
-        /// </summary>
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            if (value == null)
-                return Application.Current.Resources["TextPrimaryBrush"];
-
-            string status = value.ToString();
-
-            switch (status.ToLower())
-            {
-                case "estimate":
-                    return Application.Current.Resources["EstimateBrush"];
-                case "in progress":
-                    return Application.Current.Resources["InProgressBrush"];
-                case "complete":
-                    return Application.Current.Resources["CompleteBrush"];
-                default:
-                    return Application.Current.Resources["TextPrimaryBrush"];
-            }
-        }
-
-        /// <summary>
-        /// Converts back - not implemented
-        /// </summary>
+        
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             throw new NotImplementedException();
