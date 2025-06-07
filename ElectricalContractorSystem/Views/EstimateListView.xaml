@@ -1,0 +1,255 @@
+<UserControl x:Class="ElectricalContractorSystem.Views.EstimateListView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="800" d:DesignWidth="1200">
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <Border Grid.Row="0" Background="{StaticResource PrimaryBrush}" Padding="20,15">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <TextBlock Text="Estimate Management" 
+                           FontSize="24" FontWeight="Bold" 
+                           Foreground="White"/>
+                
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Content="New Estimate" 
+                            Command="{Binding NewEstimateCommand}"
+                            Style="{StaticResource AccentButtonStyle}"
+                            Margin="0,0,10,0"/>
+                    <Button Content="Refresh" 
+                            Command="{Binding RefreshCommand}"
+                            Style="{StaticResource SecondaryButtonStyle}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+        
+        <!-- Statistics Cards -->
+        <Grid Grid.Row="1" Margin="20,20,20,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <Border Grid.Column="0" Style="{StaticResource CardStyle}" Margin="0,0,10,0">
+                <StackPanel>
+                    <TextBlock Text="Total Estimates" Style="{StaticResource FieldLabelStyle}"/>
+                    <TextBlock Text="{Binding TotalEstimates}" FontSize="28" FontWeight="Bold"/>
+                </StackPanel>
+            </Border>
+            
+            <Border Grid.Column="1" Style="{StaticResource CardStyle}" Margin="5,0">
+                <StackPanel>
+                    <TextBlock Text="Draft" Style="{StaticResource FieldLabelStyle}"/>
+                    <TextBlock Text="{Binding DraftCount}" FontSize="28" FontWeight="Bold" Foreground="#95A5A6"/>
+                </StackPanel>
+            </Border>
+            
+            <Border Grid.Column="2" Style="{StaticResource CardStyle}" Margin="5,0">
+                <StackPanel>
+                    <TextBlock Text="Sent" Style="{StaticResource FieldLabelStyle}"/>
+                    <TextBlock Text="{Binding SentCount}" FontSize="28" FontWeight="Bold" Foreground="{StaticResource WarningBrush}"/>
+                </StackPanel>
+            </Border>
+            
+            <Border Grid.Column="3" Style="{StaticResource CardStyle}" Margin="5,0">
+                <StackPanel>
+                    <TextBlock Text="Approved" Style="{StaticResource FieldLabelStyle}"/>
+                    <TextBlock Text="{Binding ApprovedCount}" FontSize="28" FontWeight="Bold" Foreground="{StaticResource SuccessBrush}"/>
+                </StackPanel>
+            </Border>
+            
+            <Border Grid.Column="4" Style="{StaticResource CardStyle}" Margin="10,0,0,0">
+                <StackPanel>
+                    <TextBlock Text="Total Value" Style="{StaticResource FieldLabelStyle}"/>
+                    <TextBlock Text="{Binding TotalValue, StringFormat='${0:N0}'}" FontSize="24" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+        
+        <!-- Main Content -->
+        <Grid Grid.Row="2" Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            
+            <!-- Search and Filter -->
+            <Grid Grid.Row="0" Margin="0,0,0,15">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <TextBox Grid.Column="0" 
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource SearchBoxStyle}"
+                         Tag="Search estimates..."/>
+                
+                <ComboBox Grid.Column="1" 
+                          Margin="10,0"
+                          SelectedValue="{Binding StatusFilter}"
+                          SelectedValuePath="Tag"
+                          Style="{StaticResource EstimateComboBoxStyle}">
+                    <ComboBoxItem Content="All Statuses" Tag="{x:Null}"/>
+                    <ComboBoxItem Content="Draft" Tag="Draft"/>
+                    <ComboBoxItem Content="Sent" Tag="Sent"/>
+                    <ComboBoxItem Content="Approved" Tag="Approved"/>
+                    <ComboBoxItem Content="Rejected" Tag="Rejected"/>
+                    <ComboBoxItem Content="Expired" Tag="Expired"/>
+                </ComboBox>
+                
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <Button Content="Convert to Job" 
+                            Command="{Binding ConvertToJobCommand}"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Margin="0,0,10,0"/>
+                </StackPanel>
+            </Grid>
+            
+            <!-- Estimates DataGrid -->
+            <DataGrid Grid.Row="1" 
+                      ItemsSource="{Binding Estimates}"
+                      SelectedItem="{Binding SelectedEstimate}"
+                      Style="{StaticResource EstimateDataGridStyle}">
+                
+                <DataGrid.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Edit" Command="{Binding EditEstimateCommand}">
+                            <MenuItem.Icon>
+                                <TextBlock Text="✏" FontFamily="Segoe UI Symbol"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Duplicate" Command="{Binding DuplicateEstimateCommand}">
+                            <MenuItem.Icon>
+                                <TextBlock Text="📋" FontFamily="Segoe UI Symbol"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <Separator/>
+                        <MenuItem Header="Convert to Job" Command="{Binding ConvertToJobCommand}">
+                            <MenuItem.Icon>
+                                <TextBlock Text="🔄" FontFamily="Segoe UI Symbol"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="View PDF" Command="{Binding ViewPdfCommand}">
+                            <MenuItem.Icon>
+                                <TextBlock Text="📄" FontFamily="Segoe UI Symbol"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <Separator/>
+                        <MenuItem Header="Delete" Command="{Binding DeleteEstimateCommand}">
+                            <MenuItem.Icon>
+                                <TextBlock Text="🗑" FontFamily="Segoe UI Symbol"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </ContextMenu>
+                </DataGrid.ContextMenu>
+                
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Estimate #" 
+                                        Binding="{Binding EstimateNumber}" 
+                                        Width="100"/>
+                    <DataGridTextColumn Header="Ver" 
+                                        Binding="{Binding Version}" 
+                                        Width="50"/>
+                    <DataGridTextColumn Header="Customer" 
+                                        Binding="{Binding Customer.Name}" 
+                                        Width="2*"/>
+                    <DataGridTextColumn Header="Job Name" 
+                                        Binding="{Binding JobName}" 
+                                        Width="2*"/>
+                    <DataGridTextColumn Header="Address" 
+                                        Binding="{Binding Address}" 
+                                        Width="2*"/>
+                    
+                    <DataGridTemplateColumn Header="Status" Width="100">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource StatusBadgeStyle}"
+                                        HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding Status}" 
+                                               FontSize="11" 
+                                               FontWeight="Medium"/>
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    
+                    <DataGridTextColumn Header="Created" 
+                                        Binding="{Binding CreatedDate, StringFormat='{}{0:MM/dd/yyyy}'}" 
+                                        Width="100"/>
+                    
+                    <DataGridTextColumn Header="Labor Hours" 
+                                        Binding="{Binding TotalLaborHours, StringFormat='{}{0:N1}'}" 
+                                        Width="90">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="TextAlignment" Value="Right"/>
+                                <Setter Property="Padding" Value="0,0,10,0"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                    
+                    <DataGridTextColumn Header="Total" 
+                                        Binding="{Binding TotalCost, StringFormat='${0:N2}'}" 
+                                        Width="110">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="TextAlignment" Value="Right"/>
+                                <Setter Property="Padding" Value="0,0,10,0"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                    
+                    <DataGridTemplateColumn Width="40">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="..." 
+                                        Command="{Binding DataContext.EditEstimateCommand, 
+                                                  RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}"
+                                        Width="30" Height="24"
+                                        ToolTip="Edit Estimate"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+                
+                <DataGrid.RowStyle>
+                    <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#F5F5F5"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="{StaticResource SystemHighlightColor}"/>
+                            </Trigger>
+                            <DataTrigger Binding="{Binding Status}" Value="Approved">
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                        <EventSetter Event="MouseDoubleClick" Handler="DataGridRow_MouseDoubleClick"/>
+                    </Style>
+                </DataGrid.RowStyle>
+            </DataGrid>
+        </Grid>
+    </Grid>
+</UserControl>
