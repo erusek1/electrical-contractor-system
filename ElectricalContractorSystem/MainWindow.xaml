@@ -4,95 +4,37 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ElectricalContractorSystem"
-        xmlns:viewmodels="clr-namespace:ElectricalContractorSystem.ViewModels"
-        xmlns:views="clr-namespace:ElectricalContractorSystem.Views"
         mc:Ignorable="d"
-        Title="Electrical Contractor System - Erik Rusek Electric" Height="768" Width="1024" 
+        Title="Electrical Contractor Estimating System" 
+        Height="900" Width="1400"
         WindowStartupLocation="CenterScreen">
-
-    <Window.Resources>
-        <Style x:Key="NavButtonStyle" TargetType="Button">
-            <Setter Property="Padding" Value="15,10"/>
-            <Setter Property="Margin" Value="0,5"/>
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="HorizontalContentAlignment" Value="Left"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Foreground" Value="DarkSlateGray"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#E8F5E9"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-    </Window.Resources>
-
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="220"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
-
+        
         <!-- Menu Bar -->
-        <Menu Grid.Row="0" Grid.ColumnSpan="2" Background="LightGray">
-            <MenuItem Header="_Database">
-                <MenuItem Header="_Test Connection" Click="TestConnection_Click"/>
-                <MenuItem Header="_Create Sample Data" Click="CreateSampleData_Click"/>
+        <Menu Grid.Row="0">
+            <MenuItem Header="_File">
+                <MenuItem Header="_New Estimate" Click="NewEstimate_Click"/>
+                <MenuItem Header="_Open Estimate"/>
                 <Separator/>
                 <MenuItem Header="E_xit" Click="Exit_Click"/>
             </MenuItem>
+            <MenuItem Header="_Customers">
+                <MenuItem Header="_Manage Customers"/>
+            </MenuItem>
+            <MenuItem Header="_Price List">
+                <MenuItem Header="_Manage Price List"/>
+                <MenuItem Header="_Import from Excel"/>
+            </MenuItem>
             <MenuItem Header="_Help">
-                <MenuItem Header="_About" Click="About_Click"/>
+                <MenuItem Header="_About"/>
             </MenuItem>
         </Menu>
-
-        <!-- Navigation Panel -->
-        <Border Background="#F5F5F5" Grid.Row="1" Grid.Column="0">
-            <DockPanel>
-                <!-- App Title -->
-                <Border DockPanel.Dock="Top" Height="60" Background="DarkSlateGray">
-                    <TextBlock Text="ERE System" 
-                               VerticalAlignment="Center" 
-                               HorizontalAlignment="Center"
-                               Foreground="White"
-                               FontSize="20"
-                               FontWeight="SemiBold"/>
-                </Border>
-
-                <!-- Navigation Menu -->
-                <StackPanel Margin="10">
-                    <Button Content="Job Management" 
-                            Command="{Binding NavigateToJobManagementCommand}"
-                            Style="{StaticResource NavButtonStyle}"/>
-                    
-                    <Button Content="Weekly Labor Entry" 
-                            Command="{Binding NavigateToWeeklyLaborEntryCommand}"
-                            Style="{StaticResource NavButtonStyle}"/>
-                    
-                    <Button Content="Material Entry" 
-                            Command="{Binding NavigateToMaterialEntryCommand}"
-                            Style="{StaticResource NavButtonStyle}"/>
-                    
-                    <Button Content="Job Cost Tracking" 
-                            Command="{Binding NavigateToJobCostTrackingCommand}"
-                            Style="{StaticResource NavButtonStyle}"/>
-                    
-                    <Separator Margin="0,10"/>
-                    
-                    <Button Content="Settings" 
-                            Command="{Binding NavigateToSettingsCommand}"
-                            Style="{StaticResource NavButtonStyle}"/>
-                </StackPanel>
-            </DockPanel>
-        </Border>
-
-        <!-- Content Area -->
-        <Border Grid.Row="1" Grid.Column="1" Background="White">
-            <ContentControl Content="{Binding CurrentView}"/>
-        </Border>
+        
+        <!-- Main Content Area -->
+        <ContentControl Grid.Row="1" x:Name="MainContent"/>
     </Grid>
 </Window>
