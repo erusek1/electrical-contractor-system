@@ -2,641 +2,403 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
+using System.Linq;
 using MySql.Data.MySqlClient;
 using ElectricalContractorSystem.Models;
 
 namespace ElectricalContractorSystem.Services
 {
-    /// <summary>
-    /// Service for handling database operations
-    /// </summary>
-    public class DatabaseService : IDisposable
+    public class DatabaseService
     {
         private readonly string _connectionString;
-        private bool _disposed = false;
 
         public DatabaseService()
         {
-            _connectionString = ConfigurationManager.ConnectionStrings["MySQLConnection"]?.ConnectionString;
-            if (string.IsNullOrEmpty(_connectionString))
-            {
-                _connectionString = "Server=localhost;Port=3306;Database=electrical_contractor_db;Uid=root;Pwd=215Osborn!;";
-            }
+            _connectionString = ConfigurationManager.ConnectionStrings["ElectricalDB"].ConnectionString;
         }
 
-        public static string ConnectionString
-        {
-            get
-            {
-                var connectionString = ConfigurationManager.ConnectionStrings["MySQLConnection"]?.ConnectionString;
-                if (string.IsNullOrEmpty(connectionString))
-                {
-                    connectionString = "Server=localhost;Port=3306;Database=electrical_contractor_db;Uid=root;Pwd=215Osborn!;";
-                }
-                return connectionString;
-            }
-        }
+        #region Price List Methods
 
-        public bool TestConnection()
+        public List<PriceListItem> GetActivePriceListItems()
         {
-            try
+            var items = new List<PriceListItem>();
+            
+            using (var connection = new MySqlConnection(_connectionString))
             {
-                using (var connection = new MySqlConnection(_connectionString))
-                {
-                    connection.Open();
-                    return true;
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Connection test failed: {ex.Message}");
-                return false;
-            }
-        }
+                connection.Open();
+                var query = @"
+                    SELECT p.*, 
+                           l.stage as labor_stage, l.minutes,
+                           m.stage as material_stage, m.material_cost
+                    FROM PriceListItems p
+                    LEFT JOIN LaborMinutes l ON p.item_id = l.item_id
+                    LEFT JOIN MaterialStages m ON p.item_id = m.item_id
+                    WHERE p.is_active = 1
+                    ORDER BY p.category, p.name";
 
-        public DataTable ExecuteQuery(string query, Dictionary<string, object> parameters = null)
-        {
-            DataTable dataTable = new DataTable();
-            try
-            {
-                using (var connection = new MySqlConnection(_connectionString))
-                using (var command = new MySqlCommand(query, connection))
+                using (var cmd = new MySqlCommand(query, connection))
                 {
-                    if (parameters != null)
+                    using (var reader = cmd.ExecuteReader())
                     {
-                        foreach (var param in parameters)
+                        var itemDict = new Dictionary<int, PriceListItem>();
+                        
+                        while (reader.Read())
                         {
-                            command.Parameters.AddWithValue(param.Key, param.Value);
+                            var itemId = reader.GetInt32("item_id");
+                            
+                            if (!itemDict.ContainsKey(itemId))
+                            {
+                                var item = new PriceListItem
+                                {
+                                    ItemId = itemId,
+                                    ItemCode = reader.GetString("item_code"),
+                                    Name = reader.GetString("name"),
+                                    Description = reader.IsDBNull(reader.GetOrdinal("description")) ? null : reader.GetString("description"),
+                                    BasePrice = reader.GetDecimal("base_price"),
+                                    TaxRate = reader.GetDecimal("tax_rate"),
+                                    Unit = reader.GetString("unit"),
+                                    Category = reader.IsDBNull(reader.GetOrdinal("category")) ? null : reader.GetString("category"),
+                                    IsActive = reader.GetBoolean("is_active")
+                                };
+                                itemDict[itemId] = item;
+                                items.Add(item);
+                            }
+                            
+                            // Add labor minutes if present
+                            if (!reader.IsDBNull(reader.GetOrdinal("labor_stage")))
+                            {
+                                itemDict[itemId].LaborMinutes.Add(new LaborMinute
+                                {
+                                    ItemId = itemId,
+                                    Stage = reader.GetString("labor_stage"),
+                                    Minutes = reader.GetInt32("minutes")
+                                });
+                            }
+                            
+                            // Add material stages if present
+                            if (!reader.IsDBNull(reader.GetOrdinal("material_stage")))
+                            {
+                                itemDict[itemId].MaterialStages.Add(new MaterialStage
+                                {
+                                    ItemId = itemId,
+                                    Stage = reader.GetString("material_stage"),
+                                    MaterialCost = reader.GetDecimal("material_cost")
+                                });
+                            }
                         }
                     }
-                    connection.Open();
-                    using (var adapter = new MySqlDataAdapter(command))
-                    {
-                        adapter.Fill(dataTable);
-                    }
                 }
             }
-            catch (Exception ex)
-            {
-                throw new Exception($"Database query error: {ex.Message}", ex);
-            }
-            return dataTable;
-        }
-
-        public int ExecuteNonQuery(string query, Dictionary<string, object> parameters = null)
-        {
-            int result = 0;
-            try
-            {
-                using (var connection = new MySqlConnection(_connectionString))
-                using (var command = new MySqlCommand(query, connection))
-                {
-                    if (parameters != null)
-                    {
-                        foreach (var param in parameters)
-                        {
-                            command.Parameters.AddWithValue(param.Key, param.Value);
-                        }
-                    }
-                    connection.Open();
-                    result = command.ExecuteNonQuery();
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Database command error: {ex.Message}", ex);
-            }
-            return result;
-        }
-
-        public object ExecuteScalar(string query, Dictionary<string, object> parameters = null)
-        {
-            object result = null;
-            try
-            {
-                using (var connection = new MySqlConnection(_connectionString))
-                using (var command = new MySqlCommand(query, connection))
-                {
-                    if (parameters != null)
-                    {
-                        foreach (var param in parameters)
-                        {
-                            command.Parameters.AddWithValue(param.Key, param.Value);
-                        }
-                    }
-                    connection.Open();
-                    result = command.ExecuteScalar();
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Database scalar query error: {ex.Message}", ex);
-            }
-            return result;
-        }
-
-        public long GetLastInsertedId()
-        {
-            return Convert.ToInt64(ExecuteScalar("SELECT LAST_INSERT_ID()"));
-        }
-
-        #region Job Operations
-        public List<Job> GetAllJobs()
-        {
-            var jobs = new List<Job>();
-            string query = @"SELECT j.*, c.name as customer_name FROM Jobs j LEFT JOIN Customers c ON j.customer_id = c.customer_id ORDER BY j.job_number DESC";
-            var dataTable = ExecuteQuery(query);
-            foreach (DataRow row in dataTable.Rows)
-            {
-                jobs.Add(CreateJobFromRow(row));
-            }
-            return jobs;
-        }
-
-        public List<Job> GetJobsByStatus(params string[] statuses)
-        {
-            var jobs = new List<Job>();
-            var statusParams = new List<string>();
-            var parameters = new Dictionary<string, object>();
             
-            for (int i = 0; i < statuses.Length; i++)
-            {
-                var paramName = $"@status{i}";
-                statusParams.Add(paramName);
-                parameters[paramName] = statuses[i];
-            }
-            
-            string query = $@"SELECT j.*, c.name as customer_name FROM Jobs j LEFT JOIN Customers c ON j.customer_id = c.customer_id WHERE j.status IN ({string.Join(",", statusParams)}) ORDER BY j.job_number DESC";
-            var dataTable = ExecuteQuery(query, parameters);
-            foreach (DataRow row in dataTable.Rows)
-            {
-                jobs.Add(CreateJobFromRow(row));
-            }
-            return jobs;
-        }
-
-        public Job GetJob(int jobId)
-        {
-            return GetJobById(jobId);
-        }
-
-        public Job GetJobByNumber(string jobNumber)
-        {
-            var parameters = new Dictionary<string, object> { { "@jobNumber", jobNumber } };
-            string query = @"SELECT j.*, c.name as customer_name FROM Jobs j LEFT JOIN Customers c ON j.customer_id = c.customer_id WHERE j.job_number = @jobNumber";
-            var dataTable = ExecuteQuery(query, parameters);
-            return dataTable.Rows.Count == 0 ? null : CreateJobFromRow(dataTable.Rows[0]);
-        }
-
-        public Job GetJobById(int jobId)
-        {
-            var parameters = new Dictionary<string, object> { { "@jobId", jobId } };
-            string query = @"SELECT j.*, c.name as customer_name FROM Jobs j LEFT JOIN Customers c ON j.customer_id = c.customer_id WHERE j.job_id = @jobId";
-            var dataTable = ExecuteQuery(query, parameters);
-            return dataTable.Rows.Count == 0 ? null : CreateJobFromRow(dataTable.Rows[0]);
-        }
-
-        /// <summary>
-        /// Updates the status of a specific job
-        /// </summary>
-        public bool UpdateJobStatus(int jobId, string status)
-        {
-            try
-            {
-                string query = "UPDATE Jobs SET status = @status WHERE job_id = @jobId";
-                var parameters = new Dictionary<string, object>
-                {
-                    { "@jobId", jobId },
-                    { "@status", status }
-                };
-                
-                int rowsAffected = ExecuteNonQuery(query, parameters);
-                return rowsAffected > 0;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error updating job status: {ex.Message}");
-                return false;
-            }
-        }
-
-        private Job CreateJobFromRow(DataRow row)
-        {
-            return new Job
-            {
-                JobId = Convert.ToInt32(row["job_id"]),
-                JobNumber = row["job_number"].ToString(),
-                CustomerId = Convert.ToInt32(row["customer_id"]),
-                JobName = row["job_name"].ToString(),
-                Address = row["address"]?.ToString(),
-                City = row["city"]?.ToString(),
-                State = row["state"]?.ToString(),
-                Zip = row["zip"]?.ToString(),
-                SquareFootage = row["square_footage"] != DBNull.Value ? Convert.ToInt32(row["square_footage"]) : (int?)null,
-                NumFloors = row["num_floors"] != DBNull.Value ? Convert.ToInt32(row["num_floors"]) : (int?)null,
-                Status = row["status"].ToString(),
-                CreateDate = Convert.ToDateTime(row["create_date"]),
-                CompletionDate = row["completion_date"] != DBNull.Value ? Convert.ToDateTime(row["completion_date"]) : (DateTime?)null,
-                TotalEstimate = row["total_estimate"] != DBNull.Value ? Convert.ToDecimal(row["total_estimate"]) : 0m,
-                TotalActual = row["total_actual"] != DBNull.Value ? Convert.ToDecimal(row["total_actual"]) : 0m,
-                Notes = row["notes"]?.ToString()
-            };
-        }
-
-        public int AddJob(Job job)
-        {
-            string query = @"INSERT INTO Jobs (job_number, customer_id, job_name, address, city, state, zip, square_footage, num_floors, status, create_date, completion_date, total_estimate, total_actual, notes) VALUES (@jobNumber, @customerId, @jobName, @address, @city, @state, @zip, @squareFootage, @numFloors, @status, @createDate, @completionDate, @totalEstimate, @totalActual, @notes)";
-            var parameters = new Dictionary<string, object>
-            {
-                { "@jobNumber", job.JobNumber }, { "@customerId", job.CustomerId }, { "@jobName", job.JobName },
-                { "@address", job.Address }, { "@city", job.City }, { "@state", job.State }, { "@zip", job.Zip },
-                { "@squareFootage", job.SquareFootage }, { "@numFloors", job.NumFloors }, { "@status", job.Status },
-                { "@createDate", job.CreateDate }, { "@completionDate", job.CompletionDate },
-                { "@totalEstimate", job.TotalEstimate }, { "@totalActual", job.TotalActual }, { "@notes", job.Notes }
-            };
-            ExecuteNonQuery(query, parameters);
-            return (int)GetLastInsertedId();
-        }
-
-        public void UpdateJob(Job job)
-        {
-            string query = @"UPDATE Jobs SET job_number = @jobNumber, customer_id = @customerId, job_name = @jobName, address = @address, city = @city, state = @state, zip = @zip, square_footage = @squareFootage, num_floors = @numFloors, status = @status, completion_date = @completionDate, total_estimate = @totalEstimate, total_actual = @totalActual, notes = @notes WHERE job_id = @jobId";
-            var parameters = new Dictionary<string, object>
-            {
-                { "@jobId", job.JobId }, { "@jobNumber", job.JobNumber }, { "@customerId", job.CustomerId },
-                { "@jobName", job.JobName }, { "@address", job.Address }, { "@city", job.City }, { "@state", job.State },
-                { "@zip", job.Zip }, { "@squareFootage", job.SquareFootage }, { "@numFloors", job.NumFloors },
-                { "@status", job.Status }, { "@completionDate", job.CompletionDate }, { "@totalEstimate", job.TotalEstimate },
-                { "@totalActual", job.TotalActual }, { "@notes", job.Notes }
-            };
-            ExecuteNonQuery(query, parameters);
-        }
-
-        public int SaveJob(Job job)
-        {
-            if (job.JobId == 0)
-            {
-                return AddJob(job);
-            }
-            else
-            {
-                UpdateJob(job);
-                return job.JobId;
-            }
-        }
-
-        public string GetNextJobNumber()
-        {
-            var result = ExecuteScalar("SELECT COALESCE(MAX(CAST(job_number AS UNSIGNED)), 0) + 1 FROM Jobs");
-            return result.ToString();
-        }
-        #endregion
-
-        #region JobStage Operations
-        public List<JobStage> GetJobStages(int jobId)
-        {
-            var stages = new List<JobStage>();
-            string query = "SELECT * FROM JobStages WHERE job_id = @jobId";
-            var parameters = new Dictionary<string, object> { { "@jobId", jobId } };
-            var dataTable = ExecuteQuery(query, parameters);
-            
-            foreach (DataRow row in dataTable.Rows)
-            {
-                stages.Add(new JobStage
-                {
-                    StageId = Convert.ToInt32(row["stage_id"]),
-                    JobId = Convert.ToInt32(row["job_id"]),
-                    StageName = row["stage_name"].ToString(),
-                    EstimatedHours = row["estimated_hours"] != DBNull.Value ? Convert.ToDecimal(row["estimated_hours"]) : 0m,
-                    EstimatedMaterialCost = row["estimated_material_cost"] != DBNull.Value ? Convert.ToDecimal(row["estimated_material_cost"]) : 0m,
-                    ActualHours = row["actual_hours"] != DBNull.Value ? Convert.ToDecimal(row["actual_hours"]) : 0m,
-                    ActualMaterialCost = row["actual_material_cost"] != DBNull.Value ? Convert.ToDecimal(row["actual_material_cost"]) : 0m,
-                    Notes = row["notes"]?.ToString()
-                });
-            }
-            return stages;
-        }
-
-        public int AddJobStage(JobStage stage)
-        {
-            string query = @"INSERT INTO JobStages (job_id, stage_name, estimated_hours, estimated_material_cost, actual_hours, actual_material_cost, notes) VALUES (@jobId, @stageName, @estimatedHours, @estimatedMaterialCost, @actualHours, @actualMaterialCost, @notes)";
-            var parameters = new Dictionary<string, object>
-            {
-                { "@jobId", stage.JobId },
-                { "@stageName", stage.StageName },
-                { "@estimatedHours", stage.EstimatedHours },
-                { "@estimatedMaterialCost", stage.EstimatedMaterialCost },
-                { "@actualHours", stage.ActualHours },
-                { "@actualMaterialCost", stage.ActualMaterialCost },
-                { "@notes", stage.Notes }
-            };
-            ExecuteNonQuery(query, parameters);
-            return (int)GetLastInsertedId();
-        }
-
-        public void UpdateJobStage(JobStage stage)
-        {
-            string query = @"UPDATE JobStages SET stage_name = @stageName, estimated_hours = @estimatedHours, estimated_material_cost = @estimatedMaterialCost, actual_hours = @actualHours, actual_material_cost = @actualMaterialCost, notes = @notes WHERE stage_id = @stageId";
-            var parameters = new Dictionary<string, object>
-            {
-                { "@stageId", stage.StageId },
-                { "@stageName", stage.StageName },
-                { "@estimatedHours", stage.EstimatedHours },
-                { "@estimatedMaterialCost", stage.EstimatedMaterialCost },
-                { "@actualHours", stage.ActualHours },
-                { "@actualMaterialCost", stage.ActualMaterialCost },
-                { "@notes", stage.Notes }
-            };
-            ExecuteNonQuery(query, parameters);
-        }
-
-        public void DeleteJobStage(int stageId)
-        {
-            string query = "DELETE FROM JobStages WHERE stage_id = @stageId";
-            var parameters = new Dictionary<string, object> { { "@stageId", stageId } };
-            ExecuteNonQuery(query, parameters);
-        }
-        #endregion
-
-        #region RoomSpecification Operations
-        public List<RoomSpecification> GetRoomSpecifications(int jobId)
-        {
-            var specs = new List<RoomSpecification>();
-            string query = "SELECT * FROM RoomSpecifications WHERE job_id = @jobId ORDER BY room_name";
-            var parameters = new Dictionary<string, object> { { "@jobId", jobId } };
-            var dataTable = ExecuteQuery(query, parameters);
-            
-            foreach (DataRow row in dataTable.Rows)
-            {
-                specs.Add(new RoomSpecification
-                {
-                    SpecId = Convert.ToInt32(row["spec_id"]),
-                    JobId = Convert.ToInt32(row["job_id"]),
-                    RoomName = row["room_name"].ToString(),
-                    ItemDescription = row["item_description"].ToString(),
-                    Quantity = Convert.ToInt32(row["quantity"]),
-                    ItemCode = row["item_code"]?.ToString(),
-                    UnitPrice = Convert.ToDecimal(row["unit_price"]),
-                    TotalPrice = Convert.ToDecimal(row["total_price"])
-                });
-            }
-            return specs;
-        }
-
-        public int AddRoomSpecification(RoomSpecification spec)
-        {
-            string query = @"INSERT INTO RoomSpecifications (job_id, room_name, item_description, quantity, item_code, unit_price, total_price) VALUES (@jobId, @roomName, @itemDescription, @quantity, @itemCode, @unitPrice, @totalPrice)";
-            var parameters = new Dictionary<string, object>
-            {
-                { "@jobId", spec.JobId },
-                { "@roomName", spec.RoomName },
-                { "@itemDescription", spec.ItemDescription },
-                { "@quantity", spec.Quantity },
-                { "@itemCode", spec.ItemCode },
-                { "@unitPrice", spec.UnitPrice },
-                { "@totalPrice", spec.TotalPrice }
-            };
-            ExecuteNonQuery(query, parameters);
-            return (int)GetLastInsertedId();
-        }
-
-        public void UpdateRoomSpecification(RoomSpecification spec)
-        {
-            string query = @"UPDATE RoomSpecifications SET room_name = @roomName, item_description = @itemDescription, quantity = @quantity, item_code = @itemCode, unit_price = @unitPrice, total_price = @totalPrice WHERE spec_id = @specId";
-            var parameters = new Dictionary<string, object>
-            {
-                { "@specId", spec.SpecId },
-                { "@roomName", spec.RoomName },
-                { "@itemDescription", spec.ItemDescription },
-                { "@quantity", spec.Quantity },
-                { "@itemCode", spec.ItemCode },
-                { "@unitPrice", spec.UnitPrice },
-                { "@totalPrice", spec.TotalPrice }
-            };
-            ExecuteNonQuery(query, parameters);
-        }
-
-        public void DeleteRoomSpecification(int specId)
-        {
-            string query = "DELETE FROM RoomSpecifications WHERE spec_id = @specId";
-            var parameters = new Dictionary<string, object> { { "@specId", specId } };
-            ExecuteNonQuery(query, parameters);
-        }
-        #endregion
-
-        #region PermitItem Operations
-        public List<PermitItem> GetPermitItems(int jobId)
-        {
-            var items = new List<PermitItem>();
-            string query = "SELECT * FROM PermitItems WHERE job_id = @jobId ORDER BY category";
-            var parameters = new Dictionary<string, object> { { "@jobId", jobId } };
-            var dataTable = ExecuteQuery(query, parameters);
-            
-            foreach (DataRow row in dataTable.Rows)
-            {
-                items.Add(new PermitItem
-                {
-                    PermitId = Convert.ToInt32(row["permit_id"]),
-                    JobId = Convert.ToInt32(row["job_id"]),
-                    Category = row["category"].ToString(),
-                    Quantity = Convert.ToInt32(row["quantity"]),
-                    Description = row["description"]?.ToString(),
-                    Notes = row["notes"]?.ToString()
-                });
-            }
             return items;
         }
 
-        public int AddPermitItem(PermitItem item)
-        {
-            string query = @"INSERT INTO PermitItems (job_id, category, quantity, description, notes) VALUES (@jobId, @category, @quantity, @description, @notes)";
-            var parameters = new Dictionary<string, object>
-            {
-                { "@jobId", item.JobId },
-                { "@category", item.Category },
-                { "@quantity", item.Quantity },
-                { "@description", item.Description },
-                { "@notes", item.Notes }
-            };
-            ExecuteNonQuery(query, parameters);
-            return (int)GetLastInsertedId();
-        }
-
-        public void UpdatePermitItem(PermitItem item)
-        {
-            string query = @"UPDATE PermitItems SET category = @category, quantity = @quantity, description = @description, notes = @notes WHERE permit_id = @permitId";
-            var parameters = new Dictionary<string, object>
-            {
-                { "@permitId", item.PermitId },
-                { "@category", item.Category },
-                { "@quantity", item.Quantity },
-                { "@description", item.Description },
-                { "@notes", item.Notes }
-            };
-            ExecuteNonQuery(query, parameters);
-        }
-
-        public void DeletePermitItem(int permitId)
-        {
-            string query = "DELETE FROM PermitItems WHERE permit_id = @permitId";
-            var parameters = new Dictionary<string, object> { { "@permitId", permitId } };
-            ExecuteNonQuery(query, parameters);
-        }
         #endregion
 
-        #region Customer Operations
+        #region Estimate Methods
+
+        public string GetLastEstimateNumber()
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = "SELECT estimate_number FROM Estimates ORDER BY estimate_id DESC LIMIT 1";
+                
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    var result = cmd.ExecuteScalar();
+                    return result?.ToString() ?? "";
+                }
+            }
+        }
+
+        public void SaveEstimate(Estimate estimate)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                using (var transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        if (estimate.EstimateId == 0)
+                        {
+                            // Insert new estimate
+                            InsertEstimate(estimate, connection, transaction);
+                        }
+                        else
+                        {
+                            // Update existing estimate
+                            UpdateEstimate(estimate, connection, transaction);
+                        }
+                        
+                        transaction.Commit();
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                }
+            }
+        }
+
+        private void InsertEstimate(Estimate estimate, MySqlConnection connection, MySqlTransaction transaction)
+        {
+            var query = @"
+                INSERT INTO Estimates (
+                    estimate_number, version, customer_id, job_name, 
+                    address, city, state, zip, square_footage, num_floors,
+                    status, labor_rate, material_markup, total_labor_hours,
+                    total_material_cost, total_cost, notes, created_by
+                ) VALUES (
+                    @estimate_number, @version, @customer_id, @job_name,
+                    @address, @city, @state, @zip, @square_footage, @num_floors,
+                    @status, @labor_rate, @material_markup, @total_labor_hours,
+                    @total_material_cost, @total_cost, @notes, @created_by
+                )";
+
+            using (var cmd = new MySqlCommand(query, connection, transaction))
+            {
+                cmd.Parameters.AddWithValue("@estimate_number", estimate.EstimateNumber);
+                cmd.Parameters.AddWithValue("@version", estimate.Version);
+                cmd.Parameters.AddWithValue("@customer_id", estimate.CustomerId);
+                cmd.Parameters.AddWithValue("@job_name", estimate.JobName);
+                cmd.Parameters.AddWithValue("@address", estimate.Address ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@city", estimate.City ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@state", estimate.State ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@zip", estimate.Zip ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@square_footage", estimate.SquareFootage ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@num_floors", estimate.NumFloors ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@status", estimate.Status.ToString());
+                cmd.Parameters.AddWithValue("@labor_rate", estimate.LaborRate);
+                cmd.Parameters.AddWithValue("@material_markup", estimate.MaterialMarkup);
+                cmd.Parameters.AddWithValue("@total_labor_hours", estimate.TotalLaborHours ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@total_material_cost", estimate.TotalMaterialCost ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@total_cost", estimate.TotalCost ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@notes", estimate.Notes ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@created_by", estimate.CreatedBy ?? (object)DBNull.Value);
+                
+                cmd.ExecuteNonQuery();
+                estimate.EstimateId = (int)cmd.LastInsertedId;
+            }
+
+            // Save rooms and line items
+            foreach (var room in estimate.Rooms)
+            {
+                SaveRoom(room, estimate.EstimateId, connection, transaction);
+            }
+
+            // Save stage summaries
+            foreach (var summary in estimate.StageSummaries)
+            {
+                SaveStageSummary(summary, estimate.EstimateId, connection, transaction);
+            }
+        }
+
+        private void UpdateEstimate(Estimate estimate, MySqlConnection connection, MySqlTransaction transaction)
+        {
+            var query = @"
+                UPDATE Estimates SET
+                    job_name = @job_name,
+                    address = @address,
+                    city = @city,
+                    state = @state,
+                    zip = @zip,
+                    square_footage = @square_footage,
+                    num_floors = @num_floors,
+                    status = @status,
+                    labor_rate = @labor_rate,
+                    material_markup = @material_markup,
+                    total_labor_hours = @total_labor_hours,
+                    total_material_cost = @total_material_cost,
+                    total_cost = @total_cost,
+                    notes = @notes
+                WHERE estimate_id = @estimate_id";
+
+            using (var cmd = new MySqlCommand(query, connection, transaction))
+            {
+                cmd.Parameters.AddWithValue("@estimate_id", estimate.EstimateId);
+                cmd.Parameters.AddWithValue("@job_name", estimate.JobName);
+                cmd.Parameters.AddWithValue("@address", estimate.Address ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@city", estimate.City ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@state", estimate.State ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@zip", estimate.Zip ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@square_footage", estimate.SquareFootage ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@num_floors", estimate.NumFloors ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@status", estimate.Status.ToString());
+                cmd.Parameters.AddWithValue("@labor_rate", estimate.LaborRate);
+                cmd.Parameters.AddWithValue("@material_markup", estimate.MaterialMarkup);
+                cmd.Parameters.AddWithValue("@total_labor_hours", estimate.TotalLaborHours ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@total_material_cost", estimate.TotalMaterialCost ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@total_cost", estimate.TotalCost ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@notes", estimate.Notes ?? (object)DBNull.Value);
+                
+                cmd.ExecuteNonQuery();
+            }
+
+            // Delete existing rooms and line items (they'll be re-inserted)
+            using (var cmd = new MySqlCommand("DELETE FROM EstimateRooms WHERE estimate_id = @estimate_id", connection, transaction))
+            {
+                cmd.Parameters.AddWithValue("@estimate_id", estimate.EstimateId);
+                cmd.ExecuteNonQuery();
+            }
+
+            // Save rooms and line items
+            foreach (var room in estimate.Rooms)
+            {
+                SaveRoom(room, estimate.EstimateId, connection, transaction);
+            }
+
+            // Update stage summaries
+            using (var cmd = new MySqlCommand("DELETE FROM EstimateStageSummary WHERE estimate_id = @estimate_id", connection, transaction))
+            {
+                cmd.Parameters.AddWithValue("@estimate_id", estimate.EstimateId);
+                cmd.ExecuteNonQuery();
+            }
+
+            foreach (var summary in estimate.StageSummaries)
+            {
+                SaveStageSummary(summary, estimate.EstimateId, connection, transaction);
+            }
+        }
+
+        private void SaveRoom(EstimateRoom room, int estimateId, MySqlConnection connection, MySqlTransaction transaction)
+        {
+            var query = @"
+                INSERT INTO EstimateRooms (estimate_id, room_name, room_order, notes)
+                VALUES (@estimate_id, @room_name, @room_order, @notes)";
+
+            using (var cmd = new MySqlCommand(query, connection, transaction))
+            {
+                cmd.Parameters.AddWithValue("@estimate_id", estimateId);
+                cmd.Parameters.AddWithValue("@room_name", room.RoomName);
+                cmd.Parameters.AddWithValue("@room_order", room.RoomOrder);
+                cmd.Parameters.AddWithValue("@notes", room.Notes ?? (object)DBNull.Value);
+                
+                cmd.ExecuteNonQuery();
+                room.RoomId = (int)cmd.LastInsertedId;
+            }
+
+            // Save line items
+            foreach (var item in room.LineItems)
+            {
+                SaveLineItem(item, estimateId, room.RoomId, connection, transaction);
+            }
+        }
+
+        private void SaveLineItem(EstimateLineItem item, int estimateId, int roomId, MySqlConnection connection, MySqlTransaction transaction)
+        {
+            var query = @"
+                INSERT INTO EstimateLineItems (
+                    estimate_id, room_id, item_id, quantity, 
+                    item_code, description, unit_price, line_order, notes
+                ) VALUES (
+                    @estimate_id, @room_id, @item_id, @quantity,
+                    @item_code, @description, @unit_price, @line_order, @notes
+                )";
+
+            using (var cmd = new MySqlCommand(query, connection, transaction))
+            {
+                cmd.Parameters.AddWithValue("@estimate_id", estimateId);
+                cmd.Parameters.AddWithValue("@room_id", roomId);
+                cmd.Parameters.AddWithValue("@item_id", item.ItemId);
+                cmd.Parameters.AddWithValue("@quantity", item.Quantity);
+                cmd.Parameters.AddWithValue("@item_code", item.ItemCode);
+                cmd.Parameters.AddWithValue("@description", item.Description);
+                cmd.Parameters.AddWithValue("@unit_price", item.UnitPrice);
+                cmd.Parameters.AddWithValue("@line_order", item.LineOrder);
+                cmd.Parameters.AddWithValue("@notes", item.Notes ?? (object)DBNull.Value);
+                
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        private void SaveStageSummary(EstimateStageSummary summary, int estimateId, MySqlConnection connection, MySqlTransaction transaction)
+        {
+            var query = @"
+                INSERT INTO EstimateStageSummary (estimate_id, stage, estimated_hours, estimated_material)
+                VALUES (@estimate_id, @stage, @estimated_hours, @estimated_material)";
+
+            using (var cmd = new MySqlCommand(query, connection, transaction))
+            {
+                cmd.Parameters.AddWithValue("@estimate_id", estimateId);
+                cmd.Parameters.AddWithValue("@stage", summary.Stage);
+                cmd.Parameters.AddWithValue("@estimated_hours", summary.EstimatedHours);
+                cmd.Parameters.AddWithValue("@estimated_material", summary.EstimatedMaterial);
+                
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        #endregion
+
+        #region Customer Methods
+
         public List<Customer> GetAllCustomers()
         {
             var customers = new List<Customer>();
-            string query = "SELECT * FROM Customers ORDER BY name";
-            var dataTable = ExecuteQuery(query);
-            foreach (DataRow row in dataTable.Rows)
+            
+            using (var connection = new MySqlConnection(_connectionString))
             {
-                customers.Add(CreateCustomerFromRow(row));
+                connection.Open();
+                var query = "SELECT * FROM Customers ORDER BY name";
+                
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            customers.Add(new Customer
+                            {
+                                CustomerId = reader.GetInt32("customer_id"),
+                                Name = reader.GetString("name"),
+                                Address = reader.IsDBNull(reader.GetOrdinal("address")) ? null : reader.GetString("address"),
+                                City = reader.IsDBNull(reader.GetOrdinal("city")) ? null : reader.GetString("city"),
+                                State = reader.IsDBNull(reader.GetOrdinal("state")) ? null : reader.GetString("state"),
+                                Zip = reader.IsDBNull(reader.GetOrdinal("zip")) ? null : reader.GetString("zip"),
+                                Email = reader.IsDBNull(reader.GetOrdinal("email")) ? null : reader.GetString("email"),
+                                Phone = reader.IsDBNull(reader.GetOrdinal("phone")) ? null : reader.GetString("phone")
+                            });
+                        }
+                    }
+                }
             }
+            
             return customers;
         }
 
-        public Customer GetCustomerById(int customerId)
+        public void SaveCustomer(Customer customer)
         {
-            var parameters = new Dictionary<string, object> { { "@customerId", customerId } };
-            string query = "SELECT * FROM Customers WHERE customer_id = @customerId";
-            var dataTable = ExecuteQuery(query, parameters);
-            return dataTable.Rows.Count == 0 ? null : CreateCustomerFromRow(dataTable.Rows[0]);
-        }
-
-        public Customer GetCustomerByName(string name)
-        {
-            var parameters = new Dictionary<string, object> { { "@name", name } };
-            string query = "SELECT * FROM Customers WHERE name = @name";
-            var dataTable = ExecuteQuery(query, parameters);
-            return dataTable.Rows.Count == 0 ? null : CreateCustomerFromRow(dataTable.Rows[0]);
-        }
-
-        public int AddCustomer(Customer customer)
-        {
-            string query = @"INSERT INTO Customers (name, address, city, state, zip, email, phone, notes) VALUES (@name, @address, @city, @state, @zip, @email, @phone, @notes)";
-            var parameters = new Dictionary<string, object>
+            using (var connection = new MySqlConnection(_connectionString))
             {
-                { "@name", customer.Name },
-                { "@address", customer.Address },
-                { "@city", customer.City },
-                { "@state", customer.State },
-                { "@zip", customer.Zip },
-                { "@email", customer.Email },
-                { "@phone", customer.Phone },
-                { "@notes", customer.Notes }
-            };
-            ExecuteNonQuery(query, parameters);
-            return (int)GetLastInsertedId();
-        }
-
-        public void UpdateCustomer(Customer customer)
-        {
-            string query = @"UPDATE Customers SET name = @name, address = @address, city = @city, state = @state, zip = @zip, email = @email, phone = @phone, notes = @notes WHERE customer_id = @customerId";
-            var parameters = new Dictionary<string, object>
-            {
-                { "@customerId", customer.CustomerId },
-                { "@name", customer.Name },
-                { "@address", customer.Address },
-                { "@city", customer.City },
-                { "@state", customer.State },
-                { "@zip", customer.Zip },
-                { "@email", customer.Email },
-                { "@phone", customer.Phone },
-                { "@notes", customer.Notes }
-            };
-            ExecuteNonQuery(query, parameters);
-        }
-
-        public void DeleteCustomer(int customerId)
-        {
-            string query = "DELETE FROM Customers WHERE customer_id = @customerId";
-            var parameters = new Dictionary<string, object> { { "@customerId", customerId } };
-            ExecuteNonQuery(query, parameters);
-        }
-
-        private Customer CreateCustomerFromRow(DataRow row)
-        {
-            return new Customer
-            {
-                CustomerId = Convert.ToInt32(row["customer_id"]),
-                Name = row["name"].ToString(),
-                Address = row["address"]?.ToString(),
-                City = row["city"]?.ToString(),
-                State = row["state"]?.ToString(),
-                Zip = row["zip"]?.ToString(),
-                Email = row["email"]?.ToString(),
-                Phone = row["phone"]?.ToString(),
-                Notes = row["notes"]?.ToString()
-            };
-        }
-        #endregion
-
-        #region Employee Operations
-        public List<Employee> GetAllEmployees()
-        {
-            var employees = new List<Employee>();
-            string query = "SELECT * FROM Employees WHERE status = 'Active' ORDER BY name";
-            var dataTable = ExecuteQuery(query);
-            foreach (DataRow row in dataTable.Rows)
-            {
-                employees.Add(new Employee
+                connection.Open();
+                
+                if (customer.CustomerId == 0)
                 {
-                    EmployeeId = Convert.ToInt32(row["employee_id"]),
-                    Name = row["name"].ToString(),
-                    HourlyRate = Convert.ToDecimal(row["hourly_rate"]),
-                    BurdenRate = row["burden_rate"] != DBNull.Value ? Convert.ToDecimal(row["burden_rate"]) : (decimal?)null,
-                    Status = row["status"].ToString(),
-                    Notes = row["notes"]?.ToString()
-                });
+                    var query = @"
+                        INSERT INTO Customers (name, address, city, state, zip, email, phone, notes)
+                        VALUES (@name, @address, @city, @state, @zip, @email, @phone, @notes)";
+                    
+                    using (var cmd = new MySqlCommand(query, connection))
+                    {
+                        cmd.Parameters.AddWithValue("@name", customer.Name);
+                        cmd.Parameters.AddWithValue("@address", customer.Address ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@city", customer.City ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@state", customer.State ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@zip", customer.Zip ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@email", customer.Email ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@phone", customer.Phone ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@notes", customer.Notes ?? (object)DBNull.Value);
+                        
+                        cmd.ExecuteNonQuery();
+                        customer.CustomerId = (int)cmd.LastInsertedId;
+                    }
+                }
             }
-            return employees;
         }
 
-        public List<Employee> GetActiveEmployees()
-        {
-            return GetAllEmployees();
-        }
         #endregion
-
-        #region Vendor Operations
-        public List<Vendor> GetAllVendors()
-        {
-            var vendors = new List<Vendor>();
-            string query = "SELECT * FROM Vendors ORDER BY name";
-            var dataTable = ExecuteQuery(query);
-            foreach (DataRow row in dataTable.Rows)
-            {
-                vendors.Add(new Vendor
-                {
-                    VendorId = Convert.ToInt32(row["vendor_id"]),
-                    Name = row["name"].ToString(),
-                    Address = row["address"]?.ToString(),
-                    City = row["city"]?.ToString(),
-                    State = row["state"]?.ToString(),
-                    Zip = row["zip"]?.ToString(),
-                    Phone = row["phone"]?.ToString(),
-                    Email = row["email"]?.ToString(),
-                    Notes = row["notes"]?.ToString()
-                });
-            }
-            return vendors;
-        }
-        #endregion
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!_disposed)
-            {
-                _disposed = true;
-            }
-        }
     }
 }
