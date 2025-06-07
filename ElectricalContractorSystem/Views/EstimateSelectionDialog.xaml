@@ -1,0 +1,175 @@
+<Window x:Class="ElectricalContractorSystem.Views.EstimateSelectionDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Select Estimate" 
+        Height="600" Width="900"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        ResizeMode="CanResize"
+        MinHeight="400" MinWidth="700">
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <Border Grid.Row="0" Background="{StaticResource PrimaryBrush}" Padding="20">
+            <TextBlock Text="Select Estimate to Convert to Job" 
+                       FontSize="20" FontWeight="Bold" 
+                       Foreground="White"/>
+        </Border>
+        
+        <!-- Search and Filter -->
+        <Grid Grid.Row="1" Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            
+            <!-- Search and Filter Bar -->
+            <Grid Grid.Row="0" Margin="0,0,0,15">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <TextBox Grid.Column="0" 
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource SearchBoxStyle}"
+                         Tag="Search estimates..."/>
+                
+                <ComboBox Grid.Column="1" 
+                          Margin="10,0"
+                          SelectedValue="{Binding StatusFilter}"
+                          SelectedValuePath="Tag">
+                    <ComboBoxItem Content="All Statuses" Tag="{x:Null}"/>
+                    <ComboBoxItem Content="Draft" Tag="Draft"/>
+                    <ComboBoxItem Content="Sent" Tag="Sent"/>
+                    <ComboBoxItem Content="Approved" Tag="Approved"/>
+                    <ComboBoxItem Content="Rejected" Tag="Rejected"/>
+                    <ComboBoxItem Content="Expired" Tag="Expired"/>
+                </ComboBox>
+                
+                <Button Grid.Column="2" 
+                        Content="Refresh" 
+                        Command="{Binding RefreshCommand}"
+                        Style="{StaticResource SecondaryButtonStyle}"/>
+            </Grid>
+            
+            <!-- Estimate List -->
+            <DataGrid Grid.Row="1" 
+                      ItemsSource="{Binding FilteredEstimates}"
+                      SelectedItem="{Binding SelectedEstimate}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      GridLinesVisibility="Horizontal"
+                      BorderThickness="1"
+                      BorderBrush="#E0E0E0"
+                      MouseDoubleClick="DataGrid_MouseDoubleClick">
+                
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Estimate #" 
+                                        Binding="{Binding EstimateNumber}" 
+                                        Width="100"/>
+                    <DataGridTextColumn Header="Version" 
+                                        Binding="{Binding Version}" 
+                                        Width="60"/>
+                    <DataGridTextColumn Header="Customer" 
+                                        Binding="{Binding Customer.Name}" 
+                                        Width="2*"/>
+                    <DataGridTextColumn Header="Job Name" 
+                                        Binding="{Binding JobName}" 
+                                        Width="2*"/>
+                    <DataGridTemplateColumn Header="Status" Width="100">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource StatusBadgeStyle}"
+                                        HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding Status}" 
+                                               FontSize="11" 
+                                               FontWeight="Medium"/>
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="Date" 
+                                        Binding="{Binding CreatedDate, StringFormat='{}{0:MM/dd/yyyy}'}" 
+                                        Width="100"/>
+                    <DataGridTextColumn Header="Total" 
+                                        Binding="{Binding TotalCost, StringFormat='${0:N2}'}" 
+                                        Width="100">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="TextAlignment" Value="Right"/>
+                                <Setter Property="Padding" Value="0,0,10,0"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                </DataGrid.Columns>
+                
+                <DataGrid.RowStyle>
+                    <Style TargetType="DataGridRow">
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#F5F5F5"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="{StaticResource SystemHighlightColor}"/>
+                            </Trigger>
+                            <DataTrigger Binding="{Binding Status}" Value="Approved">
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.RowStyle>
+            </DataGrid>
+        </Grid>
+        
+        <!-- Footer -->
+        <Border Grid.Row="2" Background="#F8F9FA" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0">
+            <Grid Margin="20,15">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Selected: " 
+                               Foreground="{StaticResource DarkGrayBrush}"/>
+                    <TextBlock Text="{Binding SelectedEstimate.EstimateNumber, FallbackValue='None'}" 
+                               FontWeight="Medium"
+                               Foreground="{StaticResource DarkGrayBrush}"/>
+                    <TextBlock Text=" - " 
+                               Foreground="{StaticResource DarkGrayBrush}"
+                               Visibility="{Binding SelectedEstimate, Converter={StaticResource NotNullToVisibilityConverter}}"/>
+                    <TextBlock Text="{Binding SelectedEstimate.Customer.Name}" 
+                               FontWeight="Medium"
+                               Foreground="{StaticResource DarkGrayBrush}"
+                               Visibility="{Binding SelectedEstimate, Converter={StaticResource NotNullToVisibilityConverter}}"/>
+                </StackPanel>
+                
+                <Button Grid.Column="1" 
+                        Content="Cancel" 
+                        Click="CancelButton_Click"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Width="100"
+                        Margin="0,0,10,0"/>
+                
+                <Button Grid.Column="2" 
+                        Content="Select" 
+                        Command="{Binding SelectCommand}"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        Width="100"
+                        IsDefault="True"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
