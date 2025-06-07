@@ -27,7 +27,7 @@ namespace ElectricalContractorSystem.ViewModels
             
             // Initialize commands
             SelectCommand = new RelayCommand(ExecuteSelect, CanExecuteSelect);
-            AddCustomerCommand = new RelayCommand(ExecuteAddCustomer);
+            NewCustomerCommand = new RelayCommand(ExecuteNewCustomer);
             
             LoadCustomers();
         }
@@ -71,7 +71,7 @@ namespace ElectricalContractorSystem.ViewModels
         #region Commands
         
         public ICommand SelectCommand { get; }
-        public ICommand AddCustomerCommand { get; }
+        public ICommand NewCustomerCommand { get; }
         
         #endregion
         
@@ -84,10 +84,10 @@ namespace ElectricalContractorSystem.ViewModels
         
         private void ExecuteSelect(object parameter)
         {
-            OnCustomerSelected?.Invoke();
+            CloseRequested?.Invoke(this, true);
         }
         
-        private void ExecuteAddCustomer(object parameter)
+        private void ExecuteNewCustomer(object parameter)
         {
             var dialog = new AddCustomerDialog();
             if (dialog.ShowDialog() == true)
@@ -98,6 +98,12 @@ namespace ElectricalContractorSystem.ViewModels
                 
                 // Select the newly added customer
                 SelectedCustomer = Customers.FirstOrDefault(c => c.CustomerId == customer.CustomerId);
+                
+                // Auto-close with the new customer selected
+                if (SelectedCustomer != null)
+                {
+                    CloseRequested?.Invoke(this, true);
+                }
             }
         }
         
@@ -143,7 +149,7 @@ namespace ElectricalContractorSystem.ViewModels
         
         #region Events
         
-        public event Action OnCustomerSelected;
+        public event EventHandler<bool> CloseRequested;
         
         #endregion
     }
