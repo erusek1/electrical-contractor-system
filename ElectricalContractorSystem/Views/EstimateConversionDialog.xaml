@@ -1,0 +1,191 @@
+<Window x:Class="ElectricalContractorSystem.Views.EstimateConversionDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Convert Estimate to Job" 
+        Height="600" Width="700"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        ResizeMode="NoResize">
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <Border Grid.Row="0" Background="{StaticResource PrimaryBrush}" Padding="20">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                
+                <TextBlock Grid.Row="0" 
+                           Text="Convert Estimate to Job" 
+                           FontSize="20" FontWeight="Bold" 
+                           Foreground="White"/>
+                
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,10,0,0">
+                    <TextBlock Text="{Binding EstimateInfo}" 
+                               Foreground="White" Opacity="0.9"
+                               Margin="0,0,20,0"/>
+                    <TextBlock Text="{Binding CustomerInfo}" 
+                               Foreground="White" Opacity="0.9"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+        
+        <!-- Content -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <Grid Margin="30">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                
+                <!-- Job Number Section -->
+                <Border Grid.Row="0" Style="{StaticResource CardStyle}" Margin="0,0,0,20">
+                    <StackPanel>
+                        <TextBlock Text="Job Information" Style="{StaticResource SectionHeaderStyle}"/>
+                        
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBlock Grid.Column="0" 
+                                       Text="Job Number:" 
+                                       VerticalAlignment="Center"
+                                       FontWeight="Medium"/>
+                            
+                            <TextBox Grid.Column="1" 
+                                     Text="{Binding JobNumber}"
+                                     FontSize="16"
+                                     FontWeight="Bold"
+                                     Margin="10,0"/>
+                            
+                            <TextBlock Grid.Column="2" 
+                                       Text="(Required - Must be unique)"
+                                       VerticalAlignment="Center"
+                                       Foreground="{StaticResource DarkGrayBrush}"
+                                       FontStyle="Italic"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Conversion Options -->
+                <Border Grid.Row="1" Style="{StaticResource CardStyle}" Margin="0,0,0,20">
+                    <StackPanel>
+                        <TextBlock Text="Conversion Options" Style="{StaticResource SectionHeaderStyle}"/>
+                        
+                        <CheckBox IsChecked="{Binding IncludeAllStages}" 
+                                  Margin="0,5">
+                            <TextBlock>
+                                <TextBlock.Text>Include all estimate stages</TextBlock.Text>
+                                <TextBlock.ToolTip>Creates job stages for Demo, Rough, Service, Finish, etc. with estimated hours and materials</TextBlock.ToolTip>
+                            </TextBlock>
+                        </CheckBox>
+                        
+                        <CheckBox IsChecked="{Binding IncludeMaterialCosts}" 
+                                  Margin="0,5">
+                            <TextBlock>
+                                <TextBlock.Text>Include estimated material costs</TextBlock.Text>
+                                <TextBlock.ToolTip>Copies material cost estimates to each job stage</TextBlock.ToolTip>
+                            </TextBlock>
+                        </CheckBox>
+                        
+                        <CheckBox IsChecked="{Binding IncludeRoomSpecifications}" 
+                                  Margin="0,5">
+                            <TextBlock>
+                                <TextBlock.Text>Include room specifications</TextBlock.Text>
+                                <TextBlock.ToolTip>Copies detailed room-by-room specifications to the job</TextBlock.ToolTip>
+                            </TextBlock>
+                        </CheckBox>
+                        
+                        <CheckBox IsChecked="{Binding IncludePermitItems}" 
+                                  Margin="0,5">
+                            <TextBlock>
+                                <TextBlock.Text>Include permit items</TextBlock.Text>
+                                <TextBlock.ToolTip>Copies permit item counts for electrical inspections</TextBlock.ToolTip>
+                            </TextBlock>
+                        </CheckBox>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Notes Section -->
+                <Border Grid.Row="2" Style="{StaticResource CardStyle}" Margin="0,0,0,20">
+                    <StackPanel>
+                        <TextBlock Text="Conversion Notes" Style="{StaticResource SectionHeaderStyle}"/>
+                        <TextBox Text="{Binding Notes}"
+                                 TextWrapping="Wrap"
+                                 AcceptsReturn="True"
+                                 Height="80"
+                                 VerticalScrollBarVisibility="Auto"/>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Summary -->
+                <Border Grid.Row="3" Style="{StaticResource CardStyle}" 
+                        Background="#FFF9C4" BorderBrush="#FFB300">
+                    <StackPanel>
+                        <TextBlock Text="Summary" FontWeight="Bold" Margin="0,0,0,10"/>
+                        <TextBlock TextWrapping="Wrap">
+                            <TextBlock.Text>This will create a new job from the approved estimate. The estimate will be marked as converted and linked to the new job. You can track actual hours and costs against the estimated values.</TextBlock.Text>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Status -->
+                <TextBlock Grid.Row="4" 
+                           Text="{Binding ConversionStatus}"
+                           Margin="0,20,0,0"
+                           FontWeight="Medium"
+                           HorizontalAlignment="Center"
+                           Visibility="{Binding ConversionStatus, Converter={StaticResource NotNullOrEmptyToVisibilityConverter}}"/>
+            </Grid>
+        </ScrollViewer>
+        
+        <!-- Footer -->
+        <Border Grid.Row="2" Background="#F8F9FA" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0">
+            <Grid Margin="20,15">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <ProgressBar Grid.Column="0" 
+                             IsIndeterminate="True"
+                             Height="20"
+                             VerticalAlignment="Center"
+                             Margin="0,0,20,0"
+                             Visibility="{Binding IsConverting, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                
+                <Button Grid.Column="1" 
+                        Content="Cancel" 
+                        Command="{Binding CancelCommand}"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Width="100"
+                        Margin="0,0,10,0"
+                        IsEnabled="{Binding IsConverting, Converter={StaticResource InverseBooleanConverter}}"/>
+                
+                <Button Grid.Column="2" 
+                        Content="Convert to Job" 
+                        Command="{Binding ConvertCommand}"
+                        Style="{StaticResource AccentButtonStyle}"
+                        Width="120"
+                        IsDefault="True"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
