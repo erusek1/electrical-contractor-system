@@ -1,78 +1,142 @@
-# Electrical Contractor System - Implementation
+# Electrical Contractor Estimating System
 
-This repository contains the implementation files for the Electrical Contractor System, a database-driven application to replace Excel-based business management for electrical contractors.
+A comprehensive database-driven system for managing electrical contracting business operations, with a focus on job estimation, tracking, and billing.
 
-## Project Structure
+## Features
 
-### Database
-- `database/electrical_contractor_db.sql` - MySQL database schema with tables for Jobs, Customers, Labor, etc.
+### Estimating Module
+- **Room-by-Room Estimation**: Build detailed estimates organized by rooms
+- **Quick Item Entry**: Use familiar short codes (like "hh" for recessed lights)
+- **Automatic Calculations**: Labor hours and material costs calculated automatically
+- **Price List Management**: Maintain your standard items with labor minutes
+- **PDF Generation**: Create professional proposals for customers
+- **Version Control**: Track estimate revisions
 
-### Data Migration
-- `migration/customer_job_migration.py` - Script to import customers and jobs from Jobs List.xlsx
-- `migration/material_labor_migration.py` - Script to import material and labor entries from ERE.xlsx
-- `migration/price_list_migration.py` - Script to import price list from template 3.xlsx
-- `migration/job_sheet_migration.py` - Script to import individual job sheets
+### Core Features
+- Modern WPF interface replacing Excel-based workflows
+- MySQL database for reliable data storage
+- Labor tracking by job stage (Rough, Finish, Service, etc.)
+- Material cost tracking with vendor management
+- Profit analysis (Estimated vs Actual)
+- Permit item counting for inspections
 
-### Application
-- `ElectricalContractorSystem.sln` - Visual Studio solution file
-- `ElectricalContractorSystem/ElectricalContractorSystem.csproj` - C# WPF project file
-- `ElectricalContractorSystem/App.config` - Application configuration with database connection
-- Core application files (App.xaml, MainWindow.xaml, etc.)
+## System Requirements
 
-## Models
+- Windows 7 or later
+- .NET Framework 4.7.2 or later
+- MySQL Server 5.7 or later
+- Visual Studio 2019 or later (for development)
 
-Complete data models have been implemented:
+## Installation
 
-- `Customer` - Customer contact information
-- `Job` - Project details including job number, address, square footage
-- `JobStage` - Tracking of each project phase (Demo, Rough, Service, etc.)
-- `Employee` - Employee information with hourly rates
-- `LaborEntry` - Individual employee time entries
-- `MaterialEntry` - Material purchases and costs
-- `Vendor` - Vendor information
-- `PriceList` - Catalog of standard items with pricing
-- `RoomSpecification` - Room-by-room electrical specifications
-- `PermitItem` - Items needed for permit applications
+### 1. Database Setup
 
-## Services
+1. Install MySQL Server if not already installed
+2. Create a new database:
+   ```sql
+   CREATE DATABASE electrical_estimating_db;
+   ```
+3. Run the database schema script:
+   ```sql
+   mysql -u your_username -p electrical_estimating_db < database/electrical_estimating_db.sql
+   ```
 
-- `DatabaseService` - Service for handling database operations
+### 2. Application Configuration
 
-## UI Components
+1. Open `ElectricalContractorSystem/App.config`
+2. Update the connection string with your MySQL credentials:
+   ```xml
+   <connectionStrings>
+       <add name="ElectricalDB" 
+            connectionString="Server=localhost;Database=electrical_estimating_db;Uid=your_username;Pwd=your_password;" 
+            providerName="MySql.Data.MySqlClient" />
+   </connectionStrings>
+   ```
 
-- `MainWindow` - Primary application window with navigation menu
-- UI converters for status indicators (colors, visibility)
-- MVVM pattern implementation with ViewModelBase and RelayCommand
+### 3. Build and Run
 
-## Features Implemented
+1. Open `ElectricalContractorSystem.sln` in Visual Studio
+2. Restore NuGet packages (MySql.Data)
+3. Build the solution (F6)
+4. Run the application (F5)
 
-- Core data model structure matching database schema
-- Database connection and operations service
-- Application framework with navigation
-- Input/output converters for UI
+## Quick Start Guide
 
-## Getting Started
+### Creating Your First Estimate
 
-1. Create MySQL database using the schema in `/database/electrical_contractor_db.sql`
-2. Update database connection string in `ElectricalContractorSystem/App.config`
-3. Run migration scripts to import existing data from Excel files
-4. Open solution in Visual Studio and run the application
+1. **Launch the application** and click "File" → "New Estimate"
+2. **Select or create a customer**
+3. **Add rooms** using the "Add Room" button
+4. **Add items to rooms**:
+   - Search by item code (e.g., "hh" for recessed lights)
+   - Select the item from the price list
+   - Click "Add Selected Item"
+   - Adjust quantities as needed
+5. **Save the estimate** using the "Save Estimate" button
 
-## Next Steps
+### Understanding the Interface
 
-1. Complete implementation of all views:
-   - Job Management
-   - Weekly Labor Entry
-   - Material Entry
-   - Job Cost Tracking
-   - Job Details
-2. Implement validation and error handling
-3. Add reporting capabilities
-4. Develop comprehensive testing
+- **Left Panel**: List of rooms in the estimate
+- **Center Panel**: Items in the selected room
+- **Right Panel**: Price list for adding items
+- **Bottom Bar**: Running totals for labor hours and costs
 
-## Development Notes
+## Migrating from Excel
 
-- C# WPF application using MVVM architecture
-- MySQL database backend
-- Designed for easy data entry and validation
-- Focus on data integrity and business rule enforcement
+See the `migration` folder for Python scripts to import your existing data:
+- `import_price_list.py` - Import your price list from Excel
+- `import_customers.py` - Import customer data
+- `import_jobs.py` - Import historical job data
+
+## Item Codes Reference
+
+Common item codes from your Excel system:
+- `hh` - 4" LED recessed light (high hat)
+- `O` - Decora Outlet
+- `S` - Single Pole Decora Switch
+- `3W` - 3-way Decora Switch
+- `Gfi` - 15a TP GFI
+- `fridge` - Refrigerator receptacle
+- `micro` - Microwave receptacle
+- `dw` - Dishwasher receptacle
+
+## Development
+
+### Project Structure
+
+```
+ElectricalContractorSystem/
+├── Models/          # Data models (Customer, Estimate, etc.)
+├── ViewModels/      # MVVM ViewModels
+├── Views/           # WPF Views (XAML)
+├── Services/        # Database and business logic
+├── Helpers/         # Utility classes
+└── database/        # SQL schema and scripts
+```
+
+### Adding New Features
+
+1. **Models**: Define data structures in the Models folder
+2. **Database**: Update the schema if adding new tables
+3. **ViewModels**: Implement business logic following MVVM pattern
+4. **Views**: Create WPF interfaces in XAML
+
+## Support
+
+For questions or issues:
+- Check the `docs` folder for detailed documentation
+- Review the database schema in `database/electrical_estimating_db.sql`
+- Contact: erik@erikrusekelectric.com
+
+## License
+
+Proprietary - Erik Rusek Electric
+
+## Roadmap
+
+- [ ] Invoice generation from completed jobs
+- [ ] QuickBooks integration
+- [ ] Mobile app for field updates
+- [ ] Supplier price update integration
+- [ ] Advanced reporting dashboard
+- [ ] Multi-user support with permissions
