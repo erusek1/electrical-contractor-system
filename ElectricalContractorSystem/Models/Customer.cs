@@ -1,94 +1,62 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
+using System.ComponentModel.DataAnnotations;
 
 namespace ElectricalContractorSystem.Models
 {
-    /// <summary>
-    /// Customer model representing customer information
-    /// </summary>
-    public class Customer : INotifyPropertyChanged
+    public class Customer
     {
-        private int _customerId;
-        private string _name;
-        private string _address;
-        private string _city;
-        private string _state;
-        private string _zip;
-        private string _email;
-        private string _phone;
-        private string _notes;
-
-        public int CustomerId
+        public int CustomerId { get; set; }
+        
+        [Required]
+        [StringLength(100)]
+        public string Name { get; set; }
+        
+        [StringLength(255)]
+        public string Address { get; set; }
+        
+        [StringLength(50)]
+        public string City { get; set; }
+        
+        [StringLength(2)]
+        public string State { get; set; }
+        
+        [StringLength(10)]
+        public string Zip { get; set; }
+        
+        [EmailAddress]
+        [StringLength(100)]
+        public string Email { get; set; }
+        
+        [Phone]
+        [StringLength(20)]
+        public string Phone { get; set; }
+        
+        public string Notes { get; set; }
+        
+        public DateTime CreatedDate { get; set; }
+        
+        // Navigation properties
+        public virtual ICollection<Estimate> Estimates { get; set; }
+        
+        public Customer()
         {
-            get => _customerId;
-            set => SetProperty(ref _customerId, value);
+            Estimates = new HashSet<Estimate>();
+            CreatedDate = DateTime.Now;
         }
-
-        public string Name
+        
+        // Full address helper
+        public string FullAddress
         {
-            get => _name;
-            set => SetProperty(ref _name, value);
-        }
-
-        public string Address
-        {
-            get => _address;
-            set => SetProperty(ref _address, value);
-        }
-
-        public string City
-        {
-            get => _city;
-            set => SetProperty(ref _city, value);
-        }
-
-        public string State
-        {
-            get => _state;
-            set => SetProperty(ref _state, value);
-        }
-
-        public string Zip
-        {
-            get => _zip;
-            set => SetProperty(ref _zip, value);
-        }
-
-        public string Email
-        {
-            get => _email;
-            set => SetProperty(ref _email, value);
-        }
-
-        public string Phone
-        {
-            get => _phone;
-            set => SetProperty(ref _phone, value);
-        }
-
-        public string Notes
-        {
-            get => _notes;
-            set => SetProperty(ref _notes, value);
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-        protected bool SetProperty<T>(ref T backingStore, T value, [CallerMemberName] string propertyName = "")
-        {
-            if (EqualityComparer<T>.Default.Equals(backingStore, value))
-                return false;
-
-            backingStore = value;
-            OnPropertyChanged(propertyName);
-            return true;
+            get
+            {
+                var parts = new List<string>();
+                if (!string.IsNullOrWhiteSpace(Address)) parts.Add(Address);
+                if (!string.IsNullOrWhiteSpace(City)) parts.Add(City);
+                if (!string.IsNullOrWhiteSpace(State)) parts.Add(State);
+                if (!string.IsNullOrWhiteSpace(Zip)) parts.Add(Zip);
+                return string.Join(", ", parts);
+            }
         }
     }
 }
