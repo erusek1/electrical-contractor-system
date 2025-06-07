@@ -4,14 +4,25 @@
              xmlns:local="clr-namespace:ElectricalContractorSystem"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-        <!-- Global styles and resources -->
-        <Style TargetType="Button">
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="FontWeight" Value="Medium"/>
-        </Style>
-        
-        <Style TargetType="TextBox">
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-        </Style>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Estimate Styles -->
+                <ResourceDictionary Source="Resources/EstimateStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            
+            <!-- Global styles and resources -->
+            <Style TargetType="Button">
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="FontWeight" Value="Medium"/>
+            </Style>
+            
+            <Style TargetType="TextBox">
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+            </Style>
+            
+            <!-- Global Color Overrides -->
+            <SolidColorBrush x:Key="SystemAccentColor" Color="#3498DB"/>
+            <SolidColorBrush x:Key="SystemHighlightColor" Color="#E3F2FD"/>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>
