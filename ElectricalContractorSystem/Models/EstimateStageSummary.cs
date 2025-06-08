@@ -4,10 +4,9 @@ namespace ElectricalContractorSystem.Models
     {
         public int SummaryId { get; set; }
         public int EstimateId { get; set; }
-        public string StageName { get; set; }
-        public int TotalLaborMinutes { get; set; }
-        public decimal TotalLaborHours { get; set; }
-        public decimal TotalMaterialCost { get; set; }
+        public string Stage { get; set; }
+        public decimal LaborHours { get; set; }
+        public decimal MaterialCost { get; set; }
         public int StageOrder { get; set; }
     }
 }
