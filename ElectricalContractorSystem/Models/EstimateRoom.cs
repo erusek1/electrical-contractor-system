@@ -8,11 +8,12 @@ namespace ElectricalContractorSystem.Models
         public int EstimateId { get; set; }
         public string RoomName { get; set; }
         public int RoomOrder { get; set; }
-        public List<EstimateItem> Items { get; set; }
+        public string Notes { get; set; }
+        public List<EstimateLineItem> Items { get; set; }
 
         public EstimateRoom()
         {
-            Items = new List<EstimateItem>();
+            Items = new List<EstimateLineItem>();
         }
     }
 }
