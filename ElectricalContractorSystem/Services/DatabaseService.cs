@@ -27,70 +27,82 @@ namespace ElectricalContractorSystem.Services
             {
                 connection.Open();
                 var query = @"
-                    SELECT p.*, 
-                           l.stage as labor_stage, l.minutes,
-                           m.stage as material_stage, m.material_cost
-                    FROM PriceListItems p
-                    LEFT JOIN LaborMinutes l ON p.item_id = l.item_id
-                    LEFT JOIN MaterialStages m ON p.item_id = m.item_id
-                    WHERE p.is_active = 1
-                    ORDER BY p.category, p.name";
+                    SELECT item_id, category, item_code, name, description, 
+                           base_cost, tax_rate, labor_minutes, markup_percentage, 
+                           is_active, notes
+                    FROM PriceList
+                    WHERE is_active = 1
+                    ORDER BY category, name";
 
                 using (var cmd = new MySqlCommand(query, connection))
                 {
                     using (var reader = cmd.ExecuteReader())
                     {
-                        var itemDict = new Dictionary<int, PriceListItem>();
-                        
                         while (reader.Read())
                         {
-                            var itemId = reader.GetInt32("item_id");
-                            
-                            if (!itemDict.ContainsKey(itemId))
+                            var item = new PriceListItem
                             {
-                                var item = new PriceListItem
-                                {
-                                    ItemId = itemId,
-                                    ItemCode = reader.GetString("item_code"),
-                                    Name = reader.GetString("name"),
-                                    Description = reader.IsDBNull(reader.GetOrdinal("description")) ? null : reader.GetString("description"),
-                                    BasePrice = reader.GetDecimal("base_price"),
-                                    TaxRate = reader.GetDecimal("tax_rate"),
-                                    Unit = reader.GetString("unit"),
-                                    Category = reader.IsDBNull(reader.GetOrdinal("category")) ? null : reader.GetString("category"),
-                                    IsActive = reader.GetBoolean("is_active")
-                                };
-                                itemDict[itemId] = item;
-                                items.Add(item);
-                            }
-                            
-                            // Add labor minutes if present
-                            if (!reader.IsDBNull(reader.GetOrdinal("labor_stage")))
-                            {
-                                itemDict[itemId].LaborMinutes.Add(new LaborMinute
-                                {
-                                    ItemId = itemId,
-                                    Stage = reader.GetString("labor_stage"),
-                                    Minutes = reader.GetInt32("minutes")
-                                });
-                            }
-                            
-                            // Add material stages if present
-                            if (!reader.IsDBNull(reader.GetOrdinal("material_stage")))
-                            {
-                                itemDict[itemId].MaterialStages.Add(new MaterialStage
-                                {
-                                    ItemId = itemId,
-                                    Stage = reader.GetString("material_stage"),
-                                    MaterialCost = reader.GetDecimal("material_cost")
-                                });
-                            }
+                                ItemId = reader.GetInt32("item_id"),
+                                Category = reader.IsDBNull(reader.GetOrdinal("category")) ? null : reader.GetString("category"),
+                                ItemCode = reader.GetString("item_code"),
+                                Name = reader.GetString("name"),
+                                Description = reader.IsDBNull(reader.GetOrdinal("description")) ? null : reader.GetString("description"),
+                                BaseCost = reader.GetDecimal("base_cost"),
+                                TaxRate = reader.GetDecimal("tax_rate"),
+                                LaborMinutes = reader.GetInt32("labor_minutes"),
+                                MarkupPercentage = reader.GetDecimal("markup_percentage"),
+                                IsActive = reader.GetBoolean("is_active"),
+                                Notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString("notes")
+                            };
+                            items.Add(item);
                         }
                     }
                 }
             }
             
             return items;
+        }
+
+        public PriceListItem GetPriceListItemByCode(string itemCode)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = @"
+                    SELECT item_id, category, item_code, name, description, 
+                           base_cost, tax_rate, labor_minutes, markup_percentage, 
+                           is_active, notes
+                    FROM PriceList
+                    WHERE item_code = @itemCode AND is_active = 1";
+
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    cmd.Parameters.AddWithValue("@itemCode", itemCode);
+                    
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            return new PriceListItem
+                            {
+                                ItemId = reader.GetInt32("item_id"),
+                                Category = reader.IsDBNull(reader.GetOrdinal("category")) ? null : reader.GetString("category"),
+                                ItemCode = reader.GetString("item_code"),
+                                Name = reader.GetString("name"),
+                                Description = reader.IsDBNull(reader.GetOrdinal("description")) ? null : reader.GetString("description"),
+                                BaseCost = reader.GetDecimal("base_cost"),
+                                TaxRate = reader.GetDecimal("tax_rate"),
+                                LaborMinutes = reader.GetInt32("labor_minutes"),
+                                MarkupPercentage = reader.GetDecimal("markup_percentage"),
+                                IsActive = reader.GetBoolean("is_active"),
+                                Notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString("notes")
+                            };
+                        }
+                    }
+                }
+            }
+            
+            return null;
         }
 
         #endregion
@@ -108,6 +120,214 @@ namespace ElectricalContractorSystem.Services
                 {
                     var result = cmd.ExecuteScalar();
                     return result?.ToString() ?? "";
+                }
+            }
+        }
+
+        public List<Estimate> GetAllEstimates()
+        {
+            var estimates = new List<Estimate>();
+            
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = @"
+                    SELECT e.*, c.name as customer_name, c.address, c.city, c.state, c.zip, c.email, c.phone
+                    FROM Estimates e
+                    INNER JOIN Customers c ON e.customer_id = c.customer_id
+                    ORDER BY e.created_date DESC";
+                
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            var estimate = new Estimate
+                            {
+                                EstimateId = reader.GetInt32("estimate_id"),
+                                EstimateNumber = reader.GetString("estimate_number"),
+                                CustomerId = reader.GetInt32("customer_id"),
+                                JobName = reader.GetString("job_name"),
+                                JobAddress = reader.IsDBNull(reader.GetOrdinal("job_address")) ? null : reader.GetString("job_address"),
+                                JobCity = reader.IsDBNull(reader.GetOrdinal("job_city")) ? null : reader.GetString("job_city"),
+                                JobState = reader.IsDBNull(reader.GetOrdinal("job_state")) ? null : reader.GetString("job_state"),
+                                JobZip = reader.IsDBNull(reader.GetOrdinal("job_zip")) ? null : reader.GetString("job_zip"),
+                                SquareFootage = reader.IsDBNull(reader.GetOrdinal("square_footage")) ? (int?)null : reader.GetInt32("square_footage"),
+                                NumFloors = reader.IsDBNull(reader.GetOrdinal("num_floors")) ? (int?)null : reader.GetInt32("num_floors"),
+                                Status = reader.GetString("status"),
+                                CreatedDate = reader.GetDateTime("created_date"),
+                                ExpirationDate = reader.IsDBNull(reader.GetOrdinal("expiration_date")) ? (DateTime?)null : reader.GetDateTime("expiration_date"),
+                                Notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString("notes"),
+                                TaxRate = reader.GetDecimal("tax_rate"),
+                                MaterialMarkup = reader.GetDecimal("material_markup"),
+                                LaborRate = reader.GetDecimal("labor_rate"),
+                                TotalMaterialCost = reader.GetDecimal("total_material_cost"),
+                                TotalLaborMinutes = reader.GetInt32("total_labor_minutes"),
+                                TotalPrice = reader.GetDecimal("total_price"),
+                                JobId = reader.IsDBNull(reader.GetOrdinal("job_id")) ? (int?)null : reader.GetInt32("job_id"),
+                                Customer = new Customer
+                                {
+                                    CustomerId = reader.GetInt32("customer_id"),
+                                    Name = reader.GetString("customer_name"),
+                                    Address = reader.IsDBNull(reader.GetOrdinal("address")) ? null : reader.GetString("address"),
+                                    City = reader.IsDBNull(reader.GetOrdinal("city")) ? null : reader.GetString("city"),
+                                    State = reader.IsDBNull(reader.GetOrdinal("state")) ? null : reader.GetString("state"),
+                                    Zip = reader.IsDBNull(reader.GetOrdinal("zip")) ? null : reader.GetString("zip"),
+                                    Email = reader.IsDBNull(reader.GetOrdinal("email")) ? null : reader.GetString("email"),
+                                    Phone = reader.IsDBNull(reader.GetOrdinal("phone")) ? null : reader.GetString("phone")
+                                }
+                            };
+                            estimates.Add(estimate);
+                        }
+                    }
+                }
+            }
+            
+            return estimates;
+        }
+
+        public Estimate GetEstimateById(int estimateId)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                
+                // Get estimate details
+                var query = @"
+                    SELECT e.*, c.name as customer_name, c.address, c.city, c.state, c.zip, c.email, c.phone
+                    FROM Estimates e
+                    INNER JOIN Customers c ON e.customer_id = c.customer_id
+                    WHERE e.estimate_id = @estimateId";
+                
+                Estimate estimate = null;
+                
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    cmd.Parameters.AddWithValue("@estimateId", estimateId);
+                    
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            estimate = new Estimate
+                            {
+                                EstimateId = reader.GetInt32("estimate_id"),
+                                EstimateNumber = reader.GetString("estimate_number"),
+                                CustomerId = reader.GetInt32("customer_id"),
+                                JobName = reader.GetString("job_name"),
+                                JobAddress = reader.IsDBNull(reader.GetOrdinal("job_address")) ? null : reader.GetString("job_address"),
+                                JobCity = reader.IsDBNull(reader.GetOrdinal("job_city")) ? null : reader.GetString("job_city"),
+                                JobState = reader.IsDBNull(reader.GetOrdinal("job_state")) ? null : reader.GetString("job_state"),
+                                JobZip = reader.IsDBNull(reader.GetOrdinal("job_zip")) ? null : reader.GetString("job_zip"),
+                                SquareFootage = reader.IsDBNull(reader.GetOrdinal("square_footage")) ? (int?)null : reader.GetInt32("square_footage"),
+                                NumFloors = reader.IsDBNull(reader.GetOrdinal("num_floors")) ? (int?)null : reader.GetInt32("num_floors"),
+                                Status = reader.GetString("status"),
+                                CreatedDate = reader.GetDateTime("created_date"),
+                                ExpirationDate = reader.IsDBNull(reader.GetOrdinal("expiration_date")) ? (DateTime?)null : reader.GetDateTime("expiration_date"),
+                                Notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString("notes"),
+                                TaxRate = reader.GetDecimal("tax_rate"),
+                                MaterialMarkup = reader.GetDecimal("material_markup"),
+                                LaborRate = reader.GetDecimal("labor_rate"),
+                                TotalMaterialCost = reader.GetDecimal("total_material_cost"),
+                                TotalLaborMinutes = reader.GetInt32("total_labor_minutes"),
+                                TotalPrice = reader.GetDecimal("total_price"),
+                                JobId = reader.IsDBNull(reader.GetOrdinal("job_id")) ? (int?)null : reader.GetInt32("job_id"),
+                                Customer = new Customer
+                                {
+                                    CustomerId = reader.GetInt32("customer_id"),
+                                    Name = reader.GetString("customer_name"),
+                                    Address = reader.IsDBNull(reader.GetOrdinal("address")) ? null : reader.GetString("address"),
+                                    City = reader.IsDBNull(reader.GetOrdinal("city")) ? null : reader.GetString("city"),
+                                    State = reader.IsDBNull(reader.GetOrdinal("state")) ? null : reader.GetString("state"),
+                                    Zip = reader.IsDBNull(reader.GetOrdinal("zip")) ? null : reader.GetString("zip"),
+                                    Email = reader.IsDBNull(reader.GetOrdinal("email")) ? null : reader.GetString("email"),
+                                    Phone = reader.IsDBNull(reader.GetOrdinal("phone")) ? null : reader.GetString("phone")
+                                }
+                            };
+                        }
+                    }
+                }
+                
+                if (estimate != null)
+                {
+                    // Load rooms
+                    LoadEstimateRooms(estimate, connection);
+                }
+                
+                return estimate;
+            }
+        }
+
+        private void LoadEstimateRooms(Estimate estimate, MySqlConnection connection)
+        {
+            var query = @"
+                SELECT room_id, room_name, room_order, notes
+                FROM EstimateRooms
+                WHERE estimate_id = @estimateId
+                ORDER BY room_order";
+            
+            using (var cmd = new MySqlCommand(query, connection))
+            {
+                cmd.Parameters.AddWithValue("@estimateId", estimate.EstimateId);
+                
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        var room = new EstimateRoom
+                        {
+                            RoomId = reader.GetInt32("room_id"),
+                            EstimateId = estimate.EstimateId,
+                            RoomName = reader.GetString("room_name"),
+                            RoomOrder = reader.GetInt32("room_order"),
+                            Notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString("notes")
+                        };
+                        estimate.Rooms.Add(room);
+                    }
+                }
+            }
+            
+            // Load line items for each room
+            foreach (var room in estimate.Rooms)
+            {
+                LoadRoomLineItems(room, connection);
+            }
+        }
+
+        private void LoadRoomLineItems(EstimateRoom room, MySqlConnection connection)
+        {
+            var query = @"
+                SELECT line_id, item_id, quantity, item_code, description, 
+                       unit_price, material_cost, labor_minutes, line_order, notes
+                FROM EstimateLineItems
+                WHERE room_id = @roomId
+                ORDER BY line_order";
+            
+            using (var cmd = new MySqlCommand(query, connection))
+            {
+                cmd.Parameters.AddWithValue("@roomId", room.RoomId);
+                
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        var item = new EstimateLineItem
+                        {
+                            LineId = reader.GetInt32("line_id"),
+                            RoomId = room.RoomId,
+                            ItemId = reader.IsDBNull(reader.GetOrdinal("item_id")) ? (int?)null : reader.GetInt32("item_id"),
+                            Quantity = reader.GetInt32("quantity"),
+                            ItemCode = reader.IsDBNull(reader.GetOrdinal("item_code")) ? null : reader.GetString("item_code"),
+                            Description = reader.GetString("description"),
+                            UnitPrice = reader.GetDecimal("unit_price"),
+                            MaterialCost = reader.GetDecimal("material_cost"),
+                            LaborMinutes = reader.GetInt32("labor_minutes"),
+                            LineOrder = reader.GetInt32("line_order"),
+                            Notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString("notes")
+                        };
+                        room.Items.Add(item);
+                    }
                 }
             }
         }
@@ -147,52 +367,47 @@ namespace ElectricalContractorSystem.Services
         {
             var query = @"
                 INSERT INTO Estimates (
-                    estimate_number, version, customer_id, job_name, 
-                    address, city, state, zip, square_footage, num_floors,
-                    status, labor_rate, material_markup, total_labor_hours,
-                    total_material_cost, total_cost, notes, created_by
+                    estimate_number, customer_id, job_name, job_address, job_city, 
+                    job_state, job_zip, square_footage, num_floors, status, 
+                    created_date, expiration_date, notes, tax_rate, material_markup, 
+                    labor_rate, total_material_cost, total_labor_minutes, total_price
                 ) VALUES (
-                    @estimate_number, @version, @customer_id, @job_name,
-                    @address, @city, @state, @zip, @square_footage, @num_floors,
-                    @status, @labor_rate, @material_markup, @total_labor_hours,
-                    @total_material_cost, @total_cost, @notes, @created_by
+                    @estimate_number, @customer_id, @job_name, @job_address, @job_city,
+                    @job_state, @job_zip, @square_footage, @num_floors, @status,
+                    @created_date, @expiration_date, @notes, @tax_rate, @material_markup,
+                    @labor_rate, @total_material_cost, @total_labor_minutes, @total_price
                 )";
 
             using (var cmd = new MySqlCommand(query, connection, transaction))
             {
                 cmd.Parameters.AddWithValue("@estimate_number", estimate.EstimateNumber);
-                cmd.Parameters.AddWithValue("@version", estimate.Version);
                 cmd.Parameters.AddWithValue("@customer_id", estimate.CustomerId);
                 cmd.Parameters.AddWithValue("@job_name", estimate.JobName);
-                cmd.Parameters.AddWithValue("@address", estimate.Address ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@city", estimate.City ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@state", estimate.State ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@zip", estimate.Zip ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@job_address", estimate.JobAddress ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@job_city", estimate.JobCity ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@job_state", estimate.JobState ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@job_zip", estimate.JobZip ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@square_footage", estimate.SquareFootage ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@num_floors", estimate.NumFloors ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@status", estimate.Status.ToString());
-                cmd.Parameters.AddWithValue("@labor_rate", estimate.LaborRate);
-                cmd.Parameters.AddWithValue("@material_markup", estimate.MaterialMarkup);
-                cmd.Parameters.AddWithValue("@total_labor_hours", estimate.TotalLaborHours ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@total_material_cost", estimate.TotalMaterialCost ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@total_cost", estimate.TotalCost ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@status", estimate.Status);
+                cmd.Parameters.AddWithValue("@created_date", estimate.CreatedDate);
+                cmd.Parameters.AddWithValue("@expiration_date", estimate.ExpirationDate ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@notes", estimate.Notes ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@created_by", estimate.CreatedBy ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@tax_rate", estimate.TaxRate);
+                cmd.Parameters.AddWithValue("@material_markup", estimate.MaterialMarkup);
+                cmd.Parameters.AddWithValue("@labor_rate", estimate.LaborRate);
+                cmd.Parameters.AddWithValue("@total_material_cost", estimate.TotalMaterialCost);
+                cmd.Parameters.AddWithValue("@total_labor_minutes", estimate.TotalLaborMinutes);
+                cmd.Parameters.AddWithValue("@total_price", estimate.TotalPrice);
                 
                 cmd.ExecuteNonQuery();
                 estimate.EstimateId = (int)cmd.LastInsertedId;
             }
 
-            // Save rooms and line items
+            // Save rooms
             foreach (var room in estimate.Rooms)
             {
                 SaveRoom(room, estimate.EstimateId, connection, transaction);
-            }
-
-            // Save stage summaries
-            foreach (var summary in estimate.StageSummaries)
-            {
-                SaveStageSummary(summary, estimate.EstimateId, connection, transaction);
             }
         }
 
@@ -201,65 +416,57 @@ namespace ElectricalContractorSystem.Services
             var query = @"
                 UPDATE Estimates SET
                     job_name = @job_name,
-                    address = @address,
-                    city = @city,
-                    state = @state,
-                    zip = @zip,
+                    job_address = @job_address,
+                    job_city = @job_city,
+                    job_state = @job_state,
+                    job_zip = @job_zip,
                     square_footage = @square_footage,
                     num_floors = @num_floors,
                     status = @status,
-                    labor_rate = @labor_rate,
+                    expiration_date = @expiration_date,
+                    notes = @notes,
+                    tax_rate = @tax_rate,
                     material_markup = @material_markup,
-                    total_labor_hours = @total_labor_hours,
+                    labor_rate = @labor_rate,
                     total_material_cost = @total_material_cost,
-                    total_cost = @total_cost,
-                    notes = @notes
+                    total_labor_minutes = @total_labor_minutes,
+                    total_price = @total_price
                 WHERE estimate_id = @estimate_id";
 
             using (var cmd = new MySqlCommand(query, connection, transaction))
             {
                 cmd.Parameters.AddWithValue("@estimate_id", estimate.EstimateId);
                 cmd.Parameters.AddWithValue("@job_name", estimate.JobName);
-                cmd.Parameters.AddWithValue("@address", estimate.Address ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@city", estimate.City ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@state", estimate.State ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@zip", estimate.Zip ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@job_address", estimate.JobAddress ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@job_city", estimate.JobCity ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@job_state", estimate.JobState ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@job_zip", estimate.JobZip ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@square_footage", estimate.SquareFootage ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@num_floors", estimate.NumFloors ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@status", estimate.Status.ToString());
-                cmd.Parameters.AddWithValue("@labor_rate", estimate.LaborRate);
-                cmd.Parameters.AddWithValue("@material_markup", estimate.MaterialMarkup);
-                cmd.Parameters.AddWithValue("@total_labor_hours", estimate.TotalLaborHours ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@total_material_cost", estimate.TotalMaterialCost ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@total_cost", estimate.TotalCost ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@status", estimate.Status);
+                cmd.Parameters.AddWithValue("@expiration_date", estimate.ExpirationDate ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@notes", estimate.Notes ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@tax_rate", estimate.TaxRate);
+                cmd.Parameters.AddWithValue("@material_markup", estimate.MaterialMarkup);
+                cmd.Parameters.AddWithValue("@labor_rate", estimate.LaborRate);
+                cmd.Parameters.AddWithValue("@total_material_cost", estimate.TotalMaterialCost);
+                cmd.Parameters.AddWithValue("@total_labor_minutes", estimate.TotalLaborMinutes);
+                cmd.Parameters.AddWithValue("@total_price", estimate.TotalPrice);
                 
                 cmd.ExecuteNonQuery();
             }
 
-            // Delete existing rooms and line items (they'll be re-inserted)
+            // Delete existing rooms (they'll be re-inserted)
             using (var cmd = new MySqlCommand("DELETE FROM EstimateRooms WHERE estimate_id = @estimate_id", connection, transaction))
             {
                 cmd.Parameters.AddWithValue("@estimate_id", estimate.EstimateId);
                 cmd.ExecuteNonQuery();
             }
 
-            // Save rooms and line items
+            // Save rooms
             foreach (var room in estimate.Rooms)
             {
                 SaveRoom(room, estimate.EstimateId, connection, transaction);
-            }
-
-            // Update stage summaries
-            using (var cmd = new MySqlCommand("DELETE FROM EstimateStageSummary WHERE estimate_id = @estimate_id", connection, transaction))
-            {
-                cmd.Parameters.AddWithValue("@estimate_id", estimate.EstimateId);
-                cmd.ExecuteNonQuery();
-            }
-
-            foreach (var summary in estimate.StageSummaries)
-            {
-                SaveStageSummary(summary, estimate.EstimateId, connection, transaction);
             }
         }
 
@@ -281,32 +488,33 @@ namespace ElectricalContractorSystem.Services
             }
 
             // Save line items
-            foreach (var item in room.LineItems)
+            foreach (var item in room.Items)
             {
-                SaveLineItem(item, estimateId, room.RoomId, connection, transaction);
+                SaveLineItem(item, room.RoomId, connection, transaction);
             }
         }
 
-        private void SaveLineItem(EstimateLineItem item, int estimateId, int roomId, MySqlConnection connection, MySqlTransaction transaction)
+        private void SaveLineItem(EstimateLineItem item, int roomId, MySqlConnection connection, MySqlTransaction transaction)
         {
             var query = @"
                 INSERT INTO EstimateLineItems (
-                    estimate_id, room_id, item_id, quantity, 
-                    item_code, description, unit_price, line_order, notes
+                    room_id, item_id, quantity, item_code, description, 
+                    unit_price, material_cost, labor_minutes, line_order, notes
                 ) VALUES (
-                    @estimate_id, @room_id, @item_id, @quantity,
-                    @item_code, @description, @unit_price, @line_order, @notes
+                    @room_id, @item_id, @quantity, @item_code, @description,
+                    @unit_price, @material_cost, @labor_minutes, @line_order, @notes
                 )";
 
             using (var cmd = new MySqlCommand(query, connection, transaction))
             {
-                cmd.Parameters.AddWithValue("@estimate_id", estimateId);
                 cmd.Parameters.AddWithValue("@room_id", roomId);
-                cmd.Parameters.AddWithValue("@item_id", item.ItemId);
+                cmd.Parameters.AddWithValue("@item_id", item.ItemId ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@quantity", item.Quantity);
-                cmd.Parameters.AddWithValue("@item_code", item.ItemCode);
+                cmd.Parameters.AddWithValue("@item_code", item.ItemCode ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@description", item.Description);
                 cmd.Parameters.AddWithValue("@unit_price", item.UnitPrice);
+                cmd.Parameters.AddWithValue("@material_cost", item.MaterialCost);
+                cmd.Parameters.AddWithValue("@labor_minutes", item.LaborMinutes);
                 cmd.Parameters.AddWithValue("@line_order", item.LineOrder);
                 cmd.Parameters.AddWithValue("@notes", item.Notes ?? (object)DBNull.Value);
                 
@@ -314,18 +522,21 @@ namespace ElectricalContractorSystem.Services
             }
         }
 
-        private void SaveStageSummary(EstimateStageSummary summary, int estimateId, MySqlConnection connection, MySqlTransaction transaction)
+        public void SaveStageSummary(EstimateStageSummary summary, int estimateId, MySqlConnection connection, MySqlTransaction transaction)
         {
             var query = @"
-                INSERT INTO EstimateStageSummary (estimate_id, stage, estimated_hours, estimated_material)
-                VALUES (@estimate_id, @stage, @estimated_hours, @estimated_material)";
+                INSERT INTO EstimateStageSummary (estimate_id, stage, labor_hours, material_cost)
+                VALUES (@estimate_id, @stage, @labor_hours, @material_cost)
+                ON DUPLICATE KEY UPDATE
+                    labor_hours = @labor_hours,
+                    material_cost = @material_cost";
 
             using (var cmd = new MySqlCommand(query, connection, transaction))
             {
                 cmd.Parameters.AddWithValue("@estimate_id", estimateId);
                 cmd.Parameters.AddWithValue("@stage", summary.Stage);
-                cmd.Parameters.AddWithValue("@estimated_hours", summary.EstimatedHours);
-                cmd.Parameters.AddWithValue("@estimated_material", summary.EstimatedMaterial);
+                cmd.Parameters.AddWithValue("@labor_hours", summary.LaborHours);
+                cmd.Parameters.AddWithValue("@material_cost", summary.MaterialCost);
                 
                 cmd.ExecuteNonQuery();
             }
