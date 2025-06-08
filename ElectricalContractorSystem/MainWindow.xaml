@@ -99,21 +99,27 @@
                                                                Margin="0,0,0,15"
                                                                HorizontalAlignment="Center"/>
                                                     
-                                                    <Button Content="New Estimate" 
-                                                            Click="NewEstimate_Click"
-                                                            Style="{StaticResource AccentButtonStyle}"
+                                                    <Button Name="NewEstimateButton" 
+                                                            Content="New Estimate" 
                                                             Width="200"
                                                             Height="50"
                                                             FontSize="16"
-                                                            Margin="0,5"/>
+                                                            Margin="0,5"
+                                                            Background="#2196F3"
+                                                            Foreground="White"
+                                                            BorderThickness="0"
+                                                            Cursor="Hand"/>
                                                     
-                                                    <Button Content="Manage Estimates" 
-                                                            Click="ManageEstimates_Click"
-                                                            Style="{StaticResource PrimaryButtonStyle}"
+                                                    <Button Name="ManageEstimatesButton" 
+                                                            Content="Manage Estimates" 
                                                             Width="200"
                                                             Height="50"
                                                             FontSize="16"
-                                                            Margin="0,5"/>
+                                                            Margin="0,5"
+                                                            Background="#1976D2"
+                                                            Foreground="White"
+                                                            BorderThickness="0"
+                                                            Cursor="Hand"/>
                                                 </StackPanel>
                                                 
                                                 <!-- Jobs Section -->
@@ -124,21 +130,27 @@
                                                                Margin="0,0,0,15"
                                                                HorizontalAlignment="Center"/>
                                                     
-                                                    <Button Content="Job Management" 
-                                                            Click="JobManagement_Click"
-                                                            Style="{StaticResource PrimaryButtonStyle}"
+                                                    <Button Name="JobManagementButton" 
+                                                            Content="Job Management" 
                                                             Width="200"
                                                             Height="50"
                                                             FontSize="16"
-                                                            Margin="0,5"/>
+                                                            Margin="0,5"
+                                                            Background="#1976D2"
+                                                            Foreground="White"
+                                                            BorderThickness="0"
+                                                            Cursor="Hand"/>
                                                     
-                                                    <Button Content="Weekly Labor Entry" 
-                                                            Click="WeeklyLaborEntry_Click"
-                                                            Style="{StaticResource PrimaryButtonStyle}"
+                                                    <Button Name="WeeklyLaborEntryButton" 
+                                                            Content="Weekly Labor Entry" 
                                                             Width="200"
                                                             Height="50"
                                                             FontSize="16"
-                                                            Margin="0,5"/>
+                                                            Margin="0,5"
+                                                            Background="#1976D2"
+                                                            Foreground="White"
+                                                            BorderThickness="0"
+                                                            Cursor="Hand"/>
                                                 </StackPanel>
                                             </Grid>
                                         </StackPanel>
