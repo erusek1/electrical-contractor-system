@@ -17,6 +17,617 @@ namespace ElectricalContractorSystem.Services
             _connectionString = ConfigurationManager.ConnectionStrings["ElectricalDB"].ConnectionString;
         }
 
+        #region Connection Testing Methods
+
+        public bool TestConnection()
+        {
+            try
+            {
+                using (var connection = new MySqlConnection(_connectionString))
+                {
+                    connection.Open();
+                    return true;
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public object ExecuteScalar(string query)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    return cmd.ExecuteScalar();
+                }
+            }
+        }
+
+        public int ExecuteNonQuery(string query)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    return cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        #endregion
+
+        #region Job Methods
+
+        public List<Job> GetAllJobs()
+        {
+            var jobs = new List<Job>();
+            
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = @"
+                    SELECT j.*, c.name as customer_name, c.address, c.city, c.state, c.zip
+                    FROM Jobs j
+                    INNER JOIN Customers c ON j.customer_id = c.customer_id
+                    ORDER BY j.job_number DESC";
+                
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            var job = new Job
+                            {
+                                JobId = reader.GetInt32("job_id"),
+                                JobNumber = reader.GetString("job_number"),
+                                CustomerId = reader.GetInt32("customer_id"),
+                                JobName = reader.GetString("job_name"),
+                                Address = reader.IsDBNull(reader.GetOrdinal("address")) ? null : reader.GetString("address"),
+                                City = reader.IsDBNull(reader.GetOrdinal("city")) ? null : reader.GetString("city"),
+                                State = reader.IsDBNull(reader.GetOrdinal("state")) ? null : reader.GetString("state"),
+                                Zip = reader.IsDBNull(reader.GetOrdinal("zip")) ? null : reader.GetString("zip"),
+                                SquareFootage = reader.IsDBNull(reader.GetOrdinal("square_footage")) ? (int?)null : reader.GetInt32("square_footage"),
+                                NumFloors = reader.IsDBNull(reader.GetOrdinal("num_floors")) ? (int?)null : reader.GetInt32("num_floors"),
+                                Status = reader.GetString("status"),
+                                CreateDate = reader.GetDateTime("create_date"),
+                                CompletionDate = reader.IsDBNull(reader.GetOrdinal("completion_date")) ? (DateTime?)null : reader.GetDateTime("completion_date"),
+                                TotalEstimate = reader.IsDBNull(reader.GetOrdinal("total_estimate")) ? (decimal?)null : reader.GetDecimal("total_estimate"),
+                                TotalActual = reader.IsDBNull(reader.GetOrdinal("total_actual")) ? (decimal?)null : reader.GetDecimal("total_actual"),
+                                Notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString("notes"),
+                                Customer = new Customer
+                                {
+                                    CustomerId = reader.GetInt32("customer_id"),
+                                    Name = reader.GetString("customer_name")
+                                }
+                            };
+                            jobs.Add(job);
+                        }
+                    }
+                }
+            }
+            
+            return jobs;
+        }
+
+        public Job GetJob(int jobId)
+        {
+            return GetJobById(jobId);
+        }
+
+        public Job GetJobById(int jobId)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = @"
+                    SELECT j.*, c.name as customer_name, c.address as customer_address, 
+                           c.city as customer_city, c.state as customer_state, c.zip as customer_zip
+                    FROM Jobs j
+                    INNER JOIN Customers c ON j.customer_id = c.customer_id
+                    WHERE j.job_id = @jobId";
+                
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    cmd.Parameters.AddWithValue("@jobId", jobId);
+                    
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            return new Job
+                            {
+                                JobId = reader.GetInt32("job_id"),
+                                JobNumber = reader.GetString("job_number"),
+                                CustomerId = reader.GetInt32("customer_id"),
+                                JobName = reader.GetString("job_name"),
+                                Address = reader.IsDBNull(reader.GetOrdinal("address")) ? null : reader.GetString("address"),
+                                City = reader.IsDBNull(reader.GetOrdinal("city")) ? null : reader.GetString("city"),
+                                State = reader.IsDBNull(reader.GetOrdinal("state")) ? null : reader.GetString("state"),
+                                Zip = reader.IsDBNull(reader.GetOrdinal("zip")) ? null : reader.GetString("zip"),
+                                SquareFootage = reader.IsDBNull(reader.GetOrdinal("square_footage")) ? (int?)null : reader.GetInt32("square_footage"),
+                                NumFloors = reader.IsDBNull(reader.GetOrdinal("num_floors")) ? (int?)null : reader.GetInt32("num_floors"),
+                                Status = reader.GetString("status"),
+                                CreateDate = reader.GetDateTime("create_date"),
+                                CompletionDate = reader.IsDBNull(reader.GetOrdinal("completion_date")) ? (DateTime?)null : reader.GetDateTime("completion_date"),
+                                TotalEstimate = reader.IsDBNull(reader.GetOrdinal("total_estimate")) ? (decimal?)null : reader.GetDecimal("total_estimate"),
+                                TotalActual = reader.IsDBNull(reader.GetOrdinal("total_actual")) ? (decimal?)null : reader.GetDecimal("total_actual"),
+                                Notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString("notes"),
+                                Customer = new Customer
+                                {
+                                    CustomerId = reader.GetInt32("customer_id"),
+                                    Name = reader.GetString("customer_name"),
+                                    Address = reader.IsDBNull(reader.GetOrdinal("customer_address")) ? null : reader.GetString("customer_address"),
+                                    City = reader.IsDBNull(reader.GetOrdinal("customer_city")) ? null : reader.GetString("customer_city"),
+                                    State = reader.IsDBNull(reader.GetOrdinal("customer_state")) ? null : reader.GetString("customer_state"),
+                                    Zip = reader.IsDBNull(reader.GetOrdinal("customer_zip")) ? null : reader.GetString("customer_zip")
+                                }
+                            };
+                        }
+                    }
+                }
+            }
+            
+            return null;
+        }
+
+        public string GetNextJobNumber()
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = "SELECT MAX(CAST(job_number AS UNSIGNED)) FROM Jobs";
+                
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    var result = cmd.ExecuteScalar();
+                    if (result != null && result != DBNull.Value)
+                    {
+                        var lastNumber = Convert.ToInt32(result);
+                        return (lastNumber + 1).ToString();
+                    }
+                    return "401"; // Start from 401 if no jobs exist
+                }
+            }
+        }
+
+        public void AddJob(Job job)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = @"
+                    INSERT INTO Jobs (job_number, customer_id, job_name, address, city, state, zip, 
+                                      square_footage, num_floors, status, create_date, completion_date, 
+                                      total_estimate, total_actual, notes)
+                    VALUES (@job_number, @customer_id, @job_name, @address, @city, @state, @zip,
+                            @square_footage, @num_floors, @status, @create_date, @completion_date,
+                            @total_estimate, @total_actual, @notes)";
+                
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    cmd.Parameters.AddWithValue("@job_number", job.JobNumber);
+                    cmd.Parameters.AddWithValue("@customer_id", job.CustomerId);
+                    cmd.Parameters.AddWithValue("@job_name", job.JobName);
+                    cmd.Parameters.AddWithValue("@address", job.Address ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@city", job.City ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@state", job.State ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@zip", job.Zip ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@square_footage", job.SquareFootage ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@num_floors", job.NumFloors ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@status", job.Status);
+                    cmd.Parameters.AddWithValue("@create_date", job.CreateDate);
+                    cmd.Parameters.AddWithValue("@completion_date", job.CompletionDate ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@total_estimate", job.TotalEstimate ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@total_actual", job.TotalActual ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@notes", job.Notes ?? (object)DBNull.Value);
+                    
+                    cmd.ExecuteNonQuery();
+                    job.JobId = (int)cmd.LastInsertedId;
+                }
+            }
+        }
+
+        public void UpdateJob(Job job)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = @"
+                    UPDATE Jobs SET
+                        customer_id = @customer_id,
+                        job_name = @job_name,
+                        address = @address,
+                        city = @city,
+                        state = @state,
+                        zip = @zip,
+                        square_footage = @square_footage,
+                        num_floors = @num_floors,
+                        status = @status,
+                        completion_date = @completion_date,
+                        total_estimate = @total_estimate,
+                        total_actual = @total_actual,
+                        notes = @notes
+                    WHERE job_id = @job_id";
+                
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    cmd.Parameters.AddWithValue("@job_id", job.JobId);
+                    cmd.Parameters.AddWithValue("@customer_id", job.CustomerId);
+                    cmd.Parameters.AddWithValue("@job_name", job.JobName);
+                    cmd.Parameters.AddWithValue("@address", job.Address ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@city", job.City ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@state", job.State ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@zip", job.Zip ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@square_footage", job.SquareFootage ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@num_floors", job.NumFloors ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@status", job.Status);
+                    cmd.Parameters.AddWithValue("@completion_date", job.CompletionDate ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@total_estimate", job.TotalEstimate ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@total_actual", job.TotalActual ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@notes", job.Notes ?? (object)DBNull.Value);
+                    
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        public void UpdateJobStatus(int jobId, string status)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = "UPDATE Jobs SET status = @status WHERE job_id = @job_id";
+                
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    cmd.Parameters.AddWithValue("@job_id", jobId);
+                    cmd.Parameters.AddWithValue("@status", status);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        #endregion
+
+        #region JobStage Methods
+
+        public List<JobStage> GetJobStages(int jobId)
+        {
+            var stages = new List<JobStage>();
+            
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = @"
+                    SELECT * FROM JobStages
+                    WHERE job_id = @jobId
+                    ORDER BY stage_name";
+                
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    cmd.Parameters.AddWithValue("@jobId", jobId);
+                    
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            stages.Add(new JobStage
+                            {
+                                StageId = reader.GetInt32("stage_id"),
+                                JobId = reader.GetInt32("job_id"),
+                                StageName = reader.GetString("stage_name"),
+                                EstimatedHours = reader.IsDBNull(reader.GetOrdinal("estimated_hours")) ? 0 : reader.GetDecimal("estimated_hours"),
+                                EstimatedMaterialCost = reader.IsDBNull(reader.GetOrdinal("estimated_material_cost")) ? 0 : reader.GetDecimal("estimated_material_cost"),
+                                ActualHours = reader.IsDBNull(reader.GetOrdinal("actual_hours")) ? 0 : reader.GetDecimal("actual_hours"),
+                                ActualMaterialCost = reader.IsDBNull(reader.GetOrdinal("actual_material_cost")) ? 0 : reader.GetDecimal("actual_material_cost"),
+                                Notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString("notes")
+                            });
+                        }
+                    }
+                }
+            }
+            
+            return stages;
+        }
+
+        public void AddJobStage(JobStage stage)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = @"
+                    INSERT INTO JobStages (job_id, stage_name, estimated_hours, estimated_material_cost, 
+                                           actual_hours, actual_material_cost, notes)
+                    VALUES (@job_id, @stage_name, @estimated_hours, @estimated_material_cost,
+                            @actual_hours, @actual_material_cost, @notes)";
+                
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    cmd.Parameters.AddWithValue("@job_id", stage.JobId);
+                    cmd.Parameters.AddWithValue("@stage_name", stage.StageName);
+                    cmd.Parameters.AddWithValue("@estimated_hours", stage.EstimatedHours);
+                    cmd.Parameters.AddWithValue("@estimated_material_cost", stage.EstimatedMaterialCost);
+                    cmd.Parameters.AddWithValue("@actual_hours", stage.ActualHours);
+                    cmd.Parameters.AddWithValue("@actual_material_cost", stage.ActualMaterialCost);
+                    cmd.Parameters.AddWithValue("@notes", stage.Notes ?? (object)DBNull.Value);
+                    
+                    cmd.ExecuteNonQuery();
+                    stage.StageId = (int)cmd.LastInsertedId;
+                }
+            }
+        }
+
+        public void UpdateJobStage(JobStage stage)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = @"
+                    UPDATE JobStages SET
+                        estimated_hours = @estimated_hours,
+                        estimated_material_cost = @estimated_material_cost,
+                        actual_hours = @actual_hours,
+                        actual_material_cost = @actual_material_cost,
+                        notes = @notes
+                    WHERE stage_id = @stage_id";
+                
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    cmd.Parameters.AddWithValue("@stage_id", stage.StageId);
+                    cmd.Parameters.AddWithValue("@estimated_hours", stage.EstimatedHours);
+                    cmd.Parameters.AddWithValue("@estimated_material_cost", stage.EstimatedMaterialCost);
+                    cmd.Parameters.AddWithValue("@actual_hours", stage.ActualHours);
+                    cmd.Parameters.AddWithValue("@actual_material_cost", stage.ActualMaterialCost);
+                    cmd.Parameters.AddWithValue("@notes", stage.Notes ?? (object)DBNull.Value);
+                    
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        public void DeleteJobStage(int stageId)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = "DELETE FROM JobStages WHERE stage_id = @stage_id";
+                
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    cmd.Parameters.AddWithValue("@stage_id", stageId);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        #endregion
+
+        #region RoomSpecification Methods
+
+        public List<RoomSpecification> GetRoomSpecifications(int jobId)
+        {
+            var specs = new List<RoomSpecification>();
+            
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = @"
+                    SELECT * FROM RoomSpecifications
+                    WHERE job_id = @jobId
+                    ORDER BY room_name, item_description";
+                
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    cmd.Parameters.AddWithValue("@jobId", jobId);
+                    
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            specs.Add(new RoomSpecification
+                            {
+                                SpecId = reader.GetInt32("spec_id"),
+                                JobId = reader.GetInt32("job_id"),
+                                RoomName = reader.GetString("room_name"),
+                                ItemDescription = reader.GetString("item_description"),
+                                Quantity = reader.GetInt32("quantity"),
+                                ItemCode = reader.IsDBNull(reader.GetOrdinal("item_code")) ? null : reader.GetString("item_code"),
+                                UnitPrice = reader.GetDecimal("unit_price"),
+                                TotalPrice = reader.GetDecimal("total_price")
+                            });
+                        }
+                    }
+                }
+            }
+            
+            return specs;
+        }
+
+        public void AddRoomSpecification(RoomSpecification spec)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = @"
+                    INSERT INTO RoomSpecifications (job_id, room_name, item_description, quantity, 
+                                                    item_code, unit_price, total_price)
+                    VALUES (@job_id, @room_name, @item_description, @quantity,
+                            @item_code, @unit_price, @total_price)";
+                
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    cmd.Parameters.AddWithValue("@job_id", spec.JobId);
+                    cmd.Parameters.AddWithValue("@room_name", spec.RoomName);
+                    cmd.Parameters.AddWithValue("@item_description", spec.ItemDescription);
+                    cmd.Parameters.AddWithValue("@quantity", spec.Quantity);
+                    cmd.Parameters.AddWithValue("@item_code", spec.ItemCode ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@unit_price", spec.UnitPrice);
+                    cmd.Parameters.AddWithValue("@total_price", spec.TotalPrice);
+                    
+                    cmd.ExecuteNonQuery();
+                    spec.SpecId = (int)cmd.LastInsertedId;
+                }
+            }
+        }
+
+        public void UpdateRoomSpecification(RoomSpecification spec)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = @"
+                    UPDATE RoomSpecifications SET
+                        room_name = @room_name,
+                        item_description = @item_description,
+                        quantity = @quantity,
+                        item_code = @item_code,
+                        unit_price = @unit_price,
+                        total_price = @total_price
+                    WHERE spec_id = @spec_id";
+                
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    cmd.Parameters.AddWithValue("@spec_id", spec.SpecId);
+                    cmd.Parameters.AddWithValue("@room_name", spec.RoomName);
+                    cmd.Parameters.AddWithValue("@item_description", spec.ItemDescription);
+                    cmd.Parameters.AddWithValue("@quantity", spec.Quantity);
+                    cmd.Parameters.AddWithValue("@item_code", spec.ItemCode ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@unit_price", spec.UnitPrice);
+                    cmd.Parameters.AddWithValue("@total_price", spec.TotalPrice);
+                    
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        public void DeleteRoomSpecification(int specId)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = "DELETE FROM RoomSpecifications WHERE spec_id = @spec_id";
+                
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    cmd.Parameters.AddWithValue("@spec_id", specId);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        #endregion
+
+        #region PermitItem Methods
+
+        public List<PermitItem> GetPermitItems(int jobId)
+        {
+            var items = new List<PermitItem>();
+            
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = @"
+                    SELECT * FROM PermitItems
+                    WHERE job_id = @jobId
+                    ORDER BY category";
+                
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    cmd.Parameters.AddWithValue("@jobId", jobId);
+                    
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            items.Add(new PermitItem
+                            {
+                                PermitId = reader.GetInt32("permit_id"),
+                                JobId = reader.GetInt32("job_id"),
+                                Category = reader.GetString("category"),
+                                Quantity = reader.GetInt32("quantity"),
+                                Description = reader.IsDBNull(reader.GetOrdinal("description")) ? null : reader.GetString("description"),
+                                Notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString("notes")
+                            });
+                        }
+                    }
+                }
+            }
+            
+            return items;
+        }
+
+        public void AddPermitItem(PermitItem item)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = @"
+                    INSERT INTO PermitItems (job_id, category, quantity, description, notes)
+                    VALUES (@job_id, @category, @quantity, @description, @notes)";
+                
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    cmd.Parameters.AddWithValue("@job_id", item.JobId);
+                    cmd.Parameters.AddWithValue("@category", item.Category);
+                    cmd.Parameters.AddWithValue("@quantity", item.Quantity);
+                    cmd.Parameters.AddWithValue("@description", item.Description ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@notes", item.Notes ?? (object)DBNull.Value);
+                    
+                    cmd.ExecuteNonQuery();
+                    item.PermitId = (int)cmd.LastInsertedId;
+                }
+            }
+        }
+
+        public void UpdatePermitItem(PermitItem item)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = @"
+                    UPDATE PermitItems SET
+                        category = @category,
+                        quantity = @quantity,
+                        description = @description,
+                        notes = @notes
+                    WHERE permit_id = @permit_id";
+                
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    cmd.Parameters.AddWithValue("@permit_id", item.PermitId);
+                    cmd.Parameters.AddWithValue("@category", item.Category);
+                    cmd.Parameters.AddWithValue("@quantity", item.Quantity);
+                    cmd.Parameters.AddWithValue("@description", item.Description ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@notes", item.Notes ?? (object)DBNull.Value);
+                    
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        public void DeletePermitItem(int permitId)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = "DELETE FROM PermitItems WHERE permit_id = @permit_id";
+                
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    cmd.Parameters.AddWithValue("@permit_id", permitId);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        #endregion
+
         #region Price List Methods
 
         public List<PriceListItem> GetActivePriceListItems()
@@ -588,24 +1199,73 @@ namespace ElectricalContractorSystem.Services
                 
                 if (customer.CustomerId == 0)
                 {
-                    var query = @"
-                        INSERT INTO Customers (name, address, city, state, zip, email, phone, notes)
-                        VALUES (@name, @address, @city, @state, @zip, @email, @phone, @notes)";
+                    AddCustomer(customer);
+                }
+                else
+                {
+                    UpdateCustomer(customer);
+                }
+            }
+        }
+
+        public void AddCustomer(Customer customer)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                
+                var query = @"
+                    INSERT INTO Customers (name, address, city, state, zip, email, phone, notes)
+                    VALUES (@name, @address, @city, @state, @zip, @email, @phone, @notes)";
+                
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    cmd.Parameters.AddWithValue("@name", customer.Name);
+                    cmd.Parameters.AddWithValue("@address", customer.Address ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@city", customer.City ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@state", customer.State ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@zip", customer.Zip ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@email", customer.Email ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@phone", customer.Phone ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@notes", customer.Notes ?? (object)DBNull.Value);
                     
-                    using (var cmd = new MySqlCommand(query, connection))
-                    {
-                        cmd.Parameters.AddWithValue("@name", customer.Name);
-                        cmd.Parameters.AddWithValue("@address", customer.Address ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@city", customer.City ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@state", customer.State ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@zip", customer.Zip ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@email", customer.Email ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@phone", customer.Phone ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@notes", customer.Notes ?? (object)DBNull.Value);
-                        
-                        cmd.ExecuteNonQuery();
-                        customer.CustomerId = (int)cmd.LastInsertedId;
-                    }
+                    cmd.ExecuteNonQuery();
+                    customer.CustomerId = (int)cmd.LastInsertedId;
+                }
+            }
+        }
+
+        public void UpdateCustomer(Customer customer)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                
+                var query = @"
+                    UPDATE Customers SET
+                        name = @name,
+                        address = @address,
+                        city = @city,
+                        state = @state,
+                        zip = @zip,
+                        email = @email,
+                        phone = @phone,
+                        notes = @notes
+                    WHERE customer_id = @customer_id";
+                
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    cmd.Parameters.AddWithValue("@customer_id", customer.CustomerId);
+                    cmd.Parameters.AddWithValue("@name", customer.Name);
+                    cmd.Parameters.AddWithValue("@address", customer.Address ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@city", customer.City ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@state", customer.State ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@zip", customer.Zip ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@email", customer.Email ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@phone", customer.Phone ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@notes", customer.Notes ?? (object)DBNull.Value);
+                    
+                    cmd.ExecuteNonQuery();
                 }
             }
         }
