@@ -23,133 +23,38 @@ namespace ElectricalContractorSystem
         
         private void NewEstimate_Click(object sender, RoutedEventArgs e)
         {
-            // Show customer selection dialog
-            var customerDialog = new CustomerSelectionDialog();
-            var customerViewModel = new CustomerSelectionViewModel(_databaseService);
-            customerDialog.DataContext = customerViewModel;
-            
-            if (customerDialog.ShowDialog() == true)
-            {
-                var customer = customerViewModel.SelectedCustomer;
-                if (customer != null)
-                {
-                    // Create the view model and view
-                    var viewModel = new EstimateBuilderViewModel(_databaseService);
-                    viewModel.CreateNewEstimate(customer);
-                    
-                    var view = new EstimateBuilderView
-                    {
-                        DataContext = viewModel
-                    };
-                    
-                    MainContent.Content = view;
-                    this.Title = $"Electrical Contractor Management System - New Estimate for {customer.Name}";
-                }
-            }
+            // TODO: Implement estimate functionality
+            MessageBox.Show("Estimate functionality will be implemented in a future update.", 
+                "Coming Soon", 
+                MessageBoxButton.OK, 
+                MessageBoxImage.Information);
         }
         
         private void OpenEstimate_Click(object sender, RoutedEventArgs e)
         {
-            // Show estimate selection dialog
-            var estimateDialog = new EstimateSelectionDialog();
-            var selectionViewModel = new EstimateSelectionViewModel(_databaseService);
-            estimateDialog.DataContext = selectionViewModel;
-            
-            if (estimateDialog.ShowDialog() == true)
-            {
-                var estimate = selectionViewModel.SelectedEstimate;
-                if (estimate != null)
-                {
-                    var viewModel = new EstimateBuilderViewModel(_databaseService);
-                    viewModel.CurrentEstimate = estimate;
-                    
-                    var view = new EstimateBuilderView
-                    {
-                        DataContext = viewModel
-                    };
-                    
-                    MainContent.Content = view;
-                    this.Title = $"Electrical Contractor Management System - Estimate {estimate.EstimateNumber}";
-                }
-            }
+            // TODO: Implement estimate functionality
+            MessageBox.Show("Estimate functionality will be implemented in a future update.", 
+                "Coming Soon", 
+                MessageBoxButton.OK, 
+                MessageBoxImage.Information);
         }
         
         private void ManageEstimates_Click(object sender, RoutedEventArgs e)
         {
-            var viewModel = new EstimateListViewModel(_databaseService);
-            var view = new EstimateListView
-            {
-                DataContext = viewModel
-            };
-            
-            // Handle navigation from estimate list
-            viewModel.EstimateCreated += (builderViewModel) =>
-            {
-                var builderView = new EstimateBuilderView
-                {
-                    DataContext = builderViewModel
-                };
-                MainContent.Content = builderView;
-            };
-            
-            viewModel.EstimateEditRequested += (builderViewModel) =>
-            {
-                var builderView = new EstimateBuilderView
-                {
-                    DataContext = builderViewModel
-                };
-                MainContent.Content = builderView;
-            };
-            
-            viewModel.ConversionCompleted += (job) =>
-            {
-                MessageBox.Show($"Estimate successfully converted to Job #{job.JobNumber}", 
-                    "Conversion Complete", 
-                    MessageBoxButton.OK, 
-                    MessageBoxImage.Information);
-                
-                // Navigate to job view
-                ShowJobDetails(job);
-            };
-            
-            MainContent.Content = view;
-            this.Title = "Electrical Contractor Management System - Estimate Management";
+            // TODO: Implement estimate functionality
+            MessageBox.Show("Estimate functionality will be implemented in a future update.", 
+                "Coming Soon", 
+                MessageBoxButton.OK, 
+                MessageBoxImage.Information);
         }
         
         private void ConvertToJob_Click(object sender, RoutedEventArgs e)
         {
-            // Show estimate selection dialog for approved estimates only
-            var estimateDialog = new EstimateSelectionDialog();
-            var selectionViewModel = new EstimateSelectionViewModel(_databaseService)
-            {
-                ShowOnlyApproved = true
-            };
-            estimateDialog.DataContext = selectionViewModel;
-            
-            if (estimateDialog.ShowDialog() == true)
-            {
-                var estimate = selectionViewModel.SelectedEstimate;
-                if (estimate != null && estimate.Status == EstimateStatus.Approved)
-                {
-                    var conversionDialog = new EstimateConversionDialog();
-                    var conversionViewModel = new EstimateConversionViewModel(_databaseService, estimate);
-                    conversionDialog.DataContext = conversionViewModel;
-                    
-                    if (conversionDialog.ShowDialog() == true)
-                    {
-                        var job = conversionViewModel.CreatedJob;
-                        if (job != null)
-                        {
-                            MessageBox.Show($"Estimate successfully converted to Job #{job.JobNumber}", 
-                                "Conversion Complete", 
-                                MessageBoxButton.OK, 
-                                MessageBoxImage.Information);
-                            
-                            ShowJobDetails(job);
-                        }
-                    }
-                }
-            }
+            // TODO: Implement estimate functionality
+            MessageBox.Show("Estimate functionality will be implemented in a future update.", 
+                "Coming Soon", 
+                MessageBoxButton.OK, 
+                MessageBoxImage.Information);
         }
         
         private void RoomTemplates_Click(object sender, RoutedEventArgs e)
@@ -215,7 +120,7 @@ namespace ElectricalContractorSystem
         private void ImportJobs_Click(object sender, RoutedEventArgs e)
         {
             var importWindow = new ImportJobsWindow();
-            var viewModel = new ImportJobsViewModel(_databaseService);
+            var viewModel = new ImportJobsViewModel(_databaseService, importWindow);
             importWindow.DataContext = viewModel;
             importWindow.ShowDialog();
         }
@@ -234,6 +139,13 @@ namespace ElectricalContractorSystem
         
         private void AddCustomer_Click(object sender, RoutedEventArgs e)
         {
+            // TODO: Implement AddCustomerDialog
+            MessageBox.Show("Add Customer dialog will be implemented in a future update.", 
+                "Coming Soon", 
+                MessageBoxButton.OK, 
+                MessageBoxImage.Information);
+            
+            /* Commented out until AddCustomerDialog is implemented
             var dialog = new AddCustomerDialog();
             if (dialog.ShowDialog() == true)
             {
@@ -244,6 +156,7 @@ namespace ElectricalContractorSystem
                     MessageBoxButton.OK, 
                     MessageBoxImage.Information);
             }
+            */
         }
         
         #endregion
