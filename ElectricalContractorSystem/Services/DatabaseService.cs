@@ -196,7 +196,7 @@ namespace ElectricalContractorSystem.Services
             }
         }
 
-        public void AddJob(Job job)
+        public int AddJob(Job job)
         {
             using (var connection = new MySqlConnection(_connectionString))
             {
@@ -229,6 +229,7 @@ namespace ElectricalContractorSystem.Services
                     
                     cmd.ExecuteNonQuery();
                     job.JobId = (int)cmd.LastInsertedId;
+                    return job.JobId;
                 }
             }
         }
@@ -277,19 +278,27 @@ namespace ElectricalContractorSystem.Services
             }
         }
 
-        public void UpdateJobStatus(int jobId, string status)
+        public bool UpdateJobStatus(int jobId, string status)
         {
-            using (var connection = new MySqlConnection(_connectionString))
+            try
             {
-                connection.Open();
-                var query = "UPDATE Jobs SET status = @status WHERE job_id = @job_id";
-                
-                using (var cmd = new MySqlCommand(query, connection))
+                using (var connection = new MySqlConnection(_connectionString))
                 {
-                    cmd.Parameters.AddWithValue("@job_id", jobId);
-                    cmd.Parameters.AddWithValue("@status", status);
-                    cmd.ExecuteNonQuery();
+                    connection.Open();
+                    var query = "UPDATE Jobs SET status = @status WHERE job_id = @job_id";
+                    
+                    using (var cmd = new MySqlCommand(query, connection))
+                    {
+                        cmd.Parameters.AddWithValue("@job_id", jobId);
+                        cmd.Parameters.AddWithValue("@status", status);
+                        int rowsAffected = cmd.ExecuteNonQuery();
+                        return rowsAffected > 0;
+                    }
                 }
+            }
+            catch
+            {
+                return false;
             }
         }
 
@@ -336,7 +345,7 @@ namespace ElectricalContractorSystem.Services
             return stages;
         }
 
-        public void AddJobStage(JobStage stage)
+        public int AddJobStage(JobStage stage)
         {
             using (var connection = new MySqlConnection(_connectionString))
             {
@@ -359,6 +368,7 @@ namespace ElectricalContractorSystem.Services
                     
                     cmd.ExecuteNonQuery();
                     stage.StageId = (int)cmd.LastInsertedId;
+                    return stage.StageId;
                 }
             }
         }
@@ -449,7 +459,7 @@ namespace ElectricalContractorSystem.Services
             return specs;
         }
 
-        public void AddRoomSpecification(RoomSpecification spec)
+        public int AddRoomSpecification(RoomSpecification spec)
         {
             using (var connection = new MySqlConnection(_connectionString))
             {
@@ -472,6 +482,7 @@ namespace ElectricalContractorSystem.Services
                     
                     cmd.ExecuteNonQuery();
                     spec.SpecId = (int)cmd.LastInsertedId;
+                    return spec.SpecId;
                 }
             }
         }
@@ -562,7 +573,7 @@ namespace ElectricalContractorSystem.Services
             return items;
         }
 
-        public void AddPermitItem(PermitItem item)
+        public int AddPermitItem(PermitItem item)
         {
             using (var connection = new MySqlConnection(_connectionString))
             {
@@ -581,6 +592,7 @@ namespace ElectricalContractorSystem.Services
                     
                     cmd.ExecuteNonQuery();
                     item.PermitId = (int)cmd.LastInsertedId;
+                    return item.PermitId;
                 }
             }
         }
@@ -1208,7 +1220,7 @@ namespace ElectricalContractorSystem.Services
             }
         }
 
-        public void AddCustomer(Customer customer)
+        public int AddCustomer(Customer customer)
         {
             using (var connection = new MySqlConnection(_connectionString))
             {
@@ -1231,6 +1243,7 @@ namespace ElectricalContractorSystem.Services
                     
                     cmd.ExecuteNonQuery();
                     customer.CustomerId = (int)cmd.LastInsertedId;
+                    return customer.CustomerId;
                 }
             }
         }
