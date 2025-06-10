@@ -1,42 +1,13 @@
 using System;
-using MySql.Data.MySqlClient;
 
 namespace ElectricalContractorSystem.Services
 {
-    public static class DatabaseConnectionTest
+    /// <summary>
+    /// Database connection test placeholder
+    /// </summary>
+    public class DatabaseConnectionTest
     {
-        public static bool TestConnection(string connectionString)
-        {
-            try
-            {
-                using (var connection = new MySqlConnection(connectionString))
-                {
-                    connection.Open();
-                    return true;
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Database connection failed: {ex.Message}");
-                return false;
-            }
-        }
-
-        public static bool TestConnection()
-        {
-            return TestConnection(DatabaseService.ConnectionString);
-        }
-
-        public static string GetConnectionStatus()
-        {
-            if (TestConnection())
-            {
-                return "Connected to database successfully";
-            }
-            else
-            {
-                return "Failed to connect to database";
-            }
-        }
+        // This class is a placeholder for future database connection testing functionality
+        // The actual implementation has been moved to proper service classes
     }
 }
