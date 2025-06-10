@@ -47,15 +47,8 @@ namespace ElectricalContractorSystem.Services
             {
                 try
                 {
-                    bool success = _databaseService.UpdateJobStatus(jobId, newStatus);
-                    if (success)
-                    {
-                        result.SuccessCount++;
-                    }
-                    else
-                    {
-                        result.FailureCount++;
-                    }
+                    _databaseService.UpdateJobStatus(jobId, newStatus);
+                    result.SuccessCount++;
                 }
                 catch (Exception ex)
                 {
