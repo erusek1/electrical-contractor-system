@@ -108,6 +108,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="DatabaseConnectionTest.cs" />
+    <Compile Include="StartupTest.cs" />
     <Compile Include="Helpers\BooleanToVisibilityConverter.cs" />
     <Compile Include="Helpers\EmployeeHoursConverter.cs" />
     <Compile Include="Helpers\EmployeeStatusConverter.cs" />
@@ -151,8 +152,18 @@
     <Compile Include="Models\RoomTemplateItem.cs" />
     <Compile Include="Models\Vendor.cs" />
     <Compile Include="Services\BulkUpdateService.cs" />
+    <Compile Include="Services\DataPopulationService.cs" />
+    <Compile Include="Services\DataUtilityService.cs" />
     <Compile Include="Services\DatabaseConnectionTest.cs" />
     <Compile Include="Services\DatabaseService.cs" />
+    <Compile Include="Services\DatabaseService.Customer.cs" />
+    <Compile Include="Services\DatabaseService.Estimating.cs" />
+    <Compile Include="Services\DatabaseService.Extended.cs" />
+    <Compile Include="Services\EstimateConversionService.cs" />
+    <Compile Include="Services\EstimatePdfService.cs" />
+    <Compile Include="Services\EstimateService.cs" />
+    <Compile Include="Services\PriceListService.cs" />
+    <Compile Include="Services\ReportService.cs" />
     <Compile Include="ViewModels\BulkStatusUpdateDialogViewModel.cs" />
     <Compile Include="ViewModels\ImportJobsViewModel.cs" />
     <Compile Include="ViewModels\JobCostTrackingViewModel.cs" />
