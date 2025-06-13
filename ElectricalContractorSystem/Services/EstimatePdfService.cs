@@ -4,6 +4,7 @@ using System.Linq;
 using ElectricalContractorSystem.Models;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
+using iTextSharp.text.pdf.draw;
 using System.Diagnostics;
 
 namespace ElectricalContractorSystem.Services
@@ -43,7 +44,7 @@ namespace ElectricalContractorSystem.Services
                 throw new InvalidOperationException($"Estimate {estimateId} not found");
             }
 
-            var stageSummaries = _estimateService.GetEstimateStageSummaries(estimateId);
+            var stageSummaries = _estimateService.GetEstimateStageSummaries(_estimateService.GetConnection(), estimateId);
 
             using (var fs = new FileStream(outputPath, FileMode.Create, FileAccess.Write, FileShare.None))
             {
@@ -118,8 +119,8 @@ namespace ElectricalContractorSystem.Services
 
             document.Add(table);
             
-            // Add a line separator
-            var line = new LineSeparator(2f, 100f, HeaderColor, Element.ALIGN_CENTER, -1);
+            // Add a line separator using iTextSharp.text.pdf.draw.LineSeparator
+            var line = new iTextSharp.text.pdf.draw.LineSeparator(2f, 100f, HeaderColor, Element.ALIGN_CENTER, -1);
             document.Add(new Chunk(line));
             document.Add(new Paragraph("\n"));
         }
@@ -143,7 +144,7 @@ namespace ElectricalContractorSystem.Services
             var leftCell = new PdfPCell();
             leftCell.Border = Rectangle.NO_BORDER;
             leftCell.AddElement(new Paragraph($"Estimate #: {estimate.EstimateNumber}", BoldFont));
-            leftCell.AddElement(new Paragraph($"Date: {estimate.CreatedDate:MM/dd/yyyy}", NormalFont));
+            leftCell.AddElement(new Paragraph($"Date: {estimate.CreateDate:MM/dd/yyyy}", NormalFont));
             if (estimate.ExpirationDate.HasValue)
             {
                 leftCell.AddElement(new Paragraph($"Valid Until: {estimate.ExpirationDate.Value:MM/dd/yyyy}", NormalFont));
@@ -208,12 +209,12 @@ namespace ElectricalContractorSystem.Services
             AddDetailRow(table, "Job Name:", estimate.JobName);
             
             // Job address
-            if (!string.IsNullOrEmpty(estimate.JobAddress))
+            if (!string.IsNullOrEmpty(estimate.Address))
             {
-                AddDetailRow(table, "Job Location:", estimate.JobAddress);
-                if (!string.IsNullOrEmpty(estimate.JobCity))
+                AddDetailRow(table, "Job Location:", estimate.Address);
+                if (!string.IsNullOrEmpty(estimate.City))
                 {
-                    AddDetailRow(table, "", $"{estimate.JobCity}, {estimate.JobState} {estimate.JobZip}");
+                    AddDetailRow(table, "", $"{estimate.City}, {estimate.State} {estimate.Zip}");
                 }
             }
             
@@ -287,7 +288,7 @@ namespace ElectricalContractorSystem.Services
                 foreach (var item in room.Items.OrderBy(i => i.LineOrder))
                 {
                     AddItemCell(itemsTable, item.Quantity.ToString(), Element.ALIGN_CENTER);
-                    AddItemCell(itemsTable, item.ItemName, Element.ALIGN_LEFT);
+                    AddItemCell(itemsTable, item.ItemDescription, Element.ALIGN_LEFT);
                     
                     if (showPrices)
                     {
@@ -349,9 +350,9 @@ namespace ElectricalContractorSystem.Services
             // Stage rows
             foreach (var stage in stageSummaries.OrderBy(s => s.StageOrder))
             {
-                AddItemCell(table, stage.StageName, Element.ALIGN_LEFT);
-                AddItemCell(table, stage.TotalLaborHours.ToString("N1"), Element.ALIGN_CENTER);
-                AddItemCell(table, stage.TotalMaterialCost.ToString("C"), Element.ALIGN_RIGHT);
+                AddItemCell(table, stage.Stage, Element.ALIGN_LEFT);
+                AddItemCell(table, stage.LaborHours.ToString("N1"), Element.ALIGN_CENTER);
+                AddItemCell(table, stage.MaterialCost.ToString("C"), Element.ALIGN_RIGHT);
             }
 
             document.Add(table);
