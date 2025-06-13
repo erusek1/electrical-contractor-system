@@ -8,6 +8,9 @@ namespace ElectricalContractorSystem.Models
         public string ItemCode { get; set; }
         public string ItemDescription { get; set; }
         
+        // Add EstimateId property for navigation
+        public int EstimateId { get; set; }
+        
         // Aliases for compatibility
         public string Description 
         { 
