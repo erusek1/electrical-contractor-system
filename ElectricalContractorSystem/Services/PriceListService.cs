@@ -60,13 +60,19 @@ namespace ElectricalContractorSystem.Services
                             // Load stage-specific labor minutes if they exist
                             if (!reader.IsDBNull(reader.GetOrdinal("rough_minutes")))
                             {
-                                item.LaborMinutes = new LaborMinute
-                                {
-                                    RoughMinutes = reader.GetInt32("rough_minutes"),
-                                    FinishMinutes = reader.GetInt32("finish_minutes"),
-                                    ServiceMinutes = reader.GetInt32("service_minutes"),
-                                    ExtraMinutes = reader.GetInt32("extra_minutes")
-                                };
+                                item.RoughMinutes = reader.GetInt32("rough_minutes");
+                            }
+                            if (!reader.IsDBNull(reader.GetOrdinal("finish_minutes")))
+                            {
+                                item.FinishMinutes = reader.GetInt32("finish_minutes");
+                            }
+                            if (!reader.IsDBNull(reader.GetOrdinal("service_minutes")))
+                            {
+                                item.ServiceMinutes = reader.GetInt32("service_minutes");
+                            }
+                            if (!reader.IsDBNull(reader.GetOrdinal("extra_minutes")))
+                            {
+                                item.ExtraMinutes = reader.GetInt32("extra_minutes");
                             }
 
                             items.Add(item);
@@ -117,13 +123,19 @@ namespace ElectricalContractorSystem.Services
                             // Load stage-specific labor minutes if they exist
                             if (!reader.IsDBNull(reader.GetOrdinal("rough_minutes")))
                             {
-                                item.LaborMinutes = new LaborMinute
-                                {
-                                    RoughMinutes = reader.GetInt32("rough_minutes"),
-                                    FinishMinutes = reader.GetInt32("finish_minutes"),
-                                    ServiceMinutes = reader.GetInt32("service_minutes"),
-                                    ExtraMinutes = reader.GetInt32("extra_minutes")
-                                };
+                                item.RoughMinutes = reader.GetInt32("rough_minutes");
+                            }
+                            if (!reader.IsDBNull(reader.GetOrdinal("finish_minutes")))
+                            {
+                                item.FinishMinutes = reader.GetInt32("finish_minutes");
+                            }
+                            if (!reader.IsDBNull(reader.GetOrdinal("service_minutes")))
+                            {
+                                item.ServiceMinutes = reader.GetInt32("service_minutes");
+                            }
+                            if (!reader.IsDBNull(reader.GetOrdinal("extra_minutes")))
+                            {
+                                item.ExtraMinutes = reader.GetInt32("extra_minutes");
                             }
 
                             return item;
@@ -189,13 +201,19 @@ namespace ElectricalContractorSystem.Services
                             // Load stage-specific labor minutes if they exist
                             if (!reader.IsDBNull(reader.GetOrdinal("rough_minutes")))
                             {
-                                item.LaborMinutes = new LaborMinute
-                                {
-                                    RoughMinutes = reader.GetInt32("rough_minutes"),
-                                    FinishMinutes = reader.GetInt32("finish_minutes"),
-                                    ServiceMinutes = reader.GetInt32("service_minutes"),
-                                    ExtraMinutes = reader.GetInt32("extra_minutes")
-                                };
+                                item.RoughMinutes = reader.GetInt32("rough_minutes");
+                            }
+                            if (!reader.IsDBNull(reader.GetOrdinal("finish_minutes")))
+                            {
+                                item.FinishMinutes = reader.GetInt32("finish_minutes");
+                            }
+                            if (!reader.IsDBNull(reader.GetOrdinal("service_minutes")))
+                            {
+                                item.ServiceMinutes = reader.GetInt32("service_minutes");
+                            }
+                            if (!reader.IsDBNull(reader.GetOrdinal("extra_minutes")))
+                            {
+                                item.ExtraMinutes = reader.GetInt32("extra_minutes");
                             }
 
                             items.Add(item);
@@ -248,21 +266,10 @@ namespace ElectricalContractorSystem.Services
                 command.Parameters.AddWithValue("@markup_percentage", item.MarkupPercentage);
                 command.Parameters.AddWithValue("@is_active", item.IsActive);
                 command.Parameters.AddWithValue("@notes", item.Notes ?? (object)DBNull.Value);
-
-                if (item.LaborMinutes != null)
-                {
-                    command.Parameters.AddWithValue("@rough_minutes", item.LaborMinutes.RoughMinutes);
-                    command.Parameters.AddWithValue("@finish_minutes", item.LaborMinutes.FinishMinutes);
-                    command.Parameters.AddWithValue("@service_minutes", item.LaborMinutes.ServiceMinutes);
-                    command.Parameters.AddWithValue("@extra_minutes", item.LaborMinutes.ExtraMinutes);
-                }
-                else
-                {
-                    command.Parameters.AddWithValue("@rough_minutes", DBNull.Value);
-                    command.Parameters.AddWithValue("@finish_minutes", DBNull.Value);
-                    command.Parameters.AddWithValue("@service_minutes", DBNull.Value);
-                    command.Parameters.AddWithValue("@extra_minutes", DBNull.Value);
-                }
+                command.Parameters.AddWithValue("@rough_minutes", item.RoughMinutes ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@finish_minutes", item.FinishMinutes ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@service_minutes", item.ServiceMinutes ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@extra_minutes", item.ExtraMinutes ?? (object)DBNull.Value);
 
                 command.ExecuteNonQuery();
                 item.ItemId = (int)command.LastInsertedId;
@@ -302,21 +309,10 @@ namespace ElectricalContractorSystem.Services
                 command.Parameters.AddWithValue("@markup_percentage", item.MarkupPercentage);
                 command.Parameters.AddWithValue("@is_active", item.IsActive);
                 command.Parameters.AddWithValue("@notes", item.Notes ?? (object)DBNull.Value);
-
-                if (item.LaborMinutes != null)
-                {
-                    command.Parameters.AddWithValue("@rough_minutes", item.LaborMinutes.RoughMinutes);
-                    command.Parameters.AddWithValue("@finish_minutes", item.LaborMinutes.FinishMinutes);
-                    command.Parameters.AddWithValue("@service_minutes", item.LaborMinutes.ServiceMinutes);
-                    command.Parameters.AddWithValue("@extra_minutes", item.LaborMinutes.ExtraMinutes);
-                }
-                else
-                {
-                    command.Parameters.AddWithValue("@rough_minutes", DBNull.Value);
-                    command.Parameters.AddWithValue("@finish_minutes", DBNull.Value);
-                    command.Parameters.AddWithValue("@service_minutes", DBNull.Value);
-                    command.Parameters.AddWithValue("@extra_minutes", DBNull.Value);
-                }
+                command.Parameters.AddWithValue("@rough_minutes", item.RoughMinutes ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@finish_minutes", item.FinishMinutes ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@service_minutes", item.ServiceMinutes ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@extra_minutes", item.ExtraMinutes ?? (object)DBNull.Value);
 
                 command.ExecuteNonQuery();
             }
