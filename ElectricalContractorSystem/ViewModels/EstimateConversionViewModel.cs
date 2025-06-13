@@ -131,7 +131,8 @@ namespace ElectricalContractorSystem.ViewModels
                 IsConverting = true;
                 ConversionStatus = "Starting conversion...";
                 
-                var options = new ConversionOptions
+                // Use the ConversionOptions from the Services namespace
+                var options = new Services.ConversionOptions
                 {
                     IncludeAllStages = IncludeAllStages,
                     IncludeMaterialCosts = IncludeMaterialCosts,
