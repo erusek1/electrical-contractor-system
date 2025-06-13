@@ -209,14 +209,4 @@ namespace ElectricalContractorSystem.ViewModels
         
         #endregion
     }
-    
-    public class ConversionOptions
-    {
-        public string JobNumber { get; set; }
-        public bool IncludeAllStages { get; set; }
-        public bool IncludeMaterialCosts { get; set; }
-        public bool IncludeRoomSpecifications { get; set; }
-        public bool IncludePermitItems { get; set; }
-        public string Notes { get; set; }
-    }
 }
