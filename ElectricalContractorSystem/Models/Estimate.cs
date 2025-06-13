@@ -161,14 +161,4 @@ namespace ElectricalContractorSystem.Models
             return newEstimate;
         }
     }
-
-    public enum EstimateStatus
-    {
-        Draft,
-        Sent,
-        Approved,
-        Rejected,
-        Expired,
-        Converted
-    }
 }
