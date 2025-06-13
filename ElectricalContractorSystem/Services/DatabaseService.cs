@@ -59,6 +59,32 @@ namespace ElectricalContractorSystem.Services
             }
         }
 
+        // New method to provide connection for other services
+        public MySqlConnection GetConnection()
+        {
+            return new MySqlConnection(_connectionString);
+        }
+
+        // New method to execute reader queries
+        public MySqlDataReader ExecuteReader(string query, Dictionary<string, object> parameters = null)
+        {
+            var connection = new MySqlConnection(_connectionString);
+            connection.Open();
+            
+            using (var cmd = new MySqlCommand(query, connection))
+            {
+                if (parameters != null)
+                {
+                    foreach (var param in parameters)
+                    {
+                        cmd.Parameters.AddWithValue(param.Key, param.Value ?? DBNull.Value);
+                    }
+                }
+                
+                return cmd.ExecuteReader(CommandBehavior.CloseConnection);
+            }
+        }
+
         #endregion
 
         #region Job Methods
@@ -192,6 +218,26 @@ namespace ElectricalContractorSystem.Services
                         return (lastNumber + 1).ToString();
                     }
                     return "401"; // Start from 401 if no jobs exist
+                }
+            }
+        }
+
+        // New method for getting last job number (same as GetNextJobNumber but returns the last used)
+        public string GetLastJobNumber()
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = "SELECT MAX(CAST(job_number AS UNSIGNED)) FROM Jobs";
+                
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    var result = cmd.ExecuteScalar();
+                    if (result != null && result != DBNull.Value)
+                    {
+                        return result.ToString();
+                    }
+                    return "400"; // Return 400 if no jobs exist, so next will be 401
                 }
             }
         }
@@ -778,7 +824,7 @@ namespace ElectricalContractorSystem.Services
                                 JobZip = reader.IsDBNull(reader.GetOrdinal("job_zip")) ? null : reader.GetString("job_zip"),
                                 SquareFootage = reader.IsDBNull(reader.GetOrdinal("square_footage")) ? (int?)null : reader.GetInt32("square_footage"),
                                 NumFloors = reader.IsDBNull(reader.GetOrdinal("num_floors")) ? (int?)null : reader.GetInt32("num_floors"),
-                                Status = reader.GetString("status"),
+                                Status = ParseEstimateStatus(reader.GetString("status")),
                                 CreatedDate = reader.GetDateTime("created_date"),
                                 ExpirationDate = reader.IsDBNull(reader.GetOrdinal("expiration_date")) ? (DateTime?)null : reader.GetDateTime("expiration_date"),
                                 Notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString("notes"),
@@ -845,7 +891,7 @@ namespace ElectricalContractorSystem.Services
                                 JobZip = reader.IsDBNull(reader.GetOrdinal("job_zip")) ? null : reader.GetString("job_zip"),
                                 SquareFootage = reader.IsDBNull(reader.GetOrdinal("square_footage")) ? (int?)null : reader.GetInt32("square_footage"),
                                 NumFloors = reader.IsDBNull(reader.GetOrdinal("num_floors")) ? (int?)null : reader.GetInt32("num_floors"),
-                                Status = reader.GetString("status"),
+                                Status = ParseEstimateStatus(reader.GetString("status")),
                                 CreatedDate = reader.GetDateTime("created_date"),
                                 ExpirationDate = reader.IsDBNull(reader.GetOrdinal("expiration_date")) ? (DateTime?)null : reader.GetDateTime("expiration_date"),
                                 Notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString("notes"),
@@ -880,6 +926,73 @@ namespace ElectricalContractorSystem.Services
                 
                 return estimate;
             }
+        }
+
+        // New method to delete an estimate
+        public void DeleteEstimate(int estimateId)
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                using (var transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        // Delete line items first (due to foreign key constraints)
+                        var deleteLineItemsQuery = @"
+                            DELETE eli FROM EstimateLineItems eli
+                            INNER JOIN EstimateRooms er ON eli.room_id = er.room_id
+                            WHERE er.estimate_id = @estimateId";
+                        
+                        using (var cmd = new MySqlCommand(deleteLineItemsQuery, connection, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@estimateId", estimateId);
+                            cmd.ExecuteNonQuery();
+                        }
+                        
+                        // Delete rooms
+                        var deleteRoomsQuery = "DELETE FROM EstimateRooms WHERE estimate_id = @estimateId";
+                        using (var cmd = new MySqlCommand(deleteRoomsQuery, connection, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@estimateId", estimateId);
+                            cmd.ExecuteNonQuery();
+                        }
+                        
+                        // Delete stage summaries
+                        var deleteStageSummaryQuery = "DELETE FROM EstimateStageSummary WHERE estimate_id = @estimateId";
+                        using (var cmd = new MySqlCommand(deleteStageSummaryQuery, connection, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@estimateId", estimateId);
+                            cmd.ExecuteNonQuery();
+                        }
+                        
+                        // Finally delete the estimate
+                        var deleteEstimateQuery = "DELETE FROM Estimates WHERE estimate_id = @estimateId";
+                        using (var cmd = new MySqlCommand(deleteEstimateQuery, connection, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@estimateId", estimateId);
+                            cmd.ExecuteNonQuery();
+                        }
+                        
+                        transaction.Commit();
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                }
+            }
+        }
+
+        // Helper method to parse estimate status from string to enum
+        private EstimateStatus ParseEstimateStatus(string status)
+        {
+            if (Enum.TryParse<EstimateStatus>(status, true, out var result))
+            {
+                return result;
+            }
+            return EstimateStatus.Draft; // Default to Draft if parsing fails
         }
 
         private void LoadEstimateRooms(Estimate estimate, MySqlConnection connection)
@@ -1012,7 +1125,7 @@ namespace ElectricalContractorSystem.Services
                 cmd.Parameters.AddWithValue("@job_zip", estimate.JobZip ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@square_footage", estimate.SquareFootage ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@num_floors", estimate.NumFloors ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@status", estimate.Status);
+                cmd.Parameters.AddWithValue("@status", estimate.Status.ToString());
                 cmd.Parameters.AddWithValue("@created_date", estimate.CreatedDate);
                 cmd.Parameters.AddWithValue("@expiration_date", estimate.ExpirationDate ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@notes", estimate.Notes ?? (object)DBNull.Value);
@@ -1066,7 +1179,7 @@ namespace ElectricalContractorSystem.Services
                 cmd.Parameters.AddWithValue("@job_zip", estimate.JobZip ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@square_footage", estimate.SquareFootage ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@num_floors", estimate.NumFloors ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@status", estimate.Status);
+                cmd.Parameters.AddWithValue("@status", estimate.Status.ToString());
                 cmd.Parameters.AddWithValue("@expiration_date", estimate.ExpirationDate ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@notes", estimate.Notes ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@tax_rate", estimate.TaxRate);
