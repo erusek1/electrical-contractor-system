@@ -45,6 +45,11 @@
                 <MenuItem Header="_Add New Customer" Click="AddCustomer_Click"/>
             </MenuItem>
             
+            <MenuItem Header="_Employees">
+                <MenuItem Header="_Manage Employees" Click="ManageEmployees_Click"/>
+                <MenuItem Header="_Employee Cost Calculator" Click="EmployeeCostCalculator_Click"/>
+            </MenuItem>
+            
             <MenuItem Header="_Price List">
                 <MenuItem Header="_Manage Price List" Click="ManagePriceList_Click"/>
                 <MenuItem Header="_Import from Excel" Click="ImportPriceList_Click"/>
