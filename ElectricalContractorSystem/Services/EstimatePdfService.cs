@@ -12,6 +12,7 @@ namespace ElectricalContractorSystem.Services
     public class EstimatePdfService
     {
         private readonly EstimateService _estimateService;
+        private readonly DatabaseService _databaseService;
         
         // Company information - customize these
         private const string CompanyName = "Erik Rusek Electric";
@@ -31,9 +32,10 @@ namespace ElectricalContractorSystem.Services
         private readonly Font SmallFont = FontFactory.GetFont(FontFactory.HELVETICA, 8, BaseColor.BLACK);
         private readonly Font BoldFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 10, BaseColor.BLACK);
 
-        public EstimatePdfService(EstimateService estimateService)
+        public EstimatePdfService(EstimateService estimateService, DatabaseService databaseService)
         {
             _estimateService = estimateService;
+            _databaseService = databaseService;
         }
 
         public void GenerateEstimatePdf(int estimateId, string outputPath, bool showPrices = true)
@@ -44,7 +46,13 @@ namespace ElectricalContractorSystem.Services
                 throw new InvalidOperationException($"Estimate {estimateId} not found");
             }
 
-            var stageSummaries = _estimateService.GetEstimateStageSummaries(_estimateService.GetConnection(), estimateId);
+            // Get stage summaries using the database connection
+            System.Collections.Generic.List<EstimateStageSummary> stageSummaries;
+            using (var connection = _databaseService.GetConnection())
+            {
+                connection.Open();
+                stageSummaries = _estimateService.GetEstimateStageSummaries(connection, estimateId);
+            }
 
             using (var fs = new FileStream(outputPath, FileMode.Create, FileAccess.Write, FileShare.None))
             {
@@ -144,7 +152,7 @@ namespace ElectricalContractorSystem.Services
             var leftCell = new PdfPCell();
             leftCell.Border = Rectangle.NO_BORDER;
             leftCell.AddElement(new Paragraph($"Estimate #: {estimate.EstimateNumber}", BoldFont));
-            leftCell.AddElement(new Paragraph($"Date: {estimate.CreateDate:MM/dd/yyyy}", NormalFont));
+            leftCell.AddElement(new Paragraph($"Date: {estimate.CreatedDate:MM/dd/yyyy}", NormalFont));
             if (estimate.ExpirationDate.HasValue)
             {
                 leftCell.AddElement(new Paragraph($"Valid Until: {estimate.ExpirationDate.Value:MM/dd/yyyy}", NormalFont));
@@ -209,12 +217,12 @@ namespace ElectricalContractorSystem.Services
             AddDetailRow(table, "Job Name:", estimate.JobName);
             
             // Job address
-            if (!string.IsNullOrEmpty(estimate.Address))
+            if (!string.IsNullOrEmpty(estimate.JobAddress))
             {
-                AddDetailRow(table, "Job Location:", estimate.Address);
-                if (!string.IsNullOrEmpty(estimate.City))
+                AddDetailRow(table, "Job Location:", estimate.JobAddress);
+                if (!string.IsNullOrEmpty(estimate.JobCity))
                 {
-                    AddDetailRow(table, "", $"{estimate.City}, {estimate.State} {estimate.Zip}");
+                    AddDetailRow(table, "", $"{estimate.JobCity}, {estimate.JobState} {estimate.JobZip}");
                 }
             }
             
