@@ -44,9 +44,9 @@ namespace ElectricalContractorSystem.Views
             NameTextBox.Text = PriceListItem.Name;
             DescriptionTextBox.Text = PriceListItem.Description;
             BaseCostTextBox.Text = PriceListItem.BaseCost.ToString("F2");
-            TaxRateTextBox.Text = PriceListItem.TaxRate.ToString("F3");
-            LaborMinutesTextBox.Text = PriceListItem.LaborMinutes.ToString();
-            MarkupPercentageTextBox.Text = PriceListItem.MarkupPercentage.ToString("F2");
+            TaxRateTextBox.Text = PriceListItem.TaxRate?.ToString("F3") ?? "6.625";
+            LaborMinutesTextBox.Text = PriceListItem.LaborMinutes?.ToString() ?? "0";
+            MarkupPercentageTextBox.Text = PriceListItem.MarkupPercentage?.ToString("F2") ?? "22.0";
             IsActiveCheckBox.IsChecked = PriceListItem.IsActive;
             NotesTextBox.Text = PriceListItem.Notes;
         }
@@ -87,28 +87,43 @@ namespace ElectricalContractorSystem.Views
                 return;
             }
 
-            if (!decimal.TryParse(TaxRateTextBox.Text, out decimal taxRate) || taxRate < 0)
+            decimal? taxRate = null;
+            if (!string.IsNullOrWhiteSpace(TaxRateTextBox.Text))
             {
-                MessageBox.Show("Tax Rate must be a valid positive number.", "Validation Error", 
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                TaxRateTextBox.Focus();
-                return;
+                if (!decimal.TryParse(TaxRateTextBox.Text, out decimal taxRateValue) || taxRateValue < 0)
+                {
+                    MessageBox.Show("Tax Rate must be a valid positive number.", "Validation Error", 
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    TaxRateTextBox.Focus();
+                    return;
+                }
+                taxRate = taxRateValue;
             }
 
-            if (!int.TryParse(LaborMinutesTextBox.Text, out int laborMinutes) || laborMinutes < 0)
+            int? laborMinutes = null;
+            if (!string.IsNullOrWhiteSpace(LaborMinutesTextBox.Text))
             {
-                MessageBox.Show("Labor Minutes must be a valid positive integer.", "Validation Error", 
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                LaborMinutesTextBox.Focus();
-                return;
+                if (!int.TryParse(LaborMinutesTextBox.Text, out int laborMinutesValue) || laborMinutesValue < 0)
+                {
+                    MessageBox.Show("Labor Minutes must be a valid positive integer.", "Validation Error", 
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    LaborMinutesTextBox.Focus();
+                    return;
+                }
+                laborMinutes = laborMinutesValue;
             }
 
-            if (!decimal.TryParse(MarkupPercentageTextBox.Text, out decimal markupPercentage) || markupPercentage < 0)
+            decimal? markupPercentage = null;
+            if (!string.IsNullOrWhiteSpace(MarkupPercentageTextBox.Text))
             {
-                MessageBox.Show("Markup Percentage must be a valid positive number.", "Validation Error", 
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                MarkupPercentageTextBox.Focus();
-                return;
+                if (!decimal.TryParse(MarkupPercentageTextBox.Text, out decimal markupPercentageValue) || markupPercentageValue < 0)
+                {
+                    MessageBox.Show("Markup Percentage must be a valid positive number.", "Validation Error", 
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MarkupPercentageTextBox.Focus();
+                    return;
+                }
+                markupPercentage = markupPercentageValue;
             }
 
             // Update or create the price list item
