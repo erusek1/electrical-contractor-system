@@ -8,7 +8,7 @@ namespace ElectricalContractorSystem.Views
     /// </summary>
     public partial class AddCustomerDialog : Window
     {
-        public Customer Customer { get; private set; }
+        public Customer Customer { get; set; }
         
         public AddCustomerDialog()
         {
