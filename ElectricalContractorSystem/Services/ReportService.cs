@@ -489,14 +489,14 @@ namespace ElectricalContractorSystem.Services
                         AND le.date BETWEEN @startDate AND @endDate
                     GROUP BY le.date";
 
-                var parameters = new Dictionary<string, object>
+                var hoursParameters = new Dictionary<string, object>
                 {
                     ["@employeeId"] = emp.id,
                     ["@startDate"] = weekStartDate,
                     ["@endDate"] = weekEndDate
                 };
 
-                using (var reader = _databaseService.ExecuteReader(hoursQuery, parameters))
+                using (var reader = _databaseService.ExecuteReader(hoursQuery, hoursParameters))
                 {
                     while (reader.Read())
                     {
@@ -528,13 +528,13 @@ namespace ElectricalContractorSystem.Services
                 FROM LaborEntries
                 WHERE date BETWEEN @startDate AND @endDate";
 
-            parameters = new Dictionary<string, object>
+            var jobsParameters = new Dictionary<string, object>
             {
                 ["@startDate"] = weekStartDate,
                 ["@endDate"] = weekEndDate
             };
 
-            using (var reader = _databaseService.ExecuteReader(jobsQuery, parameters))
+            using (var reader = _databaseService.ExecuteReader(jobsQuery, jobsParameters))
             {
                 if (reader.Read())
                 {
