@@ -78,7 +78,7 @@ namespace ElectricalContractorSystem.ViewModels
         public int DraftCount => Estimates.Count(e => e.Status == EstimateStatus.Draft);
         public int SentCount => Estimates.Count(e => e.Status == EstimateStatus.Sent);
         public int ApprovedCount => Estimates.Count(e => e.Status == EstimateStatus.Approved);
-        public decimal TotalValue => Estimates.Sum(e => e.TotalCost ?? 0);
+        public decimal TotalValue => Estimates.Sum(e => e.TotalPrice); // Fixed: Changed from TotalCost to TotalPrice
         
         #endregion
         
