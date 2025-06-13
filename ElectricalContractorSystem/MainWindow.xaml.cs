@@ -113,7 +113,12 @@ namespace ElectricalContractorSystem
                 return;
             }
             
-            ShowEstimateBuilder();
+            // Show customer selection dialog
+            var dialog = new CustomerSelectionDialog(_databaseService);
+            if (dialog.ShowDialog() == true && dialog.SelectedCustomer != null)
+            {
+                ShowEstimateBuilder(dialog.SelectedCustomer);
+            }
         }
         
         private void OpenEstimate_Click(object sender, RoutedEventArgs e)
@@ -360,7 +365,31 @@ namespace ElectricalContractorSystem
                 return;
             }
             
-            ShowPriceListManager();
+            // Show price list items for now
+            var items = _databaseService.GetActivePriceListItems();
+            var itemList = "Current Price List Items:\n\n";
+            
+            if (items.Count > 0)
+            {
+                itemList += "Code | Description | Price\n";
+                itemList += "--------------------------------\n";
+                foreach (var item in items.Take(20)) // Show first 20 items
+                {
+                    itemList += $"{item.ItemCode,-6} | {item.Name,-30} | ${item.TotalPrice:F2}\n";
+                }
+                if (items.Count > 20)
+                {
+                    itemList += $"\n... and {items.Count - 20} more items";
+                }
+            }
+            else
+            {
+                itemList = "No price list items in database yet.\n\n" +
+                    "Import your price list using:\n" +
+                    "python migration/import_price_list_from_excel.py";
+            }
+            
+            MessageBox.Show(itemList, "Price List", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         
         private void ImportPriceList_Click(object sender, RoutedEventArgs e)
@@ -500,7 +529,7 @@ namespace ElectricalContractorSystem
             this.Title = $"Electrical Contractor Management System - Job #{job.JobNumber}";
         }
         
-        private void ShowEstimateBuilder()
+        private void ShowEstimateBuilder(Customer customer = null)
         {
             var viewModel = new EstimateBuilderViewModel(_databaseService);
             var view = new EstimateBuilderView
@@ -508,8 +537,11 @@ namespace ElectricalContractorSystem
                 DataContext = viewModel
             };
             
-            // Create new estimate
-            viewModel.CreateNewEstimate();
+            // Create new estimate with customer
+            if (customer != null)
+            {
+                viewModel.CreateNewEstimate(customer);
+            }
             
             MainContent.Content = view;
             this.Title = "Electrical Contractor Management System - Estimate Builder";
@@ -525,18 +557,6 @@ namespace ElectricalContractorSystem
             
             MainContent.Content = view;
             this.Title = "Electrical Contractor Management System - Manage Estimates";
-        }
-        
-        private void ShowPriceListManager()
-        {
-            var viewModel = new PriceListViewModel(_databaseService);
-            var view = new PriceListView
-            {
-                DataContext = viewModel
-            };
-            
-            MainContent.Content = view;
-            this.Title = "Electrical Contractor Management System - Price List Manager";
         }
         
         #endregion
