@@ -32,6 +32,11 @@ namespace ElectricalContractorSystem.Services
             }
         }
 
+        public Estimate GetEstimateById(int estimateId)
+        {
+            return GetEstimateWithDetails(estimateId);
+        }
+
         public Estimate GetEstimateWithDetails(int estimateId)
         {
             Estimate estimate = null;
@@ -74,6 +79,10 @@ namespace ElectricalContractorSystem.Services
                                 MaterialMarkup = reader.GetDecimal("material_markup"),
                                 TaxRate = reader.GetDecimal("tax_rate"),
                                 LaborRate = reader.GetDecimal("labor_rate"),
+                                Version = reader.IsDBNull(reader.GetOrdinal("version")) ? 1 : reader.GetInt32("version"),
+                                ConvertedToJobId = reader.IsDBNull(reader.GetOrdinal("converted_to_job_id")) ? (int?)null : reader.GetInt32("converted_to_job_id"),
+                                ConvertedDate = reader.IsDBNull(reader.GetOrdinal("converted_date")) ? (DateTime?)null : reader.GetDateTime("converted_date"),
+                                CreatedBy = reader.IsDBNull(reader.GetOrdinal("created_by")) ? null : reader.GetString("created_by"),
                                 Customer = new Customer
                                 {
                                     CustomerId = reader.GetInt32("customer_id"),
@@ -95,10 +104,12 @@ namespace ElectricalContractorSystem.Services
                     // Get rooms
                     estimate.Rooms = GetEstimateRooms(connection, estimateId);
 
-                    // Get line items for each room
+                    // Get line items for each room and add to estimate's LineItems collection
+                    estimate.LineItems = new List<EstimateLineItem>();
                     foreach (var room in estimate.Rooms)
                     {
                         room.Items = GetRoomLineItems(connection, room.RoomId);
+                        estimate.LineItems.AddRange(room.Items);
                     }
 
                     // Get stage summaries
@@ -106,13 +117,16 @@ namespace ElectricalContractorSystem.Services
 
                     // Get permit items
                     estimate.PermitItems = GetEstimatePermitItems(connection, estimateId);
+
+                    // Calculate totals
+                    estimate.CalculateTotals();
                 }
 
                 return estimate;
             }
         }
 
-        private List<EstimateRoom> GetEstimateRooms(MySqlConnection connection, int estimateId)
+        public List<EstimateRoom> GetEstimateRooms(MySqlConnection connection, int estimateId)
         {
             var rooms = new List<EstimateRoom>();
             var query = @"SELECT room_id, room_name, room_order, notes
@@ -143,7 +157,7 @@ namespace ElectricalContractorSystem.Services
             return rooms;
         }
 
-        private List<EstimateLineItem> GetRoomLineItems(MySqlConnection connection, int roomId)
+        public List<EstimateLineItem> GetRoomLineItems(MySqlConnection connection, int roomId)
         {
             var items = new List<EstimateLineItem>();
             var query = @"SELECT line_id, item_id, quantity, item_code, description, 
@@ -166,7 +180,7 @@ namespace ElectricalContractorSystem.Services
                             ItemId = reader.IsDBNull(reader.GetOrdinal("item_id")) ? (int?)null : reader.GetInt32("item_id"),
                             Quantity = reader.GetInt32("quantity"),
                             ItemCode = reader.IsDBNull(reader.GetOrdinal("item_code")) ? null : reader.GetString("item_code"),
-                            Description = reader.GetString("description"),
+                            ItemDescription = reader.GetString("description"),
                             UnitPrice = reader.GetDecimal("unit_price"),
                             MaterialCost = reader.GetDecimal("material_cost"),
                             LaborMinutes = reader.GetInt32("labor_minutes"),
@@ -180,7 +194,7 @@ namespace ElectricalContractorSystem.Services
             return items;
         }
 
-        private List<EstimateStageSummary> GetEstimateStageSummaries(MySqlConnection connection, int estimateId)
+        public List<EstimateStageSummary> GetEstimateStageSummaries(MySqlConnection connection, int estimateId)
         {
             var summaries = new List<EstimateStageSummary>();
             var query = @"SELECT stage, labor_hours, material_cost
@@ -207,7 +221,7 @@ namespace ElectricalContractorSystem.Services
             return summaries;
         }
 
-        private List<EstimatePermitItem> GetEstimatePermitItems(MySqlConnection connection, int estimateId)
+        public List<EstimatePermitItem> GetEstimatePermitItems(MySqlConnection connection, int estimateId)
         {
             var items = new List<EstimatePermitItem>();
             var query = @"SELECT permit_id, category, quantity, description
@@ -223,7 +237,7 @@ namespace ElectricalContractorSystem.Services
                     {
                         items.Add(new EstimatePermitItem
                         {
-                            PermitId = reader.GetInt32("permit_id"),
+                            PermitItemId = reader.GetInt32("permit_id"),
                             EstimateId = estimateId,
                             Category = reader.GetString("category"),
                             Quantity = reader.GetInt32("quantity"),
@@ -313,7 +327,7 @@ namespace ElectricalContractorSystem.Services
                                 {
                                     JobId = jobId,
                                     RoomName = room.RoomName,
-                                    ItemDescription = item.Description,
+                                    ItemDescription = item.ItemDescription,
                                     Quantity = item.Quantity,
                                     ItemCode = item.ItemCode,
                                     UnitPrice = item.UnitPrice,
