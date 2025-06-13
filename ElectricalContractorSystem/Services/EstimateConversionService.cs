@@ -32,7 +32,6 @@ namespace ElectricalContractorSystem.Services
             
             using (var connection = _databaseService.GetConnection())
             {
-                connection.Open();
                 using (var transaction = connection.BeginTransaction())
                 {
                     try
@@ -104,11 +103,121 @@ namespace ElectricalContractorSystem.Services
         }
 
         /// <summary>
+        /// Converts an approved estimate into a job with all related data using conversion options
+        /// </summary>
+        public Job ConvertEstimateToJob(Estimate estimate, ViewModels.ConversionOptions options)
+        {
+            if (estimate.Status != EstimateStatus.Approved)
+            {
+                throw new InvalidOperationException("Only approved estimates can be converted to jobs.");
+            }
+            
+            if (estimate.ConvertedToJobId.HasValue)
+            {
+                throw new InvalidOperationException("This estimate has already been converted to a job.");
+            }
+            
+            using (var connection = _databaseService.GetConnection())
+            {
+                using (var transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        // Create the job
+                        var job = new Job
+                        {
+                            JobNumber = options.JobNumber ?? GenerateNextJobNumber(connection, transaction),
+                            CustomerId = estimate.CustomerId,
+                            JobName = estimate.JobName,
+                            Address = estimate.Address,
+                            City = estimate.City,
+                            State = estimate.State,
+                            Zip = estimate.Zip,
+                            SquareFootage = estimate.SquareFootage,
+                            NumFloors = estimate.NumFloors,
+                            Status = "In Progress",
+                            CreateDate = DateTime.Now,
+                            TotalEstimate = estimate.TotalCost,
+                            EstimateId = estimate.EstimateId,
+                            Notes = options.Notes ?? $"Created from Estimate #{estimate.EstimateNumber} v{estimate.Version}"
+                        };
+                        
+                        // Insert the job
+                        var jobId = InsertJob(job, connection, transaction);
+                        job.JobId = jobId;
+                        
+                        // Create job stages from estimate summary if requested
+                        if (options.IncludeAllStages)
+                        {
+                            foreach (var summary in estimate.StageSummaries)
+                            {
+                                var stage = new JobStage
+                                {
+                                    JobId = jobId,
+                                    StageName = summary.Stage,
+                                    EstimatedHours = summary.LaborHours,
+                                    EstimatedMaterialCost = options.IncludeMaterialCosts ? summary.MaterialCost : 0,
+                                    ActualHours = 0,
+                                    ActualMaterialCost = 0
+                                };
+                                
+                                InsertJobStage(stage, connection, transaction);
+                            }
+                        }
+                        
+                        // Create initial material entries from estimate line items if requested
+                        if (options.IncludeMaterialCosts)
+                        {
+                            CreateInitialMaterialEntries(estimate, jobId, connection, transaction);
+                        }
+                        
+                        // Update estimate to mark as converted
+                        UpdateEstimateAsConverted(estimate.EstimateId, jobId, connection, transaction);
+                        
+                        // Create permit items from estimate if requested
+                        if (options.IncludePermitItems)
+                        {
+                            CreatePermitItems(estimate, jobId, connection, transaction);
+                        }
+                        
+                        // Create room specifications if requested
+                        if (options.IncludeRoomSpecifications)
+                        {
+                            CreateRoomSpecifications(estimate, jobId, connection, transaction);
+                        }
+                        
+                        transaction.Commit();
+                        
+                        // Update the estimate object
+                        estimate.ConvertedToJobId = jobId;
+                        estimate.ConvertedDate = DateTime.Now;
+                        estimate.Status = EstimateStatus.Converted;
+                        
+                        return job;
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
         /// Async version of ConvertEstimateToJob
         /// </summary>
         public Task<Job> ConvertEstimateToJobAsync(Estimate estimate)
         {
             return Task.Run(() => ConvertEstimateToJob(estimate));
+        }
+
+        /// <summary>
+        /// Async version of ConvertEstimateToJob with options
+        /// </summary>
+        public Task<Job> ConvertEstimateToJobAsync(Estimate estimate, ViewModels.ConversionOptions options)
+        {
+            return Task.Run(() => ConvertEstimateToJob(estimate, options));
         }
         
         private string GenerateNextJobNumber(MySqlConnection connection, MySqlTransaction transaction)
@@ -344,6 +453,37 @@ namespace ElectricalContractorSystem.Services
                     cmd.Parameters.AddWithValue("@description", $"Auto-generated from estimate conversion");
                     
                     cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        private void CreateRoomSpecifications(Estimate estimate, int jobId, MySqlConnection connection, MySqlTransaction transaction)
+        {
+            foreach (var room in estimate.Rooms)
+            {
+                foreach (var item in room.Items)
+                {
+                    var query = @"
+                        INSERT INTO RoomSpecifications (
+                            job_id, room_name, item_description, quantity, 
+                            item_code, unit_price, total_price
+                        ) VALUES (
+                            @job_id, @room_name, @item_description, @quantity,
+                            @item_code, @unit_price, @total_price
+                        )";
+                    
+                    using (var cmd = new MySqlCommand(query, connection, transaction))
+                    {
+                        cmd.Parameters.AddWithValue("@job_id", jobId);
+                        cmd.Parameters.AddWithValue("@room_name", room.RoomName);
+                        cmd.Parameters.AddWithValue("@item_description", item.ItemDescription);
+                        cmd.Parameters.AddWithValue("@quantity", item.Quantity);
+                        cmd.Parameters.AddWithValue("@item_code", item.ItemCode ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@unit_price", item.UnitPrice);
+                        cmd.Parameters.AddWithValue("@total_price", item.TotalPrice);
+                        
+                        cmd.ExecuteNonQuery();
+                    }
                 }
             }
         }
