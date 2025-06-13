@@ -23,9 +23,19 @@ namespace ElectricalContractorSystem.Models
         public decimal HourlyRate { get; set; }
 
         /// <summary>
-        /// Burden rate (additional cost as percentage of hourly rate)
+        /// Burden rate (additional employment costs like taxes, insurance, benefits)
         /// </summary>
         public decimal? BurdenRate { get; set; }
+        
+        /// <summary>
+        /// Vehicle cost per hour for this employee
+        /// </summary>
+        public decimal? VehicleCostPerHour { get; set; }
+        
+        /// <summary>
+        /// Overhead percentage to apply to hourly rate
+        /// </summary>
+        public decimal? OverheadPercentage { get; set; }
 
         /// <summary>
         /// Employee status (Active, Inactive)
@@ -54,6 +64,32 @@ namespace ElectricalContractorSystem.Models
                     return HourlyRate * (1 + (BurdenRate.Value / 100));
                 }
                 return HourlyRate;
+            }
+        }
+        
+        /// <summary>
+        /// Calculates the effective rate including all costs
+        /// Effective Rate = Base + Burden + Vehicle + (Base × Overhead%)
+        /// </summary>
+        public decimal EffectiveRate
+        {
+            get
+            {
+                decimal rate = HourlyRate;
+                
+                // Add burden rate (as fixed amount, not percentage)
+                if (BurdenRate.HasValue)
+                    rate += BurdenRate.Value;
+                    
+                // Add vehicle cost per hour
+                if (VehicleCostPerHour.HasValue)
+                    rate += VehicleCostPerHour.Value;
+                    
+                // Add overhead as percentage of base hourly rate
+                if (OverheadPercentage.HasValue)
+                    rate += HourlyRate * (OverheadPercentage.Value / 100);
+                    
+                return rate;
             }
         }
 
