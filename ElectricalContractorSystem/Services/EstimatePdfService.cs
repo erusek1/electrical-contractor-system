@@ -51,7 +51,7 @@ namespace ElectricalContractorSystem.Services
                 var writer = PdfWriter.GetInstance(document, fs);
                 
                 // Add page events for header/footer
-                writer.PageEvent = new PdfPageEventHelper(CompanyName, estimate.EstimateNumber);
+                writer.PageEvent = new EstimatePdfPageEventHelper(CompanyName, estimate.EstimateNumber);
                 
                 document.Open();
 
@@ -492,14 +492,14 @@ namespace ElectricalContractorSystem.Services
         }
     }
 
-    // Helper class for page headers/footers
-    public class PdfPageEventHelper : PdfPageEventHelper
+    // Helper class for page headers/footers - renamed to avoid conflict
+    public class EstimatePdfPageEventHelper : PdfPageEventHelper
     {
         private readonly string _companyName;
         private readonly string _estimateNumber;
         private readonly Font _footerFont = FontFactory.GetFont(FontFactory.HELVETICA, 8, BaseColor.GRAY);
 
-        public PdfPageEventHelper(string companyName, string estimateNumber)
+        public EstimatePdfPageEventHelper(string companyName, string estimateNumber)
         {
             _companyName = companyName;
             _estimateNumber = estimateNumber;
