@@ -115,8 +115,11 @@ namespace ElectricalContractorSystem
             }
             
             // Show customer selection dialog
-            var dialog = new CustomerSelectionDialog();
-            dialog.SetDatabaseService(_databaseService);
+            var viewModel = new CustomerSelectionViewModel(_databaseService);
+            var dialog = new CustomerSelectionDialog
+            {
+                DataContext = viewModel
+            };
             
             if (dialog.ShowDialog() == true && dialog.SelectedCustomer != null)
             {
@@ -378,7 +381,7 @@ namespace ElectricalContractorSystem
                 itemList += "--------------------------------\n";
                 foreach (var item in items.Take(20)) // Show first 20 items
                 {
-                    itemList += $"{item.ItemCode,-6} | {item.Name,-30} | ${item.TotalPrice:F2}\n";
+                    itemList += $"{item.ItemCode,-6} | {item.Name,-30} | ${item.SellPrice:F2}\n";
                 }
                 if (items.Count > 20)
                 {
