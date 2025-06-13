@@ -6,51 +6,38 @@ using ElectricalContractorSystem.Models;
 
 namespace ElectricalContractorSystem.Services
 {
-    // Extension methods for DatabaseService
     public partial class DatabaseService
     {
-        public string ConnectionString => _connectionString;
-        
+        #region Extension Methods for Legacy Compatibility
+
         public MySqlConnection GetConnection()
         {
-            return new MySqlConnection(_connectionString);
-        }
-        
-        public MySqlDataReader ExecuteReader(string query)
-        {
             var connection = new MySqlConnection(_connectionString);
             connection.Open();
-            var cmd = new MySqlCommand(query, connection);
-            return cmd.ExecuteReader(CommandBehavior.CloseConnection);
+            return connection;
         }
-        
-        public MySqlDataReader ExecuteReader(string query, params MySqlParameter[] parameters)
+
+        public MySqlDataReader ExecuteReader(string query, Dictionary<string, object> parameters = null)
         {
-            var connection = new MySqlConnection(_connectionString);
-            connection.Open();
+            var connection = GetConnection();
             var cmd = new MySqlCommand(query, connection);
+            
             if (parameters != null)
             {
-                cmd.Parameters.AddRange(parameters);
-            }
-            return cmd.ExecuteReader(CommandBehavior.CloseConnection);
-        }
-        
-        public string GetLastJobNumber()
-        {
-            using (var connection = new MySqlConnection(_connectionString))
-            {
-                connection.Open();
-                var query = "SELECT job_number FROM Jobs ORDER BY job_id DESC LIMIT 1";
-                
-                using (var cmd = new MySqlCommand(query, connection))
+                foreach (var param in parameters)
                 {
-                    var result = cmd.ExecuteScalar();
-                    return result?.ToString() ?? "400"; // Start from 401 if no jobs exist
+                    cmd.Parameters.AddWithValue(param.Key, param.Value ?? DBNull.Value);
                 }
             }
+            
+            return cmd.ExecuteReader(CommandBehavior.CloseConnection);
         }
-        
+
+        public string GetLastJobNumber()
+        {
+            return GetNextJobNumber();
+        }
+
         public void DeleteEstimate(int estimateId)
         {
             using (var connection = new MySqlConnection(_connectionString))
@@ -61,17 +48,15 @@ namespace ElectricalContractorSystem.Services
                     try
                     {
                         // Delete line items first
-                        var deleteLineItemsQuery = @"
-                            DELETE eli FROM EstimateLineItems eli
-                            INNER JOIN EstimateRooms er ON eli.room_id = er.room_id
-                            WHERE er.estimate_id = @estimateId";
-                        
-                        using (var cmd = new MySqlCommand(deleteLineItemsQuery, connection, transaction))
+                        var deleteItemsQuery = @"
+                            DELETE FROM EstimateLineItems 
+                            WHERE room_id IN (SELECT room_id FROM EstimateRooms WHERE estimate_id = @estimateId)";
+                        using (var cmd = new MySqlCommand(deleteItemsQuery, connection, transaction))
                         {
                             cmd.Parameters.AddWithValue("@estimateId", estimateId);
                             cmd.ExecuteNonQuery();
                         }
-                        
+
                         // Delete rooms
                         var deleteRoomsQuery = "DELETE FROM EstimateRooms WHERE estimate_id = @estimateId";
                         using (var cmd = new MySqlCommand(deleteRoomsQuery, connection, transaction))
@@ -79,7 +64,7 @@ namespace ElectricalContractorSystem.Services
                             cmd.Parameters.AddWithValue("@estimateId", estimateId);
                             cmd.ExecuteNonQuery();
                         }
-                        
+
                         // Delete stage summaries
                         var deleteSummariesQuery = "DELETE FROM EstimateStageSummary WHERE estimate_id = @estimateId";
                         using (var cmd = new MySqlCommand(deleteSummariesQuery, connection, transaction))
@@ -87,7 +72,7 @@ namespace ElectricalContractorSystem.Services
                             cmd.Parameters.AddWithValue("@estimateId", estimateId);
                             cmd.ExecuteNonQuery();
                         }
-                        
+
                         // Delete permit items
                         var deletePermitItemsQuery = "DELETE FROM EstimatePermitItems WHERE estimate_id = @estimateId";
                         using (var cmd = new MySqlCommand(deletePermitItemsQuery, connection, transaction))
@@ -95,7 +80,7 @@ namespace ElectricalContractorSystem.Services
                             cmd.Parameters.AddWithValue("@estimateId", estimateId);
                             cmd.ExecuteNonQuery();
                         }
-                        
+
                         // Finally delete the estimate
                         var deleteEstimateQuery = "DELETE FROM Estimates WHERE estimate_id = @estimateId";
                         using (var cmd = new MySqlCommand(deleteEstimateQuery, connection, transaction))
@@ -103,7 +88,7 @@ namespace ElectricalContractorSystem.Services
                             cmd.Parameters.AddWithValue("@estimateId", estimateId);
                             cmd.ExecuteNonQuery();
                         }
-                        
+
                         transaction.Commit();
                     }
                     catch
@@ -114,5 +99,7 @@ namespace ElectricalContractorSystem.Services
                 }
             }
         }
+
+        #endregion
     }
 }
