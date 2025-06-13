@@ -99,7 +99,7 @@
                                 <Setter Property="Background" Value="#F5F5F5"/>
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter Property="Background" Value="{StaticResource SystemHighlightColor}"/>
+                                <Setter Property="Background" Value="{StaticResource SystemHighlightBrush}"/>
                             </Trigger>
                         </Style.Triggers>
                     </Style>
