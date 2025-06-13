@@ -7,6 +7,7 @@ using System.Windows.Input;
 using ElectricalContractorSystem.Helpers;
 using ElectricalContractorSystem.Models;
 using ElectricalContractorSystem.Services;
+using ElectricalContractorSystem.Views;
 using Microsoft.Win32;
 using System.IO;
 using System.Windows;
@@ -150,21 +151,11 @@ namespace ElectricalContractorSystem.ViewModels
 
         private void AddItem(object parameter)
         {
-            var newItem = new PriceList
-            {
-                Category = "Devices",
-                TaxRate = 0.06625m, // NJ tax rate
-                MarkupPercentage = 22.0m,
-                IsActive = true
-            };
-
             var dialog = new PriceListItemDialog();
-            dialog.Item = newItem;
-            dialog.Title = "Add Price List Item";
-
+            
             if (dialog.ShowDialog() == true)
             {
-                _databaseService.SavePriceListItem(dialog.Item);
+                _databaseService.SavePriceListItem(dialog.PriceListItem);
                 LoadPriceList();
             }
         }
@@ -173,27 +164,11 @@ namespace ElectricalContractorSystem.ViewModels
         {
             if (SelectedItem == null) return;
 
-            var dialog = new PriceListItemDialog();
-            dialog.Item = new PriceList
-            {
-                ItemId = SelectedItem.ItemId,
-                Category = SelectedItem.Category,
-                ItemCode = SelectedItem.ItemCode,
-                Name = SelectedItem.Name,
-                Description = SelectedItem.Description,
-                BaseCost = SelectedItem.BaseCost,
-                TaxRate = SelectedItem.TaxRate,
-                LaborMinutes = SelectedItem.LaborMinutes,
-                MarkupPercentage = SelectedItem.MarkupPercentage,
-                IsActive = SelectedItem.IsActive,
-                Notes = SelectedItem.Notes
-            };
-
-            dialog.Title = "Edit Price List Item";
+            var dialog = new PriceListItemDialog(SelectedItem);
 
             if (dialog.ShowDialog() == true)
             {
-                _databaseService.UpdatePriceListItem(dialog.Item);
+                _databaseService.UpdatePriceListItem(dialog.PriceListItem);
                 LoadPriceList();
             }
         }
