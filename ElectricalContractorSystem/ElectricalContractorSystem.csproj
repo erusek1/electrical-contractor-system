@@ -175,7 +175,10 @@
     <Compile Include="Services\PriceListService.cs" />
     <Compile Include="Services\ReportService.cs" />
     <Compile Include="ViewModels\BulkStatusUpdateDialogViewModel.cs" />
+    <Compile Include="ViewModels\ConversionOptions.cs" />
+    <Compile Include="ViewModels\CustomerManagementViewModel.cs" />
     <Compile Include="ViewModels\CustomerSelectionViewModel.cs" />
+    <Compile Include="ViewModels\EmployeeManagementViewModel.cs" />
     <Compile Include="ViewModels\EstimateBuilderViewModel.cs" />
     <Compile Include="ViewModels\EstimateConversionViewModel.cs" />
     <Compile Include="ViewModels\EstimateListViewModel.cs" />
@@ -187,6 +190,7 @@
     <Compile Include="ViewModels\JobManagementViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
     <Compile Include="ViewModels\MaterialEntryViewModel.cs" />
+    <Compile Include="ViewModels\PriceListManagementViewModel.cs" />
     <Compile Include="ViewModels\ViewModelBase.cs" />
     <Compile Include="ViewModels\WeeklyLaborEntryViewModel.cs" />
     <Compile Include="Views\AddCustomerDialog.xaml.cs">
@@ -195,8 +199,14 @@
     <Compile Include="Views\BulkStatusUpdateDialog.xaml.cs">
       <DependentUpon>BulkStatusUpdateDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\CustomerManagementView.xaml.cs">
+      <DependentUpon>CustomerManagementView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\CustomerSelectionDialog.xaml.cs">
       <DependentUpon>CustomerSelectionDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\EmployeeManagementView.xaml.cs">
+      <DependentUpon>EmployeeManagementView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\EstimateBuilderView.xaml.cs">
       <DependentUpon>EstimateBuilderView.xaml</DependentUpon>
@@ -231,6 +241,12 @@
     <Compile Include="Views\NewJobDialog.xaml.cs">
       <DependentUpon>NewJobDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\PriceListItemDialog.xaml.cs">
+      <DependentUpon>PriceListItemDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\PriceListManagementView.xaml.cs">
+      <DependentUpon>PriceListManagementView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\WeeklyLaborEntryView.xaml.cs">
       <DependentUpon>WeeklyLaborEntryView.xaml</DependentUpon>
     </Compile>
@@ -258,7 +274,15 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Views\CustomerManagementView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\CustomerSelectionDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\EmployeeManagementView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -303,6 +327,14 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\NewJobDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\PriceListItemDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\PriceListManagementView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
