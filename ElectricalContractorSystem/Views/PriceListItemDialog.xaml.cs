@@ -6,10 +6,10 @@ namespace ElectricalContractorSystem.Views
 {
     public partial class PriceListItemDialog : Window
     {
-        public PriceListItem PriceListItem { get; private set; }
+        public PriceList PriceListItem { get; private set; }
         public bool IsEditMode { get; private set; }
 
-        public PriceListItemDialog(PriceListItem item = null)
+        public PriceListItemDialog(PriceList item = null)
         {
             InitializeComponent();
             
@@ -24,7 +24,7 @@ namespace ElectricalContractorSystem.Views
             else
             {
                 Title = "Add Price List Item";
-                PriceListItem = new PriceListItem
+                PriceListItem = new PriceList
                 {
                     IsActive = true,
                     TaxRate = 6.625m, // Default NJ tax rate
@@ -114,7 +114,7 @@ namespace ElectricalContractorSystem.Views
             // Update or create the price list item
             if (!IsEditMode)
             {
-                PriceListItem = new PriceListItem();
+                PriceListItem = new PriceList();
             }
 
             PriceListItem.Category = CategoryTextBox.Text.Trim();
