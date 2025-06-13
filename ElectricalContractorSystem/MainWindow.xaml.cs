@@ -317,20 +317,13 @@ namespace ElectricalContractorSystem
                 return;
             }
             
-            // For now, show a simple list of customers
-            var customers = _databaseService.GetAllCustomers();
-            var customerList = "Current Customers:\n\n";
-            foreach (var customer in customers)
+            var viewModel = new CustomerManagementViewModel(_databaseService);
+            var view = new CustomerManagementView
             {
-                customerList += $"• {customer.Name}\n";
-            }
+                DataContext = viewModel
+            };
             
-            if (customers.Count == 0)
-            {
-                customerList = "No customers in database yet.\n\nUse 'Add New Customer' to add customers.";
-            }
-            
-            MessageBox.Show(customerList, "Customer List", MessageBoxButton.OK, MessageBoxImage.Information);
+            view.ShowDialog();
         }
         
         private void AddCustomer_Click(object sender, RoutedEventArgs e)
@@ -358,6 +351,45 @@ namespace ElectricalContractorSystem
         
         #endregion
         
+        #region Employee Menu Items
+        
+        private void ManageEmployees_Click(object sender, RoutedEventArgs e)
+        {
+            if (!CheckDatabaseConnection())
+            {
+                MessageBox.Show("Manage Employees requires database connection.", 
+                    "Database Required", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Information);
+                return;
+            }
+            
+            var viewModel = new EmployeeManagementViewModel(_databaseService);
+            var view = new EmployeeManagementView
+            {
+                DataContext = viewModel
+            };
+            
+            view.ShowDialog();
+        }
+        
+        private void EmployeeCostCalculator_Click(object sender, RoutedEventArgs e)
+        {
+            if (!CheckDatabaseConnection())
+            {
+                MessageBox.Show("Employee Cost Calculator requires database connection.", 
+                    "Database Required", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Information);
+                return;
+            }
+            
+            // For now, just show the employee management view which includes cost calculation
+            ManageEmployees_Click(sender, e);
+        }
+        
+        #endregion
+        
         #region Price List Menu Items
         
         private void ManagePriceList_Click(object sender, RoutedEventArgs e)
@@ -371,31 +403,13 @@ namespace ElectricalContractorSystem
                 return;
             }
             
-            // Show price list items for now
-            var items = _databaseService.GetActivePriceListItems();
-            var itemList = "Current Price List Items:\n\n";
-            
-            if (items.Count > 0)
+            var viewModel = new PriceListManagementViewModel(_databaseService);
+            var view = new PriceListManagementView
             {
-                itemList += "Code | Description | Price\n";
-                itemList += "--------------------------------\n";
-                foreach (var item in items.Take(20)) // Show first 20 items
-                {
-                    itemList += $"{item.ItemCode,-6} | {item.Name,-30} | ${item.SellPrice:F2}\n";
-                }
-                if (items.Count > 20)
-                {
-                    itemList += $"\n... and {items.Count - 20} more items";
-                }
-            }
-            else
-            {
-                itemList = "No price list items in database yet.\n\n" +
-                    "Import your price list using:\n" +
-                    "python migration/import_price_list_from_excel.py";
-            }
+                DataContext = viewModel
+            };
             
-            MessageBox.Show(itemList, "Price List", MessageBoxButton.OK, MessageBoxImage.Information);
+            view.ShowDialog();
         }
         
         private void ImportPriceList_Click(object sender, RoutedEventArgs e)
@@ -412,10 +426,23 @@ namespace ElectricalContractorSystem
         
         private void ExportPriceList_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Export Price List feature coming soon!", 
-                "Coming Soon", 
-                MessageBoxButton.OK, 
-                MessageBoxImage.Information);
+            if (!CheckDatabaseConnection())
+            {
+                MessageBox.Show("Export Price List requires database connection.", 
+                    "Database Required", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Information);
+                return;
+            }
+            
+            // Show price list management view and use export function there
+            var viewModel = new PriceListManagementViewModel(_databaseService);
+            var view = new PriceListManagementView
+            {
+                DataContext = viewModel
+            };
+            
+            view.ShowDialog();
         }
         
         #endregion
