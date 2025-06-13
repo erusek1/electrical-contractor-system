@@ -1,3 +1,4 @@
+using System;
 using System.Windows;
 using ElectricalContractorSystem.Models;
 using ElectricalContractorSystem.Services;
@@ -11,12 +12,92 @@ namespace ElectricalContractorSystem
     /// </summary>
     public partial class MainWindow : Window
     {
-        private readonly DatabaseService _databaseService;
+        private DatabaseService _databaseService;
+        private bool _isDatabaseConnected = false;
         
         public MainWindow()
         {
             InitializeComponent();
-            _databaseService = new DatabaseService();
+            InitializeDatabaseConnection();
+            InitializeHomeScreenButtons();
+        }
+        
+        private void InitializeDatabaseConnection()
+        {
+            try
+            {
+                _databaseService = new DatabaseService();
+                _isDatabaseConnected = _databaseService.TestConnection();
+                
+                if (!_isDatabaseConnected)
+                {
+                    ShowDatabaseError("Unable to connect to the database. Some features will be unavailable.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _isDatabaseConnected = false;
+                ShowDatabaseError($"Database initialization failed: {ex.Message}");
+            }
+        }
+        
+        private void InitializeHomeScreenButtons()
+        {
+            // Wire up the home screen buttons
+            var newEstimateBtn = this.FindName("NewEstimateButton") as System.Windows.Controls.Button;
+            if (newEstimateBtn != null)
+            {
+                newEstimateBtn.Click += NewEstimate_Click;
+            }
+            
+            var manageEstimatesBtn = this.FindName("ManageEstimatesButton") as System.Windows.Controls.Button;
+            if (manageEstimatesBtn != null)
+            {
+                manageEstimatesBtn.Click += ManageEstimates_Click;
+            }
+            
+            var jobManagementBtn = this.FindName("JobManagementButton") as System.Windows.Controls.Button;
+            if (jobManagementBtn != null)
+            {
+                jobManagementBtn.Click += JobManagement_Click;
+            }
+            
+            var weeklyLaborBtn = this.FindName("WeeklyLaborEntryButton") as System.Windows.Controls.Button;
+            if (weeklyLaborBtn != null)
+            {
+                weeklyLaborBtn.Click += WeeklyLaborEntry_Click;
+            }
+        }
+        
+        private void ShowDatabaseError(string message)
+        {
+            MessageBox.Show(
+                $"{message}\n\nTo fix database issues:\n" +
+                "1. Ensure MySQL is installed and running\n" +
+                "2. Run the database script in /database/electrical_contractor_db.sql\n" +
+                "3. Update App.config with your MySQL credentials\n\n" +
+                "You can still explore the interface, but data won't be saved.",
+                "Database Connection Issue",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        }
+        
+        private bool CheckDatabaseConnection()
+        {
+            if (!_isDatabaseConnected)
+            {
+                var result = MessageBox.Show(
+                    "This feature requires a database connection. Would you like to retry connecting?",
+                    "Database Required",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+                
+                if (result == MessageBoxResult.Yes)
+                {
+                    InitializeDatabaseConnection();
+                }
+            }
+            return _isDatabaseConnected;
         }
         
         #region Estimate Menu Items
@@ -24,7 +105,12 @@ namespace ElectricalContractorSystem
         private void NewEstimate_Click(object sender, RoutedEventArgs e)
         {
             // TODO: Implement estimate functionality
-            MessageBox.Show("Estimate functionality will be implemented in a future update.", 
+            MessageBox.Show("Estimate functionality will be implemented in a future update.\n\n" +
+                "This will allow you to:\n" +
+                "• Create new estimates with room-by-room specifications\n" +
+                "• Use quick codes like 'hh' for items\n" +
+                "• Calculate labor and material costs automatically\n" +
+                "• Convert approved estimates to jobs", 
                 "Coming Soon", 
                 MessageBoxButton.OK, 
                 MessageBoxImage.Information);
@@ -71,6 +157,21 @@ namespace ElectricalContractorSystem
         
         private void JobManagement_Click(object sender, RoutedEventArgs e)
         {
+            if (!CheckDatabaseConnection())
+            {
+                // Show a demo view even without database
+                MessageBox.Show("Job Management requires database connection.\n\n" +
+                    "Features include:\n" +
+                    "• Track all jobs with status\n" +
+                    "• Filter by active/completed\n" +
+                    "• Quick access to job details\n" +
+                    "• Monitor job profitability",
+                    "Database Required",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                return;
+            }
+            
             var viewModel = new JobManagementViewModel(_databaseService);
             var view = new JobManagementView
             {
@@ -83,6 +184,20 @@ namespace ElectricalContractorSystem
         
         private void WeeklyLaborEntry_Click(object sender, RoutedEventArgs e)
         {
+            if (!CheckDatabaseConnection())
+            {
+                MessageBox.Show("Weekly Labor Entry requires database connection.\n\n" +
+                    "Features include:\n" +
+                    "• Enter hours by employee, job, and stage\n" +
+                    "• Weekly view with 40-hour validation\n" +
+                    "• Quick entry grid interface\n" +
+                    "• Automatic hour calculations",
+                    "Database Required",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                return;
+            }
+            
             var viewModel = new WeeklyLaborEntryViewModel(_databaseService);
             var view = new WeeklyLaborEntryView
             {
@@ -95,6 +210,15 @@ namespace ElectricalContractorSystem
         
         private void MaterialEntry_Click(object sender, RoutedEventArgs e)
         {
+            if (!CheckDatabaseConnection())
+            {
+                MessageBox.Show("Material Entry requires database connection.", 
+                    "Database Required", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Information);
+                return;
+            }
+            
             var viewModel = new MaterialEntryViewModel(_databaseService);
             var view = new MaterialEntryView
             {
@@ -107,6 +231,15 @@ namespace ElectricalContractorSystem
         
         private void JobCostTracking_Click(object sender, RoutedEventArgs e)
         {
+            if (!CheckDatabaseConnection())
+            {
+                MessageBox.Show("Job Cost Tracking requires database connection.", 
+                    "Database Required", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Information);
+                return;
+            }
+            
             var viewModel = new JobCostTrackingViewModel(_databaseService);
             var view = new JobCostTrackingView
             {
@@ -119,6 +252,15 @@ namespace ElectricalContractorSystem
         
         private void ImportJobs_Click(object sender, RoutedEventArgs e)
         {
+            if (!CheckDatabaseConnection())
+            {
+                MessageBox.Show("Import Jobs requires database connection.", 
+                    "Database Required", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Information);
+                return;
+            }
+            
             var importWindow = new ImportJobsWindow();
             var viewModel = new ImportJobsViewModel(_databaseService, importWindow);
             importWindow.DataContext = viewModel;
@@ -139,6 +281,15 @@ namespace ElectricalContractorSystem
         
         private void AddCustomer_Click(object sender, RoutedEventArgs e)
         {
+            if (!CheckDatabaseConnection())
+            {
+                MessageBox.Show("Add Customer requires database connection.", 
+                    "Database Required", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Information);
+                return;
+            }
+            
             // TODO: Implement AddCustomerDialog
             MessageBox.Show("Add Customer dialog will be implemented in a future update.", 
                 "Coming Soon", 
@@ -165,7 +316,12 @@ namespace ElectricalContractorSystem
         
         private void ManagePriceList_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Price List Management interface coming soon!", 
+            MessageBox.Show("Price List Management interface coming soon!\n\n" +
+                "This will allow you to:\n" +
+                "• Add and edit items with codes\n" +
+                "• Set labor minutes per item\n" +
+                "• Configure material costs and markup\n" +
+                "• Import/export from Excel", 
                 "Coming Soon", 
                 MessageBoxButton.OK, 
                 MessageBoxImage.Information);
@@ -173,7 +329,11 @@ namespace ElectricalContractorSystem
         
         private void ImportPriceList_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Use the migration script: python migration/import_price_list_from_excel.py", 
+            MessageBox.Show("To import your price list:\n\n" +
+                "1. Ensure MySQL database is set up\n" +
+                "2. Place your Excel price list in the migration folder\n" +
+                "3. Run: python migration/import_price_list_from_excel.py\n\n" +
+                "The script will import items with codes, prices, and labor minutes.", 
                 "Import Price List", 
                 MessageBoxButton.OK, 
                 MessageBoxImage.Information);
@@ -229,7 +389,14 @@ namespace ElectricalContractorSystem
         
         private void UserGuide_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("See docs/Estimating_System_User_Guide.md for user guide.", 
+            MessageBox.Show("User Guide\n\n" +
+                "Quick Start:\n" +
+                "1. Set up MySQL database using the script in /database\n" +
+                "2. Import your existing data using migration scripts\n" +
+                "3. Use Job Management to track projects\n" +
+                "4. Enter labor hours weekly for accurate tracking\n" +
+                "5. Track materials by job and stage\n\n" +
+                "For detailed instructions, see /docs folder", 
                 "User Guide", 
                 MessageBoxButton.OK, 
                 MessageBoxImage.Information);
@@ -253,6 +420,11 @@ namespace ElectricalContractorSystem
             MessageBox.Show("Electrical Contractor Management System\n" +
                 "Version 1.0\n\n" +
                 "Developed for efficient estimate creation and job management.\n\n" +
+                "Features:\n" +
+                "• Job tracking and management\n" +
+                "• Weekly labor entry with validation\n" +
+                "• Material tracking by job and stage\n" +
+                "• Cost analysis and profitability tracking\n\n" +
                 "© 2025 Erik Rusek Electric", 
                 "About", 
                 MessageBoxButton.OK, 
@@ -274,6 +446,8 @@ namespace ElectricalContractorSystem
         
         private void ShowJobDetails(Job job)
         {
+            if (!CheckDatabaseConnection()) return;
+            
             var viewModel = new JobDetailsViewModel(_databaseService);
             viewModel.CurrentJob = job;
             
