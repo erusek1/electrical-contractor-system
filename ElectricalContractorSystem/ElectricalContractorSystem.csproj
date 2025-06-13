@@ -117,7 +117,6 @@
     <Compile Include="Controls\QuickItemEntry.xaml.cs">
       <DependentUpon>QuickItemEntry.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ConversionOptions.cs" />
     <Compile Include="DatabaseConnectionTest.cs" />
     <Compile Include="StartupTest.cs" />
     <Compile Include="Helpers\BooleanToVisibilityConverter.cs" />
