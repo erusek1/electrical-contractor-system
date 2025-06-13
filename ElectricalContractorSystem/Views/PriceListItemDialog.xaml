@@ -3,153 +3,98 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:ElectricalContractorSystem.Views"
         mc:Ignorable="d"
-        Title="Price List Item" 
-        Height="500" Width="500"
+        Title="Price List Item" Height="550" Width="500"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize">
-    <Grid>
+    <Grid Margin="20">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-
-        <Grid Grid.Row="0" Margin="20">
+        
+        <!-- Category -->
+        <Label Grid.Row="0" Content="Category:" FontWeight="Bold"/>
+        <TextBox Grid.Row="1" Name="CategoryTextBox" Margin="0,0,0,10"/>
+        
+        <!-- Item Code -->
+        <Label Grid.Row="2" Content="Item Code:" FontWeight="Bold"/>
+        <TextBox Grid.Row="3" Name="ItemCodeTextBox" Margin="0,0,0,10"/>
+        
+        <!-- Name -->
+        <Label Grid.Row="4" Content="Name:" FontWeight="Bold"/>
+        <TextBox Grid.Row="5" Name="NameTextBox" Margin="0,0,0,10"/>
+        
+        <!-- Description -->
+        <Label Grid.Row="6" Content="Description:" FontWeight="Bold"/>
+        <TextBox Grid.Row="7" Name="DescriptionTextBox" 
+                 TextWrapping="Wrap" AcceptsReturn="True" 
+                 Height="60" VerticalScrollBarVisibility="Auto" 
+                 Margin="0,0,0,10"/>
+        
+        <!-- Grid for numeric values -->
+        <Grid Grid.Row="8" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="10"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
             
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="120"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-
-            <!-- Category -->
-            <Label Grid.Row="0" Grid.Column="0" Content="Category:" VerticalAlignment="Center"/>
-            <ComboBox Grid.Row="0" Grid.Column="1" 
-                      Margin="0,2"
-                      SelectedValue="{Binding Item.Category}">
-                <ComboBoxItem>Devices</ComboBoxItem>
-                <ComboBoxItem>Lighting</ComboBoxItem>
-                <ComboBoxItem>Wire</ComboBoxItem>
-                <ComboBoxItem>Service</ComboBoxItem>
-                <ComboBoxItem>Other</ComboBoxItem>
-            </ComboBox>
-
-            <!-- Item Code -->
-            <Label Grid.Row="1" Grid.Column="0" Content="Item Code:" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="1" Grid.Column="1" 
-                     Text="{Binding Item.ItemCode}"
-                     Margin="0,2"/>
-
-            <!-- Name -->
-            <Label Grid.Row="2" Grid.Column="0" Content="Name:" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="2" Grid.Column="1" 
-                     Text="{Binding Item.Name}"
-                     Margin="0,2"/>
-
-            <!-- Description -->
-            <Label Grid.Row="3" Grid.Column="0" Content="Description:" VerticalAlignment="Top" Margin="0,5,0,0"/>
-            <TextBox Grid.Row="3" Grid.Column="1" 
-                     Text="{Binding Item.Description}"
-                     TextWrapping="Wrap"
-                     AcceptsReturn="True"
-                     Height="60"
-                     VerticalScrollBarVisibility="Auto"
-                     Margin="0,2"/>
-
             <!-- Base Cost -->
-            <Label Grid.Row="4" Grid.Column="0" Content="Base Cost:" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="4" Grid.Column="1" 
-                     Text="{Binding Item.BaseCost, StringFormat={}{0:F2}}"
-                     Margin="0,2"/>
-
+            <Label Grid.Row="0" Grid.Column="0" Content="Base Cost ($):" FontWeight="Bold"/>
+            <TextBox Grid.Row="1" Grid.Column="0" Name="BaseCostTextBox"/>
+            
             <!-- Tax Rate -->
-            <Label Grid.Row="5" Grid.Column="0" Content="Tax Rate (%):" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="5" Grid.Column="1" 
-                     Text="{Binding Item.TaxRate, StringFormat={}{0:F3}}"
-                     Margin="0,2"/>
-
+            <Label Grid.Row="0" Grid.Column="2" Content="Tax Rate (%):" FontWeight="Bold"/>
+            <TextBox Grid.Row="1" Grid.Column="2" Name="TaxRateTextBox"/>
+            
             <!-- Labor Minutes -->
-            <Label Grid.Row="6" Grid.Column="0" Content="Labor Minutes:" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="6" Grid.Column="1" 
-                     Text="{Binding Item.LaborMinutes}"
-                     Margin="0,2"/>
-
+            <Label Grid.Row="3" Grid.Column="0" Content="Labor Minutes:" FontWeight="Bold"/>
+            <TextBox Grid.Row="4" Grid.Column="0" Name="LaborMinutesTextBox"/>
+            
             <!-- Markup Percentage -->
-            <Label Grid.Row="7" Grid.Column="0" Content="Markup (%):" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="7" Grid.Column="1" 
-                     Text="{Binding Item.MarkupPercentage, StringFormat={}{0:F1}}"
-                     Margin="0,2"/>
-
-            <!-- Is Active -->
-            <Label Grid.Row="8" Grid.Column="0" Content="Active:" VerticalAlignment="Center"/>
-            <CheckBox Grid.Row="8" Grid.Column="1" 
-                      IsChecked="{Binding Item.IsActive}"
-                      VerticalAlignment="Center"
-                      Margin="0,2"/>
-
-            <!-- Notes -->
-            <Label Grid.Row="9" Grid.Column="0" Content="Notes:" VerticalAlignment="Top" Margin="0,5,0,0"/>
-            <TextBox Grid.Row="9" Grid.Column="1" 
-                     Text="{Binding Item.Notes}"
-                     TextWrapping="Wrap"
-                     AcceptsReturn="True"
-                     Height="60"
-                     VerticalScrollBarVisibility="Auto"
-                     Margin="0,2"/>
-
-            <!-- Quick Code Helper -->
-            <Border Grid.Row="11" Grid.ColumnSpan="2" 
-                    Background="#FFF9C4" 
-                    BorderBrush="#FFB300" 
-                    BorderThickness="1" 
-                    CornerRadius="3"
-                    Padding="10"
-                    Margin="0,10,0,0">
-                <TextBlock TextWrapping="Wrap">
-                    <Run FontWeight="Bold">Quick Codes:</Run>
-                    <LineBreak/>
-                    hh = 4" LED recessed light (high hat)
-                    <LineBreak/>
-                    O = Decora Outlet
-                    <LineBreak/>
-                    S = Single Pole Decora Switch
-                    <LineBreak/>
-                    3W = 3-way Decora Switch
-                    <LineBreak/>
-                    Gfi = 15a TP GFI
-                </TextBlock>
-            </Border>
+            <Label Grid.Row="3" Grid.Column="2" Content="Markup (%):" FontWeight="Bold"/>
+            <TextBox Grid.Row="4" Grid.Column="2" Name="MarkupPercentageTextBox"/>
         </Grid>
-
+        
+        <!-- Active Checkbox -->
+        <CheckBox Grid.Row="9" Name="IsActiveCheckBox" Content="Active" 
+                  IsChecked="True" Margin="0,0,0,10" FontWeight="Bold"/>
+        
+        <!-- Notes -->
+        <Label Grid.Row="10" Content="Notes:" FontWeight="Bold" VerticalAlignment="Top"/>
+        <TextBox Grid.Row="10" Name="NotesTextBox" 
+                 TextWrapping="Wrap" AcceptsReturn="True"
+                 VerticalScrollBarVisibility="Auto" 
+                 Margin="0,25,0,10"/>
+        
         <!-- Buttons -->
-        <Border Grid.Row="1" Background="#F5F5F5" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0">
-            <StackPanel Orientation="Horizontal" 
-                        HorizontalAlignment="Right" 
-                        Margin="10">
-                <Button Content="Save" 
-                        Width="80" 
-                        Margin="0,0,10,0"
-                        Click="Save_Click"
-                        IsDefault="True"/>
-                <Button Content="Cancel" 
-                        Width="80"
-                        Click="Cancel_Click"
-                        IsCancel="True"/>
-            </StackPanel>
-        </Border>
+        <StackPanel Grid.Row="11" Orientation="Horizontal" 
+                    HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button Name="SaveButton" Content="Save" Width="100" 
+                    Margin="0,0,10,0" Padding="5" 
+                    Background="#4CAF50" Foreground="White"
+                    Click="SaveButton_Click"/>
+            <Button Name="CancelButton" Content="Cancel" Width="100" 
+                    Padding="5" IsCancel="True"
+                    Click="CancelButton_Click"/>
+        </StackPanel>
     </Grid>
 </Window>
