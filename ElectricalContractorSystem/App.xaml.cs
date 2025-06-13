@@ -13,7 +13,8 @@ namespace ElectricalContractorSystem
             
             // Run diagnostics in debug mode or if requested
             #if DEBUG
-            StartupTest.RunDiagnostics();
+            // Uncomment the next line if you want to see diagnostics on startup
+            // StartupTest.RunDiagnostics();
             #endif
         }
     }
