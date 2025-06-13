@@ -11,6 +11,8 @@
         <Color x:Key="AccentLightColor">#FFD54F</Color>
         <Color x:Key="DangerColor">#D32F2F</Color>
         <Color x:Key="SuccessColor">#388E3C</Color>
+        <Color x:Key="DarkGrayColor">#666666</Color>
+        <Color x:Key="SystemHighlightColor">#E3F2FD</Color>
         
         <!-- Brushes -->
         <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}"/>
@@ -20,6 +22,8 @@
         <SolidColorBrush x:Key="AccentLightBrush" Color="{StaticResource AccentLightColor}"/>
         <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}"/>
         <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}"/>
+        <SolidColorBrush x:Key="DarkGrayBrush" Color="{StaticResource DarkGrayColor}"/>
+        <SolidColorBrush x:Key="SystemHighlightBrush" Color="{StaticResource SystemHighlightColor}"/>
         
         <!-- Button Styles -->
         <Style x:Key="PrimaryButtonStyle" TargetType="Button">
@@ -109,8 +113,27 @@
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="4">
-                            <ScrollViewer x:Name="PART_ContentHost" 
-                                          Margin="{TemplateBinding Padding}"/>
+                            <Grid>
+                                <ScrollViewer x:Name="PART_ContentHost" 
+                                              Margin="{TemplateBinding Padding}"/>
+                                <TextBlock x:Name="PlaceholderText"
+                                           Text="{TemplateBinding Tag}"
+                                           Foreground="Gray"
+                                           Margin="{TemplateBinding Padding}"
+                                           VerticalAlignment="Center"
+                                           IsHitTestVisible="False">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text, RelativeSource={RelativeSource TemplatedParent}}" Value="">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
