@@ -3,101 +3,248 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ElectricalContractorSystem.Views"
         mc:Ignorable="d"
-        Title="Customer Management" Height="600" Width="900">
+        Title="Customer Management" 
+        Height="600" Width="800"
+        WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        
+
         <!-- Header -->
-        <Border Grid.Row="0" Background="#2C3E50" Padding="10">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                
-                <TextBlock Text="Customer Management" FontSize="20" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
-                
-                <Button Grid.Column="1" Content="Add Customer" Command="{Binding AddCustomerCommand}" 
-                        Style="{StaticResource PrimaryButtonStyle}" Margin="5,0"/>
-                <Button Grid.Column="2" Content="Import" Command="{Binding ImportCustomersCommand}" 
-                        Style="{StaticResource SecondaryButtonStyle}" Margin="5,0"/>
-                <Button Grid.Column="3" Content="Export" Command="{Binding ExportCustomersCommand}" 
-                        Style="{StaticResource SecondaryButtonStyle}" Margin="5,0"/>
-            </Grid>
+        <Border Grid.Row="0" Background="#1976D2" Padding="15">
+            <TextBlock Text="Customer Management" 
+                       Foreground="White" 
+                       FontSize="20" 
+                       FontWeight="Medium"/>
         </Border>
-        
-        <!-- Search Bar -->
-        <Border Grid.Row="0" Background="#ECF0F1" Padding="10" Margin="0,60,0,0">
-            <Grid>
+
+        <!-- Toolbar -->
+        <Border Grid.Row="1" Background="#F5F5F5" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1">
+            <Grid Margin="10">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="300"/>
                 </Grid.ColumnDefinitions>
-                
-                <TextBlock Text="Search:" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <TextBox Grid.Column="1" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
-                         VerticalAlignment="Center" Padding="5"/>
-                <Button Grid.Column="2" Content="Clear" Command="{Binding ClearSearchCommand}" 
-                        Margin="10,0,0,0" Padding="10,5"/>
+
+                <Button Grid.Column="0" 
+                        Content="Add Customer" 
+                        Command="{Binding AddCustomerCommand}"
+                        Margin="0,0,5,0"
+                        Padding="10,5"
+                        Background="#4CAF50"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Cursor="Hand">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}" 
+                                    CornerRadius="3"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center" 
+                                                  VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <Button Grid.Column="1" 
+                        Content="Edit" 
+                        Command="{Binding EditCustomerCommand}"
+                        Margin="0,0,5,0"
+                        Padding="10,5"
+                        Background="#2196F3"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Cursor="Hand"
+                        IsEnabled="{Binding IsCustomerSelected}">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}" 
+                                    CornerRadius="3"
+                                    Padding="{TemplateBinding Padding}"
+                                    Opacity="{Binding IsEnabled, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource BoolToOpacityConverter}}">
+                                <ContentPresenter HorizontalAlignment="Center" 
+                                                  VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <Button Grid.Column="2" 
+                        Content="Delete" 
+                        Command="{Binding DeleteCustomerCommand}"
+                        Margin="0,0,5,0"
+                        Padding="10,5"
+                        Background="#F44336"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Cursor="Hand"
+                        IsEnabled="{Binding IsCustomerSelected}">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}" 
+                                    CornerRadius="3"
+                                    Padding="{TemplateBinding Padding}"
+                                    Opacity="{Binding IsEnabled, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource BoolToOpacityConverter}}">
+                                <ContentPresenter HorizontalAlignment="Center" 
+                                                  VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <Button Grid.Column="3" 
+                        Content="Refresh" 
+                        Command="{Binding RefreshCommand}"
+                        Margin="0,0,5,0"
+                        Padding="10,5"
+                        Background="#757575"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Cursor="Hand">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}" 
+                                    CornerRadius="3"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center" 
+                                                  VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <!-- Search Box -->
+                <Grid Grid.Column="5">
+                    <TextBox x:Name="SearchBox"
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             VerticalAlignment="Center"
+                             Padding="8,5,25,5"
+                             BorderBrush="#BDBDBD"
+                             BorderThickness="1"
+                             Background="White">
+                        <TextBox.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="3"/>
+                            </Style>
+                        </TextBox.Resources>
+                    </TextBox>
+                    <TextBlock Text="Search customers..."
+                               Foreground="#757575"
+                               IsHitTestVisible="False"
+                               VerticalAlignment="Center"
+                               Margin="10,0,0,0">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Text, ElementName=SearchBox}" Value="">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <TextBlock Text="🔍"
+                               HorizontalAlignment="Right"
+                               VerticalAlignment="Center"
+                               Margin="0,0,8,0"
+                               Foreground="#757575"/>
+                </Grid>
             </Grid>
         </Border>
-        
-        <!-- Customer Grid -->
-        <DataGrid Grid.Row="1" ItemsSource="{Binding FilteredCustomers}" 
+
+        <!-- Customer List -->
+        <DataGrid Grid.Row="2" 
+                  ItemsSource="{Binding FilteredCustomers}"
                   SelectedItem="{Binding SelectedCustomer}"
-                  AutoGenerateColumns="False" CanUserAddRows="False"
-                  Margin="10,90,10,10">
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  GridLinesVisibility="None"
+                  HeadersVisibility="Column"
+                  Background="White"
+                  BorderThickness="0"
+                  RowHeight="40">
+            <DataGrid.Resources>
+                <Style TargetType="DataGridColumnHeader">
+                    <Setter Property="Background" Value="#FAFAFA"/>
+                    <Setter Property="Foreground" Value="#616161"/>
+                    <Setter Property="FontWeight" Value="Medium"/>
+                    <Setter Property="Height" Value="40"/>
+                    <Setter Property="Padding" Value="10,0"/>
+                    <Setter Property="BorderBrush" Value="#E0E0E0"/>
+                    <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                </Style>
+                <Style TargetType="DataGridRow">
+                    <Setter Property="Background" Value="White"/>
+                    <Style.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="#F5F5F5"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Background" Value="#E3F2FD"/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+                <Style TargetType="DataGridCell">
+                    <Setter Property="BorderThickness" Value="0"/>
+                    <Setter Property="Padding" Value="10,0"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="DataGridCell">
+                                <Border Padding="{TemplateBinding Padding}" 
+                                        Background="{TemplateBinding Background}">
+                                    <ContentPresenter VerticalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </DataGrid.Resources>
+            
             <DataGrid.Columns>
-                <DataGridTextColumn Header="ID" Binding="{Binding CustomerId}" Width="50" IsReadOnly="True"/>
-                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="200"/>
-                <DataGridTextColumn Header="Address" Binding="{Binding Address}" Width="200"/>
-                <DataGridTextColumn Header="City" Binding="{Binding City}" Width="100"/>
-                <DataGridTextColumn Header="State" Binding="{Binding State}" Width="50"/>
-                <DataGridTextColumn Header="Zip" Binding="{Binding Zip}" Width="80"/>
-                <DataGridTextColumn Header="Phone" Binding="{Binding Phone}" Width="120"/>
-                <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="*"/>
-                
-                <DataGridTemplateColumn Header="Actions" Width="150">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Horizontal">
-                                <Button Content="Save" Command="{Binding DataContext.SaveCustomerCommand, 
-                                        RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                        CommandParameter="{Binding}"
-                                        Style="{StaticResource SmallButtonStyle}" Margin="2"/>
-                                <Button Content="Delete" Command="{Binding DataContext.DeleteCustomerCommand, 
-                                        RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                        CommandParameter="{Binding}"
-                                        Style="{StaticResource DeleteButtonStyle}" Margin="2"/>
-                            </StackPanel>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Name" 
+                                    Binding="{Binding Name}" 
+                                    Width="200"/>
+                <DataGridTextColumn Header="Email" 
+                                    Binding="{Binding Email}" 
+                                    Width="200"/>
+                <DataGridTextColumn Header="Phone" 
+                                    Binding="{Binding Phone}" 
+                                    Width="120"/>
+                <DataGridTextColumn Header="City" 
+                                    Binding="{Binding City}" 
+                                    Width="120"/>
+                <DataGridTextColumn Header="State" 
+                                    Binding="{Binding State}" 
+                                    Width="60"/>
+                <DataGridTextColumn Header="Notes" 
+                                    Binding="{Binding Notes}" 
+                                    Width="*"/>
             </DataGrid.Columns>
         </DataGrid>
-        
+
         <!-- Status Bar -->
-        <StatusBar Grid.Row="2">
-            <StatusBarItem>
-                <TextBlock Text="{Binding StatusMessage}"/>
-            </StatusBarItem>
-            <StatusBarItem HorizontalAlignment="Right">
-                <TextBlock>
-                    <TextBlock.Text>
-                        <MultiBinding StringFormat="Total Customers: {0}">
-                            <Binding Path="Customers.Count"/>
-                        </MultiBinding>
-                    </TextBlock.Text>
-                </TextBlock>
-            </StatusBarItem>
-        </StatusBar>
+        <Border Grid.Row="3" Background="#F5F5F5" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0">
+            <TextBlock Margin="10,5" 
+                       Foreground="#616161">
+                <TextBlock.Text>
+                    <MultiBinding StringFormat="{}{0} customers">
+                        <Binding Path="FilteredCustomers.Count"/>
+                    </MultiBinding>
+                </TextBlock.Text>
+            </TextBlock>
+        </Border>
     </Grid>
 </Window>
