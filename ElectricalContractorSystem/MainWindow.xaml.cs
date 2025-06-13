@@ -104,49 +104,74 @@ namespace ElectricalContractorSystem
         
         private void NewEstimate_Click(object sender, RoutedEventArgs e)
         {
-            // TODO: Implement estimate functionality
-            MessageBox.Show("Estimate functionality will be implemented in a future update.\n\n" +
-                "This will allow you to:\n" +
-                "• Create new estimates with room-by-room specifications\n" +
-                "• Use quick codes like 'hh' for items\n" +
-                "• Calculate labor and material costs automatically\n" +
-                "• Convert approved estimates to jobs", 
-                "Coming Soon", 
-                MessageBoxButton.OK, 
-                MessageBoxImage.Information);
+            if (!CheckDatabaseConnection())
+            {
+                MessageBox.Show("New Estimate requires database connection.", 
+                    "Database Required", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Information);
+                return;
+            }
+            
+            ShowEstimateBuilder();
         }
         
         private void OpenEstimate_Click(object sender, RoutedEventArgs e)
         {
-            // TODO: Implement estimate functionality
-            MessageBox.Show("Estimate functionality will be implemented in a future update.", 
-                "Coming Soon", 
-                MessageBoxButton.OK, 
-                MessageBoxImage.Information);
+            if (!CheckDatabaseConnection())
+            {
+                MessageBox.Show("Open Estimate requires database connection.", 
+                    "Database Required", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Information);
+                return;
+            }
+            
+            // Show estimate selection dialog
+            ShowEstimateList();
         }
         
         private void ManageEstimates_Click(object sender, RoutedEventArgs e)
         {
-            // TODO: Implement estimate functionality
-            MessageBox.Show("Estimate functionality will be implemented in a future update.", 
-                "Coming Soon", 
-                MessageBoxButton.OK, 
-                MessageBoxImage.Information);
+            if (!CheckDatabaseConnection())
+            {
+                MessageBox.Show("Manage Estimates requires database connection.", 
+                    "Database Required", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Information);
+                return;
+            }
+            
+            ShowEstimateList();
         }
         
         private void ConvertToJob_Click(object sender, RoutedEventArgs e)
         {
-            // TODO: Implement estimate functionality
-            MessageBox.Show("Estimate functionality will be implemented in a future update.", 
-                "Coming Soon", 
+            if (!CheckDatabaseConnection())
+            {
+                MessageBox.Show("Convert to Job requires database connection.", 
+                    "Database Required", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Information);
+                return;
+            }
+            
+            // Show estimate selection for conversion
+            MessageBox.Show("Select an estimate from the Manage Estimates screen to convert it to a job.", 
+                "Convert to Job", 
                 MessageBoxButton.OK, 
                 MessageBoxImage.Information);
+            ShowEstimateList();
         }
         
         private void RoomTemplates_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Room Templates management will be implemented in a future update.", 
-                "Coming Soon", 
+            MessageBox.Show("Room Templates allow you to create standard room configurations that can be reused.\n\n" +
+                "Coming in a future update:\n" +
+                "• Create templates for common room types\n" +
+                "• Save standard item configurations\n" +
+                "• Quick-add rooms from templates", 
+                "Room Templates", 
                 MessageBoxButton.OK, 
                 MessageBoxImage.Information);
         }
@@ -159,7 +184,6 @@ namespace ElectricalContractorSystem
         {
             if (!CheckDatabaseConnection())
             {
-                // Show a demo view even without database
                 MessageBox.Show("Job Management requires database connection.\n\n" +
                     "Features include:\n" +
                     "• Track all jobs with status\n" +
@@ -273,10 +297,29 @@ namespace ElectricalContractorSystem
         
         private void ManageCustomers_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Customer Management interface coming soon!", 
-                "Coming Soon", 
-                MessageBoxButton.OK, 
-                MessageBoxImage.Information);
+            if (!CheckDatabaseConnection())
+            {
+                MessageBox.Show("Manage Customers requires database connection.", 
+                    "Database Required", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Information);
+                return;
+            }
+            
+            // For now, show a simple list of customers
+            var customers = _databaseService.GetAllCustomers();
+            var customerList = "Current Customers:\n\n";
+            foreach (var customer in customers)
+            {
+                customerList += $"• {customer.Name}\n";
+            }
+            
+            if (customers.Count == 0)
+            {
+                customerList = "No customers in database yet.\n\nUse 'Add New Customer' to add customers.";
+            }
+            
+            MessageBox.Show(customerList, "Customer List", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         
         private void AddCustomer_Click(object sender, RoutedEventArgs e)
@@ -290,13 +333,6 @@ namespace ElectricalContractorSystem
                 return;
             }
             
-            // TODO: Implement AddCustomerDialog
-            MessageBox.Show("Add Customer dialog will be implemented in a future update.", 
-                "Coming Soon", 
-                MessageBoxButton.OK, 
-                MessageBoxImage.Information);
-            
-            /* Commented out until AddCustomerDialog is implemented
             var dialog = new AddCustomerDialog();
             if (dialog.ShowDialog() == true)
             {
@@ -307,7 +343,6 @@ namespace ElectricalContractorSystem
                     MessageBoxButton.OK, 
                     MessageBoxImage.Information);
             }
-            */
         }
         
         #endregion
@@ -316,15 +351,16 @@ namespace ElectricalContractorSystem
         
         private void ManagePriceList_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Price List Management interface coming soon!\n\n" +
-                "This will allow you to:\n" +
-                "• Add and edit items with codes\n" +
-                "• Set labor minutes per item\n" +
-                "• Configure material costs and markup\n" +
-                "• Import/export from Excel", 
-                "Coming Soon", 
-                MessageBoxButton.OK, 
-                MessageBoxImage.Information);
+            if (!CheckDatabaseConnection())
+            {
+                MessageBox.Show("Manage Price List requires database connection.", 
+                    "Database Required", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Information);
+                return;
+            }
+            
+            ShowPriceListManager();
         }
         
         private void ImportPriceList_Click(object sender, RoutedEventArgs e)
@@ -390,12 +426,14 @@ namespace ElectricalContractorSystem
         private void UserGuide_Click(object sender, RoutedEventArgs e)
         {
             MessageBox.Show("User Guide\n\n" +
-                "Quick Start:\n" +
-                "1. Set up MySQL database using the script in /database\n" +
-                "2. Import your existing data using migration scripts\n" +
-                "3. Use Job Management to track projects\n" +
-                "4. Enter labor hours weekly for accurate tracking\n" +
-                "5. Track materials by job and stage\n\n" +
+                "Estimates:\n" +
+                "• Use quick codes: 'hh' for high hat, 'O' for outlet, 'S' for switch\n" +
+                "• Add rooms and drag items from price list\n" +
+                "• Labor and materials calculate automatically\n\n" +
+                "Jobs:\n" +
+                "• Track projects from estimate to completion\n" +
+                "• Enter weekly labor hours with validation\n" +
+                "• Track materials by job and stage\n\n" +
                 "For detailed instructions, see /docs folder", 
                 "User Guide", 
                 MessageBoxButton.OK, 
@@ -421,6 +459,8 @@ namespace ElectricalContractorSystem
                 "Version 1.0\n\n" +
                 "Developed for efficient estimate creation and job management.\n\n" +
                 "Features:\n" +
+                "• Estimate builder with room-by-room specifications\n" +
+                "• Quick item codes (hh, O, S, 3W, etc.)\n" +
                 "• Job tracking and management\n" +
                 "• Weekly labor entry with validation\n" +
                 "• Material tracking by job and stage\n" +
@@ -458,6 +498,45 @@ namespace ElectricalContractorSystem
             
             MainContent.Content = view;
             this.Title = $"Electrical Contractor Management System - Job #{job.JobNumber}";
+        }
+        
+        private void ShowEstimateBuilder()
+        {
+            var viewModel = new EstimateBuilderViewModel(_databaseService);
+            var view = new EstimateBuilderView
+            {
+                DataContext = viewModel
+            };
+            
+            // Create new estimate
+            viewModel.CreateNewEstimate();
+            
+            MainContent.Content = view;
+            this.Title = "Electrical Contractor Management System - Estimate Builder";
+        }
+        
+        private void ShowEstimateList()
+        {
+            var viewModel = new EstimateListViewModel(_databaseService);
+            var view = new EstimateListView
+            {
+                DataContext = viewModel
+            };
+            
+            MainContent.Content = view;
+            this.Title = "Electrical Contractor Management System - Manage Estimates";
+        }
+        
+        private void ShowPriceListManager()
+        {
+            var viewModel = new PriceListViewModel(_databaseService);
+            var view = new PriceListView
+            {
+                DataContext = viewModel
+            };
+            
+            MainContent.Content = view;
+            this.Title = "Electrical Contractor Management System - Price List Manager";
         }
         
         #endregion
