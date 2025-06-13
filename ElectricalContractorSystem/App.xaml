@@ -15,6 +15,7 @@
         <Color x:Key="AccentLightColor">#FFD54F</Color>
         <Color x:Key="DangerColor">#D32F2F</Color>
         <Color x:Key="SuccessColor">#388E3C</Color>
+        <Color x:Key="WarningColor">#FFA000</Color>
         <Color x:Key="DarkGrayColor">#666666</Color>
         <Color x:Key="SystemHighlightColor">#E3F2FD</Color>
         
@@ -26,8 +27,74 @@
         <SolidColorBrush x:Key="AccentLightBrush" Color="{StaticResource AccentLightColor}"/>
         <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}"/>
         <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}"/>
+        <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}"/>
         <SolidColorBrush x:Key="DarkGrayBrush" Color="{StaticResource DarkGrayColor}"/>
         <SolidColorBrush x:Key="SystemHighlightBrush" Color="{StaticResource SystemHighlightColor}"/>
+        
+        <!-- Card Style -->
+        <Style x:Key="CardStyle" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#E0E0E0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="15"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="5" Color="#10000000" Opacity="0.3" ShadowDepth="2"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <!-- Field Label Style -->
+        <Style x:Key="FieldLabelStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="#666666"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
+        </Style>
+        
+        <!-- Status Badge Style -->
+        <Style x:Key="StatusBadgeStyle" TargetType="Border">
+            <Setter Property="CornerRadius" Value="3"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Status}" Value="Draft">
+                    <Setter Property="Background" Value="#ECF0F1"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="Sent">
+                    <Setter Property="Background" Value="#FFF3CD"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="Approved">
+                    <Setter Property="Background" Value="#D4EDDA"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="Rejected">
+                    <Setter Property="Background" Value="#F8D7DA"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="Expired">
+                    <Setter Property="Background" Value="#E7E8EA"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        
+        <!-- Estimate ComboBox Style -->
+        <Style x:Key="EstimateComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="BorderBrush" Value="LightGray"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        
+        <!-- Estimate DataGrid Style -->
+        <Style x:Key="EstimateDataGridStyle" TargetType="DataGrid">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="AlternatingRowBackground" Value="#FAFAFA"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="CanUserAddRows" Value="False"/>
+            <Setter Property="AutoGenerateColumns" Value="False"/>
+            <Setter Property="SelectionMode" Value="Single"/>
+            <Setter Property="RowHeight" Value="40"/>
+        </Style>
         
         <!-- Button Styles -->
         <Style x:Key="PrimaryButtonStyle" TargetType="Button">
