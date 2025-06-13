@@ -54,6 +54,9 @@ CREATE TABLE IF NOT EXISTS `Employees` (
   `name` VARCHAR(50) NOT NULL,
   `hourly_rate` DECIMAL(10,2) NOT NULL,
   `burden_rate` DECIMAL(10,2) NULL,
+  `vehicle_cost_per_hour` DECIMAL(10,2) NULL,
+  `vehicle_cost_per_month` DECIMAL(10,2) NULL,
+  `overhead_percentage` DECIMAL(5,2) NULL,
   `status` ENUM('Active', 'Inactive') NOT NULL DEFAULT 'Active',
   `notes` TEXT NULL,
   PRIMARY KEY (`employee_id`)
@@ -220,13 +223,13 @@ CREATE TABLE IF NOT EXISTS `PermitItems` (
 -- -----------------------------------------------------
 -- Add initial data (sample employees)
 -- -----------------------------------------------------
-INSERT INTO `Employees` (`name`, `hourly_rate`, `status`) VALUES 
-('Erik', 85.00, 'Active'),
-('Lee', 65.00, 'Active'),
-('Carlos', 65.00, 'Active'),
-('Jake', 65.00, 'Active'),
-('Trevor', 65.00, 'Active'),
-('Ryan', 65.00, 'Active');
+INSERT INTO `Employees` (`name`, `hourly_rate`, `burden_rate`, `vehicle_cost_per_hour`, `vehicle_cost_per_month`, `overhead_percentage`, `status`) VALUES 
+('Erik', 85.00, 0, 0, 0, 0, 'Active'),
+('Lee', 65.00, 0, 0, 0, 0, 'Active'),
+('Carlos', 65.00, 0, 0, 0, 0, 'Active'),
+('Jake', 65.00, 0, 0, 0, 0, 'Active'),
+('Trevor', 65.00, 0, 0, 0, 0, 'Active'),
+('Ryan', 65.00, 0, 0, 0, 0, 'Active');
 
 -- -----------------------------------------------------
 -- Add initial data (sample vendors)
