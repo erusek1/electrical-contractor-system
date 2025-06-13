@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Windows;
 using ElectricalContractorSystem.Models;
 using ElectricalContractorSystem.Services;
@@ -114,7 +115,9 @@ namespace ElectricalContractorSystem
             }
             
             // Show customer selection dialog
-            var dialog = new CustomerSelectionDialog(_databaseService);
+            var dialog = new CustomerSelectionDialog();
+            dialog.SetDatabaseService(_databaseService);
+            
             if (dialog.ShowDialog() == true && dialog.SelectedCustomer != null)
             {
                 ShowEstimateBuilder(dialog.SelectedCustomer);
