@@ -80,7 +80,7 @@ namespace ElectricalContractorSystem.Services
                     State = addressParts.State,
                     Zip = addressParts.Zip,
                     Status = jobInfo.Status,
-                    CreateDate = GetJobCreateDate(jobInfo.JobNumber),
+                    CreateDate = GetJobCreateDate(jobInfo.JobNumber) ?? DateTime.Now,
                     TotalEstimate = GetJobEstimate(jobInfo.JobNumber),
                     TotalActual = GetJobActual(jobInfo.JobNumber),
                     Customer = customer
@@ -89,7 +89,7 @@ namespace ElectricalContractorSystem.Services
                 // Set completion date for completed jobs
                 if (job.Status == "Complete")
                 {
-                    job.CompletionDate = job.CreateDate?.AddDays(new Random().Next(30, 120));
+                    job.CompletionDate = job.CreateDate.AddDays(new Random().Next(30, 120));
                 }
 
                 jobs.Add(job);
@@ -194,13 +194,20 @@ namespace ElectricalContractorSystem.Services
                                 var stages = new[] { "Demo", "Rough", "Service", "Finish", "Extra" };
                                 var stage = stages[random.Next(stages.Length)];
 
+                                // Get or create JobStage
+                                var jobStage = new JobStage
+                                {
+                                    JobId = job.JobId,
+                                    StageName = stage
+                                };
+
                                 entries.Add(new LaborEntry
                                 {
                                     JobId = job.JobId,
                                     EmployeeId = employee.EmployeeId,
                                     Date = workDate,
                                     Hours = hours,
-                                    Stage = stage,
+                                    JobStage = jobStage,
                                     Notes = ""
                                 });
                             }
@@ -235,15 +242,22 @@ namespace ElectricalContractorSystem.Services
                     var vendor = vendors[random.Next(vendors.Count)];
                     var stages = new[] { "Rough", "Service", "Finish", "Extra" };
                     var stage = stages[random.Next(stages.Length)];
-                    var date = job.CreateDate.Value.AddDays(random.Next(1, 30));
+                    var date = job.CreateDate.AddDays(random.Next(1, 30));
                     
+                    // Get or create JobStage
+                    var jobStage = new JobStage
+                    {
+                        JobId = job.JobId,
+                        StageName = stage
+                    };
+
                     entries.Add(new MaterialEntry
                     {
                         JobId = job.JobId,
                         VendorId = vendor.VendorId,
                         Date = date,
                         Cost = (decimal)(random.Next(100, 2000) + random.NextDouble()),
-                        Stage = stage,
+                        JobStage = jobStage,
                         InvoiceNumber = $"INV-{random.Next(10000, 99999)}",
                         InvoiceTotal = (decimal)(random.Next(500, 5000) + random.NextDouble()),
                         Notes = GetRandomMaterialDescription()
