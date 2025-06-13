@@ -3,8 +3,11 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ElectricalContractorSystem.Views"
         mc:Ignorable="d"
-        Title="Price List Management" Height="700" Width="1200">
+        Title="Price List Management" 
+        Height="700" Width="1000"
+        WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -12,124 +15,311 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        
+
         <!-- Header -->
-        <Border Grid.Row="0" Background="#2C3E50" Padding="10">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                
-                <TextBlock Text="Price List Management" FontSize="20" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
-                
-                <Button Grid.Column="1" Content="Add Item" Command="{Binding AddItemCommand}" 
-                        Style="{StaticResource PrimaryButtonStyle}" Margin="5,0"/>
-                <Button Grid.Column="2" Content="Import from Excel" Command="{Binding ImportFromExcelCommand}" 
-                        Style="{StaticResource SecondaryButtonStyle}" Margin="5,0"/>
-                <Button Grid.Column="3" Content="Export to Excel" Command="{Binding ExportToExcelCommand}" 
-                        Style="{StaticResource SecondaryButtonStyle}" Margin="5,0"/>
-                <Button Grid.Column="4" Content="Update All Prices" Command="{Binding UpdateAllPricesCommand}" 
-                        Style="{StaticResource AccentButtonStyle}" Margin="5,0"/>
-            </Grid>
+        <Border Grid.Row="0" Background="#1976D2" Padding="15">
+            <TextBlock Text="Price List Management" 
+                       Foreground="White" 
+                       FontSize="20" 
+                       FontWeight="Medium"/>
         </Border>
-        
-        <!-- Search and Filter Bar -->
-        <Border Grid.Row="1" Background="#ECF0F1" Padding="10">
-            <Grid>
+
+        <!-- Toolbar -->
+        <Border Grid.Row="1" Background="#F5F5F5" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1">
+            <Grid Margin="10">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="200"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="150"/>
+                    <ColumnDefinition Width="300"/>
                 </Grid.ColumnDefinitions>
-                
-                <TextBlock Text="Search:" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <TextBox Grid.Column="1" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
-                         VerticalAlignment="Center" Padding="5"/>
-                
-                <TextBlock Grid.Column="2" Text="Category:" VerticalAlignment="Center" Margin="20,0,10,0"/>
-                <ComboBox Grid.Column="3" ItemsSource="{Binding Categories}" 
+
+                <Button Grid.Column="0" 
+                        Content="Add Item" 
+                        Command="{Binding AddItemCommand}"
+                        Margin="0,0,5,0"
+                        Padding="10,5"
+                        Background="#4CAF50"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Cursor="Hand">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}" 
+                                    CornerRadius="3"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center" 
+                                                  VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <Button Grid.Column="1" 
+                        Content="Edit" 
+                        Command="{Binding EditItemCommand}"
+                        Margin="0,0,5,0"
+                        Padding="10,5"
+                        Background="#2196F3"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Cursor="Hand"
+                        IsEnabled="{Binding IsItemSelected}">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}" 
+                                    CornerRadius="3"
+                                    Padding="{TemplateBinding Padding}"
+                                    Opacity="{Binding IsEnabled, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource BoolToOpacityConverter}}">
+                                <ContentPresenter HorizontalAlignment="Center" 
+                                                  VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <Button Grid.Column="2" 
+                        Content="Delete" 
+                        Command="{Binding DeleteItemCommand}"
+                        Margin="0,0,5,0"
+                        Padding="10,5"
+                        Background="#F44336"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Cursor="Hand"
+                        IsEnabled="{Binding IsItemSelected}">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}" 
+                                    CornerRadius="3"
+                                    Padding="{TemplateBinding Padding}"
+                                    Opacity="{Binding IsEnabled, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource BoolToOpacityConverter}}">
+                                <ContentPresenter HorizontalAlignment="Center" 
+                                                  VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <Button Grid.Column="3" 
+                        Content="Refresh" 
+                        Command="{Binding RefreshCommand}"
+                        Margin="0,0,5,0"
+                        Padding="10,5"
+                        Background="#757575"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Cursor="Hand">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}" 
+                                    CornerRadius="3"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center" 
+                                                  VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <Separator Grid.Column="4" 
+                           Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}"
+                           Margin="5,0"/>
+
+                <Button Grid.Column="5" 
+                        Content="Import from Excel" 
+                        Command="{Binding ImportCommand}"
+                        Margin="0,0,5,0"
+                        Padding="10,5"
+                        Background="#FF9800"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Cursor="Hand">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}" 
+                                    CornerRadius="3"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center" 
+                                                  VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <!-- Category Filter -->
+                <ComboBox Grid.Column="7" 
+                          ItemsSource="{Binding Categories}"
                           SelectedItem="{Binding SelectedCategory}"
                           VerticalAlignment="Center"/>
-                
-                <CheckBox Grid.Column="4" Content="Active Only" IsChecked="{Binding ShowActiveOnly}" 
-                          VerticalAlignment="Center" Margin="20,0"/>
-                
-                <Button Grid.Column="5" Content="Clear Filters" Command="{Binding ClearFiltersCommand}" 
-                        Margin="20,0,0,0" Padding="10,5"/>
+
+                <!-- Search Box -->
+                <Grid Grid.Column="8">
+                    <TextBox x:Name="SearchBox"
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             VerticalAlignment="Center"
+                             Padding="8,5,25,5"
+                             BorderBrush="#BDBDBD"
+                             BorderThickness="1"
+                             Background="White">
+                        <TextBox.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="3"/>
+                            </Style>
+                        </TextBox.Resources>
+                    </TextBox>
+                    <TextBlock Text="Search items..."
+                               Foreground="#757575"
+                               IsHitTestVisible="False"
+                               VerticalAlignment="Center"
+                               Margin="10,0,0,0">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Text, ElementName=SearchBox}" Value="">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <TextBlock Text="🔍"
+                               HorizontalAlignment="Right"
+                               VerticalAlignment="Center"
+                               Margin="0,0,8,0"
+                               Foreground="#757575"/>
+                </Grid>
             </Grid>
         </Border>
-        
-        <!-- Price List Grid -->
-        <DataGrid Grid.Row="2" ItemsSource="{Binding FilteredItems}" 
+
+        <!-- Price List Items -->
+        <DataGrid Grid.Row="2" 
+                  ItemsSource="{Binding FilteredItems}"
                   SelectedItem="{Binding SelectedItem}"
-                  AutoGenerateColumns="False" CanUserAddRows="False"
-                  Margin="10">
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  GridLinesVisibility="None"
+                  HeadersVisibility="Column"
+                  Background="White"
+                  BorderThickness="0"
+                  RowHeight="40">
             <DataGrid.Resources>
-                <Style TargetType="DataGridCell">
+                <Style TargetType="DataGridColumnHeader">
+                    <Setter Property="Background" Value="#FAFAFA"/>
+                    <Setter Property="Foreground" Value="#616161"/>
+                    <Setter Property="FontWeight" Value="Medium"/>
+                    <Setter Property="Height" Value="40"/>
+                    <Setter Property="Padding" Value="10,0"/>
+                    <Setter Property="BorderBrush" Value="#E0E0E0"/>
+                    <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                </Style>
+                <Style TargetType="DataGridRow">
+                    <Setter Property="Background" Value="White"/>
                     <Style.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="#F5F5F5"/>
+                        </Trigger>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter Property="Background" Value="{x:Null}"/>
-                            <Setter Property="BorderBrush" Value="{x:Null}"/>
+                            <Setter Property="Background" Value="#E3F2FD"/>
                         </Trigger>
                     </Style.Triggers>
+                </Style>
+                <Style TargetType="DataGridCell">
+                    <Setter Property="BorderThickness" Value="0"/>
+                    <Setter Property="Padding" Value="10,0"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="DataGridCell">
+                                <Border Padding="{TemplateBinding Padding}" 
+                                        Background="{TemplateBinding Background}">
+                                    <ContentPresenter VerticalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
                 </Style>
             </DataGrid.Resources>
             
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Code" Binding="{Binding ItemCode}" Width="80"/>
-                <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="120"/>
-                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="250"/>
-                <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="*"/>
-                <DataGridTextColumn Header="Base Cost" Binding="{Binding BaseCost, StringFormat=C}" Width="80"/>
-                <DataGridTextColumn Header="Tax %" Binding="{Binding TaxRate, StringFormat={}{0:P1}}" Width="60"/>
-                <DataGridTextColumn Header="Sell Price" Binding="{Binding SellPrice, StringFormat=C}" Width="80" IsReadOnly="True"/>
-                <DataGridTextColumn Header="Rough Min" Binding="{Binding LaborRough}" Width="70"/>
-                <DataGridTextColumn Header="Finish Min" Binding="{Binding LaborFinish}" Width="70"/>
-                <DataGridTextColumn Header="Service Min" Binding="{Binding LaborService}" Width="70"/>
-                <DataGridTextColumn Header="Extra Min" Binding="{Binding LaborExtra}" Width="70"/>
-                <DataGridCheckBoxColumn Header="Active" Binding="{Binding IsActive}" Width="50"/>
-                
-                <DataGridTemplateColumn Header="Actions" Width="100">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Horizontal">
-                                <Button Content="Save" Command="{Binding DataContext.SaveItemCommand, 
-                                        RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                        CommandParameter="{Binding}"
-                                        Style="{StaticResource SmallButtonStyle}" Margin="2"/>
-                                <Button Content="Delete" Command="{Binding DataContext.DeleteItemCommand, 
-                                        RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                        CommandParameter="{Binding}"
-                                        Style="{StaticResource DeleteButtonStyle}" Margin="2"/>
-                            </StackPanel>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Code" 
+                                    Binding="{Binding ItemCode}" 
+                                    Width="80"/>
+                <DataGridTextColumn Header="Category" 
+                                    Binding="{Binding Category}" 
+                                    Width="100"/>
+                <DataGridTextColumn Header="Name" 
+                                    Binding="{Binding Name}" 
+                                    Width="250"/>
+                <DataGridTextColumn Header="Description" 
+                                    Binding="{Binding Description}" 
+                                    Width="*"/>
+                <DataGridTextColumn Header="Base Cost" 
+                                    Binding="{Binding BaseCost, StringFormat=C}" 
+                                    Width="90">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="TextAlignment" Value="Right"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Labor (min)" 
+                                    Binding="{Binding LaborMinutes}" 
+                                    Width="90">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="TextAlignment" Value="Center"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Markup %" 
+                                    Binding="{Binding MarkupPercentage, StringFormat={}{0:F1}%}" 
+                                    Width="80">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="TextAlignment" Value="Center"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+                <DataGridCheckBoxColumn Header="Active" 
+                                        Binding="{Binding IsActive}" 
+                                        Width="60">
+                    <DataGridCheckBoxColumn.ElementStyle>
+                        <Style TargetType="CheckBox">
+                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                            <Setter Property="IsEnabled" Value="False"/>
+                        </Style>
+                    </DataGridCheckBoxColumn.ElementStyle>
+                </DataGridCheckBoxColumn>
             </DataGrid.Columns>
         </DataGrid>
-        
+
         <!-- Status Bar -->
-        <StatusBar Grid.Row="3">
-            <StatusBarItem>
-                <TextBlock Text="{Binding StatusMessage}"/>
-            </StatusBarItem>
-            <StatusBarItem HorizontalAlignment="Right">
-                <TextBlock>
+        <Border Grid.Row="3" Background="#F5F5F5" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0">
+            <Grid Margin="10,5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <TextBlock Grid.Column="0" Foreground="#616161">
                     <TextBlock.Text>
-                        <MultiBinding StringFormat="Total Items: {0} | Active: {1}">
-                            <Binding Path="Items.Count"/>
-                            <Binding Path="ActiveItemCount"/>
+                        <MultiBinding StringFormat="{}{0} items">
+                            <Binding Path="FilteredItems.Count"/>
                         </MultiBinding>
                     </TextBlock.Text>
                 </TextBlock>
-            </StatusBarItem>
-        </StatusBar>
+                
+                <TextBlock Grid.Column="1" Foreground="#616161" FontStyle="Italic">
+                    Quick codes: hh=high hat, O=outlet, S=switch, 3W=3-way, Gfi=GFI
+                </TextBlock>
+            </Grid>
+        </Border>
     </Grid>
 </Window>
