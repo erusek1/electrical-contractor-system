@@ -13,6 +13,12 @@ namespace ElectricalContractorSystem.Models
         public decimal MarkupPercentage { get; set; }
         public bool IsActive { get; set; }
         public string Notes { get; set; }
+        
+        // Stage-specific labor minutes
+        public int? RoughMinutes { get; set; }
+        public int? FinishMinutes { get; set; }
+        public int? ServiceMinutes { get; set; }
+        public int? ExtraMinutes { get; set; }
 
         public PriceListItem()
         {
@@ -36,6 +42,15 @@ namespace ElectricalContractorSystem.Models
             }
 
             return baseTotal;
+        }
+        
+        // Calculated property to get sell price (with markup but no tax)
+        public decimal SellPrice 
+        { 
+            get
+            {
+                return BaseCost * (1 + MarkupPercentage / 100);
+            }
         }
     }
 }
