@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using ElectricalContractorSystem.Models;
 using MySql.Data.MySqlClient;
 
@@ -29,7 +30,7 @@ namespace ElectricalContractorSystem.Services
                 throw new InvalidOperationException("This estimate has already been converted to a job.");
             }
             
-            using (var connection = new MySqlConnection(_databaseService.ConnectionString))
+            using (var connection = _databaseService.GetConnection())
             {
                 connection.Open();
                 using (var transaction = connection.BeginTransaction())
@@ -66,8 +67,8 @@ namespace ElectricalContractorSystem.Services
                             {
                                 JobId = jobId,
                                 StageName = summary.Stage,
-                                EstimatedHours = summary.EstimatedHours,
-                                EstimatedMaterialCost = summary.EstimatedMaterial,
+                                EstimatedHours = summary.LaborHours,
+                                EstimatedMaterialCost = summary.MaterialCost,
                                 ActualHours = 0,
                                 ActualMaterialCost = 0
                             };
@@ -100,6 +101,14 @@ namespace ElectricalContractorSystem.Services
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Async version of ConvertEstimateToJob
+        /// </summary>
+        public Task<Job> ConvertEstimateToJobAsync(Estimate estimate)
+        {
+            return Task.Run(() => ConvertEstimateToJob(estimate));
         }
         
         private string GenerateNextJobNumber(MySqlConnection connection, MySqlTransaction transaction)
@@ -176,26 +185,10 @@ namespace ElectricalContractorSystem.Services
         
         private void CreateInitialMaterialEntries(Estimate estimate, int jobId, MySqlConnection connection, MySqlTransaction transaction)
         {
-            // Group line items by stage based on the price list item's labor minutes
+            // Group line items by their estimated stage
             var itemsByStage = estimate.LineItems
-                .Where(li => li.PriceListItem != null)
-                .SelectMany(li => 
-                {
-                    // For each line item, determine which stages it belongs to based on labor minutes
-                    var stages = li.PriceListItem.LaborMinutes
-                        .Where(lm => lm.Minutes > 0)
-                        .Select(lm => new { Stage = lm.Stage, LineItem = li })
-                        .ToList();
-                    
-                    // If no labor minutes defined, put in "Finish" by default
-                    if (!stages.Any())
-                    {
-                        stages.Add(new { Stage = "Finish", LineItem = li });
-                    }
-                    
-                    return stages;
-                })
-                .GroupBy(x => x.Stage);
+                .GroupBy(li => DetermineStageForItem(li.ItemCode))
+                .Where(g => g.Key != null);
             
             foreach (var stageGroup in itemsByStage)
             {
@@ -231,7 +224,7 @@ namespace ElectricalContractorSystem.Services
                 }
                 
                 // Create material entries for this stage
-                var totalCost = stageGroup.Sum(x => x.LineItem.TotalPrice);
+                var totalCost = stageGroup.Sum(x => x.TotalPrice);
                 
                 if (totalCost > 0)
                 {
@@ -287,13 +280,14 @@ namespace ElectricalContractorSystem.Services
         {
             var query = @"
                 UPDATE Estimates SET
-                    status = 'Converted',
+                    status = @status,
                     converted_to_job_id = @job_id,
                     converted_date = @converted_date
                 WHERE estimate_id = @estimate_id";
             
             using (var cmd = new MySqlCommand(query, connection, transaction))
             {
+                cmd.Parameters.AddWithValue("@status", EstimateStatus.Converted.ToString());
                 cmd.Parameters.AddWithValue("@job_id", jobId);
                 cmd.Parameters.AddWithValue("@converted_date", DateTime.Now);
                 cmd.Parameters.AddWithValue("@estimate_id", estimateId);
@@ -317,7 +311,7 @@ namespace ElectricalContractorSystem.Services
             
             foreach (var item in estimate.LineItems)
             {
-                var code = item.ItemCode.ToLower();
+                var code = item.ItemCode?.ToLower() ?? "";
                 var qty = item.Quantity;
                 
                 // Count based on item codes
@@ -352,6 +346,26 @@ namespace ElectricalContractorSystem.Services
                     cmd.ExecuteNonQuery();
                 }
             }
+        }
+        
+        private string DetermineStageForItem(string itemCode)
+        {
+            if (string.IsNullOrEmpty(itemCode))
+                return "Finish";
+                
+            var code = itemCode.ToLower();
+            
+            // Rough stage items
+            if (code == "hh" || code == "fridge" || code == "micro" || code == "dw" || 
+                code == "oven" || code == "cook" || code == "hood")
+                return "Rough";
+            
+            // Service stage items
+            if (code == "panel" || code == "meter" || code == "disc")
+                return "Service";
+            
+            // Everything else is typically finish work
+            return "Finish";
         }
     }
 }
