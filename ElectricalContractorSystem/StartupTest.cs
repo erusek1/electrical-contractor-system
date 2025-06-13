@@ -76,8 +76,8 @@ namespace ElectricalContractorSystem
                         {
                             using (var cmd = new MySqlCommand($"SHOW TABLES LIKE '{table}'", connection))
                             {
-                                var result = cmd.ExecuteScalar();
-                                if (result != null)
+                                var tableResult = cmd.ExecuteScalar();
+                                if (tableResult != null)
                                 {
                                     diagnostics.AppendLine($"  ✓ Table '{table}' exists");
                                 }
@@ -115,13 +115,13 @@ namespace ElectricalContractorSystem
             }
 
             // Show results
-            var result = MessageBox.Show(
+            var dialogResult = MessageBox.Show(
                 diagnostics.ToString() + "\n\nWould you like to continue starting the application?",
                 "Startup Diagnostics",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Information);
 
-            if (result == MessageBoxResult.No)
+            if (dialogResult == MessageBoxResult.No)
             {
                 Application.Current.Shutdown();
             }
