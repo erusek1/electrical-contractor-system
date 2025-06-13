@@ -511,4 +511,18 @@ namespace ElectricalContractorSystem.Services
             return "Finish";
         }
     }
+    
+    /// <summary>
+    /// Options for converting an estimate to a job
+    /// Temporary placement here until the .csproj file is updated
+    /// </summary>
+    public class ConversionOptions
+    {
+        public string JobNumber { get; set; }
+        public bool IncludeAllStages { get; set; }
+        public bool IncludeMaterialCosts { get; set; }
+        public bool IncludeRoomSpecifications { get; set; }
+        public bool IncludePermitItems { get; set; }
+        public string Notes { get; set; }
+    }
 }
