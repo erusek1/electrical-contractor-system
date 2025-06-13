@@ -87,11 +87,21 @@ namespace ElectricalContractorSystem.Models
         /// Additional notes
         /// </summary>
         public string Notes { get; set; }
+        
+        /// <summary>
+        /// Source estimate ID if this job was created from an estimate
+        /// </summary>
+        public int? EstimateId { get; set; }
 
         /// <summary>
         /// Navigation property to Customer
         /// </summary>
         public Customer Customer { get; set; }
+        
+        /// <summary>
+        /// Navigation property to source Estimate
+        /// </summary>
+        public virtual Estimate SourceEstimate { get; set; }
 
         /// <summary>
         /// Navigation property to collection of JobStages
