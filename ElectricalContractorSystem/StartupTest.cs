@@ -1,146 +1,130 @@
 using System;
 using System.Configuration;
+using System.Text;
 using System.Windows;
 using MySql.Data.MySqlClient;
 
 namespace ElectricalContractorSystem
 {
-    /// <summary>
-    /// Startup test to check database connectivity and help debug issues
-    /// </summary>
     public static class StartupTest
     {
         public static void RunDiagnostics()
         {
-            string diagnosticInfo = "=== Electrical Contractor System Startup Diagnostics ===\n\n";
-            
+            var diagnostics = new StringBuilder();
+            diagnostics.AppendLine("=== Electrical Contractor System Startup Diagnostics ===");
+            diagnostics.AppendLine($"Date: {DateTime.Now}");
+            diagnostics.AppendLine();
+
+            // Check connection string
             try
             {
-                // 1. Check configuration
-                diagnosticInfo += "1. Configuration Check:\n";
-                var connectionString = ConfigurationManager.ConnectionStrings["ElectricalDB"]?.ConnectionString;
-                
-                if (string.IsNullOrEmpty(connectionString))
+                var connectionString = ConfigurationManager.ConnectionStrings["ElectricalDB"];
+                if (connectionString != null)
                 {
-                    diagnosticInfo += "   ❌ ERROR: Connection string 'ElectricalDB' not found in App.config\n";
+                    diagnostics.AppendLine("✓ Connection string found in App.config");
+                    diagnostics.AppendLine($"  Connection Name: {connectionString.Name}");
+                    diagnostics.AppendLine($"  Provider: {connectionString.ProviderName}");
+                    
+                    // Parse connection string for display (hide password)
+                    var builder = new MySqlConnectionStringBuilder(connectionString.ConnectionString);
+                    diagnostics.AppendLine($"  Server: {builder.Server}");
+                    diagnostics.AppendLine($"  Port: {builder.Port}");
+                    diagnostics.AppendLine($"  Database: {builder.Database}");
+                    diagnostics.AppendLine($"  User ID: {builder.UserID}");
+                    diagnostics.AppendLine($"  SSL Mode: {builder.SslMode}");
                 }
                 else
                 {
-                    diagnosticInfo += "   ✓ Connection string found\n";
-                    
-                    // Parse connection string for display (hide password)
-                    var builder = new MySqlConnectionStringBuilder(connectionString);
-                    diagnosticInfo += $"   - Server: {builder.Server}\n";
-                    diagnosticInfo += $"   - Database: {builder.Database}\n";
-                    diagnosticInfo += $"   - User: {builder.UserID}\n";
-                    diagnosticInfo += $"   - SSL Mode: {builder.SslMode}\n";
+                    diagnostics.AppendLine("✗ Connection string 'ElectricalDB' not found in App.config");
                 }
-                
-                // 2. Test MySQL connection
-                diagnosticInfo += "\n2. Database Connection Test:\n";
-                
+            }
+            catch (Exception ex)
+            {
+                diagnostics.AppendLine($"✗ Error reading connection string: {ex.Message}");
+            }
+
+            diagnostics.AppendLine();
+
+            // Test database connection
+            try
+            {
+                var connectionString = ConfigurationManager.ConnectionStrings["ElectricalDB"]?.ConnectionString;
                 if (!string.IsNullOrEmpty(connectionString))
                 {
-                    try
+                    diagnostics.AppendLine("Testing database connection...");
+                    using (var connection = new MySqlConnection(connectionString))
                     {
-                        using (var connection = new MySqlConnection(connectionString))
+                        connection.Open();
+                        diagnostics.AppendLine("✓ Successfully connected to MySQL server");
+
+                        // Check if database exists
+                        using (var cmd = new MySqlCommand("SELECT DATABASE()", connection))
                         {
-                            connection.Open();
-                            diagnosticInfo += "   ✓ Successfully connected to MySQL server\n";
-                            
-                            // Check if database exists
-                            var command = new MySqlCommand("SELECT DATABASE()", connection);
-                            var currentDb = command.ExecuteScalar()?.ToString();
-                            diagnosticInfo += $"   ✓ Current database: {currentDb}\n";
-                            
-                            // Check for required tables
-                            diagnosticInfo += "\n3. Database Tables Check:\n";
-                            var tablesCommand = new MySqlCommand(@"
-                                SELECT TABLE_NAME 
-                                FROM INFORMATION_SCHEMA.TABLES 
-                                WHERE TABLE_SCHEMA = @dbname
-                                ORDER BY TABLE_NAME", connection);
-                            tablesCommand.Parameters.AddWithValue("@dbname", currentDb);
-                            
-                            using (var reader = tablesCommand.ExecuteReader())
+                            var dbName = cmd.ExecuteScalar()?.ToString();
+                            diagnostics.AppendLine($"✓ Connected to database: {dbName}");
+                        }
+
+                        // Check for required tables
+                        var requiredTables = new[] { "Customers", "Jobs", "Employees", "Vendors", "JobStages", 
+                                                     "LaborEntries", "MaterialEntries", "PriceList", 
+                                                     "RoomSpecifications", "PermitItems" };
+                        
+                        diagnostics.AppendLine();
+                        diagnostics.AppendLine("Checking for required tables:");
+                        
+                        foreach (var table in requiredTables)
+                        {
+                            using (var cmd = new MySqlCommand($"SHOW TABLES LIKE '{table}'", connection))
                             {
-                                bool hasTables = false;
-                                while (reader.Read())
+                                var result = cmd.ExecuteScalar();
+                                if (result != null)
                                 {
-                                    hasTables = true;
-                                    diagnosticInfo += $"   ✓ Found table: {reader.GetString(0)}\n";
+                                    diagnostics.AppendLine($"  ✓ Table '{table}' exists");
                                 }
-                                
-                                if (!hasTables)
+                                else
                                 {
-                                    diagnosticInfo += "   ⚠️ WARNING: No tables found in database\n";
-                                    diagnosticInfo += "   - You need to run the database creation script\n";
-                                    diagnosticInfo += "   - Check the /database folder for SQL scripts\n";
+                                    diagnostics.AppendLine($"  ✗ Table '{table}' NOT FOUND");
                                 }
                             }
                         }
                     }
-                    catch (MySqlException mysqlEx)
-                    {
-                        diagnosticInfo += $"   ❌ MySQL Error: {mysqlEx.Message}\n";
-                        
-                        if (mysqlEx.Message.Contains("Unknown database"))
-                        {
-                            diagnosticInfo += "\n   📌 TO FIX THIS:\n";
-                            diagnosticInfo += "   1. Open MySQL Workbench or command line\n";
-                            diagnosticInfo += "   2. Create the database: CREATE DATABASE electrical_contractor_db;\n";
-                            diagnosticInfo += "   3. Run the schema script from /database folder\n";
-                        }
-                        else if (mysqlEx.Message.Contains("Access denied"))
-                        {
-                            diagnosticInfo += "\n   📌 TO FIX THIS:\n";
-                            diagnosticInfo += "   1. Check your MySQL username and password\n";
-                            diagnosticInfo += "   2. Update App.config with correct credentials\n";
-                            diagnosticInfo += "   3. Make sure the user has access to the database\n";
-                        }
-                        else if (mysqlEx.Message.Contains("Unable to connect"))
-                        {
-                            diagnosticInfo += "\n   📌 TO FIX THIS:\n";
-                            diagnosticInfo += "   1. Make sure MySQL Server is running\n";
-                            diagnosticInfo += "   2. Check if it's running on localhost\n";
-                            diagnosticInfo += "   3. Verify the port (default is 3306)\n";
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        diagnosticInfo += $"   ❌ General Error: {ex.Message}\n";
-                    }
                 }
-                
-                // 4. Check for required files
-                diagnosticInfo += "\n4. Application Files Check:\n";
-                var requiredViews = new[] { "JobManagementView", "WeeklyLaborEntryView", "MaterialEntryView", "JobCostTrackingView" };
-                
-                foreach (var view in requiredViews)
+                else
                 {
-                    var type = Type.GetType($"ElectricalContractorSystem.Views.{view}");
-                    if (type != null)
-                    {
-                        diagnosticInfo += $"   ✓ {view} found\n";
-                    }
-                    else
-                    {
-                        diagnosticInfo += $"   ❌ {view} missing\n";
-                    }
+                    diagnostics.AppendLine("✗ Connection string is empty or null");
                 }
-                
-                diagnosticInfo += "\n=== End of Diagnostics ===\n\n";
-                diagnosticInfo += "Press OK to continue to the application...\n";
-                
+            }
+            catch (MySqlException ex)
+            {
+                diagnostics.AppendLine($"✗ MySQL Error: {ex.Message}");
+                diagnostics.AppendLine();
+                diagnostics.AppendLine("Common causes:");
+                diagnostics.AppendLine("  1. MySQL server is not running");
+                diagnostics.AppendLine("  2. Database 'electrical_contractor_db' does not exist");
+                diagnostics.AppendLine("  3. Invalid username or password");
+                diagnostics.AppendLine("  4. MySQL is not installed");
+                diagnostics.AppendLine();
+                diagnostics.AppendLine("To fix:");
+                diagnostics.AppendLine("  1. Ensure MySQL is installed and running");
+                diagnostics.AppendLine("  2. Create the database by running the SQL script in /database/electrical_contractor_db.sql");
+                diagnostics.AppendLine("  3. Update the connection string in App.config with your MySQL credentials");
             }
             catch (Exception ex)
             {
-                diagnosticInfo += $"\n❌ CRITICAL ERROR during diagnostics: {ex.Message}\n";
+                diagnostics.AppendLine($"✗ General Error: {ex.GetType().Name} - {ex.Message}");
             }
-            
-            // Show diagnostic results
-            MessageBox.Show(diagnosticInfo, "Startup Diagnostics", MessageBoxButton.OK, 
-                diagnosticInfo.Contains("❌") ? MessageBoxImage.Warning : MessageBoxImage.Information);
+
+            // Show results
+            var result = MessageBox.Show(
+                diagnostics.ToString() + "\n\nWould you like to continue starting the application?",
+                "Startup Diagnostics",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Information);
+
+            if (result == MessageBoxResult.No)
+            {
+                Application.Current.Shutdown();
+            }
         }
     }
 }
