@@ -191,4 +191,152 @@ namespace ElectricalContractorSystem.Services
                             if (random.NextDouble() > 0.3) // 70% chance employee works on this job this day
                             {
                                 var hours = random.Next(4, 9); // 4-8 hours
-                                var stages = new[] { "Demo", "Rough", "Service
+                                var stages = new[] { "Demo", "Rough", "Service", "Finish", "Extra" };
+                                var stage = stages[random.Next(stages.Length)];
+
+                                entries.Add(new LaborEntry
+                                {
+                                    JobId = job.JobId,
+                                    EmployeeId = employee.EmployeeId,
+                                    Date = workDate,
+                                    Hours = hours,
+                                    Stage = stage,
+                                    Notes = ""
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+
+            return entries;
+        }
+
+        /// <summary>
+        /// Gets material entries from your Excel data
+        /// </summary>
+        public List<MaterialEntry> GetMaterialEntriesFromExcelData()
+        {
+            var entries = new List<MaterialEntry>();
+            var vendors = GetVendorsFromExcelData();
+            var jobs = GetJobsFromExcelData();
+            var random = new Random();
+
+            // Add material entries for active jobs
+            var activeJobs = jobs.Where(j => j.Status == "In Progress" || j.Status == "Complete").ToList();
+            
+            foreach (var job in activeJobs)
+            {
+                // Add 3-5 material purchases per job
+                var numPurchases = random.Next(3, 6);
+                
+                for (int i = 0; i < numPurchases; i++)
+                {
+                    var vendor = vendors[random.Next(vendors.Count)];
+                    var stages = new[] { "Rough", "Service", "Finish", "Extra" };
+                    var stage = stages[random.Next(stages.Length)];
+                    var date = job.CreateDate.Value.AddDays(random.Next(1, 30));
+                    
+                    entries.Add(new MaterialEntry
+                    {
+                        JobId = job.JobId,
+                        VendorId = vendor.VendorId,
+                        Date = date,
+                        Cost = (decimal)(random.Next(100, 2000) + random.NextDouble()),
+                        Stage = stage,
+                        InvoiceNumber = $"INV-{random.Next(10000, 99999)}",
+                        InvoiceTotal = (decimal)(random.Next(500, 5000) + random.NextDouble()),
+                        Notes = GetRandomMaterialDescription()
+                    });
+                }
+            }
+
+            return entries;
+        }
+
+        #region Helper Methods
+
+        private (string Address, string City, string State, string Zip) ParseAddress(string fullAddress)
+        {
+            var parts = fullAddress.Split(',').Select(p => p.Trim()).ToArray();
+            
+            if (parts.Length >= 3)
+            {
+                return (parts[0], parts[1], parts[2].Length >= 2 ? parts[2].Substring(0, 2) : "NJ", "");
+            }
+            else if (parts.Length == 2)
+            {
+                return (parts[0], parts[1], "NJ", "");
+            }
+            else
+            {
+                // Try to parse single-line addresses
+                var lastSpace = fullAddress.LastIndexOf(' ');
+                if (lastSpace > 0)
+                {
+                    return (fullAddress.Substring(0, lastSpace), fullAddress.Substring(lastSpace + 1), "NJ", "");
+                }
+                return (fullAddress, "", "NJ", "");
+            }
+        }
+
+        private DateTime? GetJobCreateDate(string jobNumber)
+        {
+            // Simulate creation dates based on job number
+            var baseDate = new DateTime(2024, 1, 1);
+            var jobNum = int.Parse(jobNumber);
+            
+            if (jobNum < 500)
+            {
+                return baseDate.AddDays((jobNum - 400) * 7); // Early jobs, weekly spacing
+            }
+            else
+            {
+                return baseDate.AddDays(350 + (jobNum - 600) * 5); // Recent jobs, closer spacing
+            }
+        }
+
+        private decimal? GetJobEstimate(string jobNumber)
+        {
+            var random = new Random(int.Parse(jobNumber)); // Seed for consistency
+            return (decimal)(random.Next(5000, 100000) + random.NextDouble());
+        }
+
+        private decimal? GetJobActual(string jobNumber)
+        {
+            var estimate = GetJobEstimate(jobNumber);
+            if (estimate.HasValue)
+            {
+                var random = new Random(int.Parse(jobNumber) + 1);
+                var variance = 0.8 + (random.NextDouble() * 0.4); // 80% to 120% of estimate
+                return estimate.Value * (decimal)variance;
+            }
+            return null;
+        }
+
+        private string GetRandomMaterialDescription()
+        {
+            var descriptions = new[]
+            {
+                "Wire and boxes",
+                "Misc supplies",
+                "Conduit and fittings",
+                "Panels and breakers",
+                "Service equipment",
+                "Receptacles and switches",
+                "Light fixtures",
+                "Additional materials",
+                "Rough-in materials",
+                "Finish materials",
+                "Service cable",
+                "Circuit breakers",
+                "Junction boxes",
+                "Wire nuts and connectors"
+            };
+            
+            return descriptions[new Random().Next(descriptions.Length)];
+        }
+
+        #endregion
+    }
+}
