@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using ElectricalContractorSystem.Models;
+using ElectricalContractorSystem.ViewModels;
 using MySql.Data.MySqlClient;
 
 namespace ElectricalContractorSystem.Services
@@ -32,6 +33,7 @@ namespace ElectricalContractorSystem.Services
             
             using (var connection = _databaseService.GetConnection())
             {
+                connection.Open();
                 using (var transaction = connection.BeginTransaction())
                 {
                     try
@@ -105,7 +107,7 @@ namespace ElectricalContractorSystem.Services
         /// <summary>
         /// Converts an approved estimate into a job with all related data using conversion options
         /// </summary>
-        public Job ConvertEstimateToJob(Estimate estimate, ViewModels.ConversionOptions options)
+        public Job ConvertEstimateToJob(Estimate estimate, ConversionOptions options)
         {
             if (estimate.Status != EstimateStatus.Approved)
             {
@@ -119,6 +121,7 @@ namespace ElectricalContractorSystem.Services
             
             using (var connection = _databaseService.GetConnection())
             {
+                connection.Open();
                 using (var transaction = connection.BeginTransaction())
                 {
                     try
@@ -215,7 +218,7 @@ namespace ElectricalContractorSystem.Services
         /// <summary>
         /// Async version of ConvertEstimateToJob with options
         /// </summary>
-        public Task<Job> ConvertEstimateToJobAsync(Estimate estimate, ViewModels.ConversionOptions options)
+        public Task<Job> ConvertEstimateToJobAsync(Estimate estimate, ConversionOptions options)
         {
             return Task.Run(() => ConvertEstimateToJob(estimate, options));
         }
