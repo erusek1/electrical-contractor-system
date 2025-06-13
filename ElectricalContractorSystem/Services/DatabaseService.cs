@@ -8,7 +8,7 @@ using ElectricalContractorSystem.Models;
 
 namespace ElectricalContractorSystem.Services
 {
-    public class DatabaseService
+    public partial class DatabaseService
     {
         private readonly string _connectionString;
 
