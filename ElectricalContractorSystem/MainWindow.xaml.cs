@@ -480,9 +480,8 @@ namespace ElectricalContractorSystem
                 return;
             }
             
-            var assemblyService = new AssemblyService(_databaseService);
-            var pricingService = new PricingService(_databaseService);
-            var viewModel = new AssemblyManagementViewModel(_databaseService, assemblyService, pricingService);
+            // Use the simpler constructor that exists in the ViewModel
+            var viewModel = new AssemblyManagementViewModel(_databaseService);
             var view = new AssemblyManagementView
             {
                 DataContext = viewModel
@@ -508,6 +507,7 @@ namespace ElectricalContractorSystem
                 return;
             }
             
+            // Create the services first
             var pricingService = new PricingService(_databaseService);
             var viewModel = new MaterialPriceTrackingViewModel(_databaseService, pricingService);
             var view = new MaterialPriceTrackingView
