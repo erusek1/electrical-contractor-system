@@ -12,7 +12,7 @@ namespace ElectricalContractorSystem.Services
     public partial class ReportService
     {
         // Fixed GetWeeklySummaryReport method to resolve parameters scope issue
-        public new WeeklySummaryReport GetWeeklySummaryReport(DateTime weekStartDate)
+        public WeeklySummaryReport GetWeeklySummaryReport(DateTime weekStartDate)
         {
             var weekEndDate = weekStartDate.AddDays(4); // Monday to Friday
             
