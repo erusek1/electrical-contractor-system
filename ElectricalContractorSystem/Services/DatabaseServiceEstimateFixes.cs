@@ -50,5 +50,33 @@ namespace ElectricalContractorSystem.Services
             
             return estimate;
         }
+        
+        /// <summary>
+        /// Convert string status from database to EstimateStatus enum
+        /// </summary>
+        private EstimateStatus ConvertToEstimateStatus(string status)
+        {
+            if (Enum.TryParse<EstimateStatus>(status, true, out var result))
+            {
+                return result;
+            }
+            
+            // Handle any legacy or alternate status values
+            switch (status?.ToLower())
+            {
+                case "draft":
+                    return EstimateStatus.Draft;
+                case "sent":
+                    return EstimateStatus.Sent;
+                case "approved":
+                    return EstimateStatus.Approved;
+                case "rejected":
+                    return EstimateStatus.Rejected;
+                case "expired":
+                    return EstimateStatus.Expired;
+                default:
+                    return EstimateStatus.Draft; // Default to Draft if unknown
+            }
+        }
     }
 }
