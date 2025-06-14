@@ -23,7 +23,6 @@ namespace ElectricalContractorSystem.Services
         // Fix for MaterialEntry - add missing JobStage property
         public static void FixMaterialEntry(MaterialEntry entry, JobStage stage)
         {
-            entry.StageId = stage.StageId;
             entry.Stage = stage;
         }
     }
@@ -42,7 +41,8 @@ namespace ElectricalContractorSystem.Services
             if (room != null && room.Items != null)
             {
                 room.Items.Remove(item);
-                viewModel.OnPropertyChanged("SelectedRoom");
+                // Use reflection to call protected method or make it public in the view model
+                viewModel.RaisePropertyChanged("SelectedRoom");
             }
         }
     }
