@@ -27,7 +27,18 @@ namespace ElectricalContractorSystem.ViewModels
         {
             _databaseService = databaseService;
             _pricingService = new PricingService(databaseService);
-            
+            Initialize();
+        }
+        
+        public MaterialPriceTrackingViewModel(DatabaseService databaseService, PricingService pricingService)
+        {
+            _databaseService = databaseService;
+            _pricingService = pricingService;
+            Initialize();
+        }
+        
+        private void Initialize()
+        {
             // Initialize collections
             Materials = new ObservableCollection<Material>();
             PriceHistory = new ObservableCollection<MaterialPriceHistory>();
