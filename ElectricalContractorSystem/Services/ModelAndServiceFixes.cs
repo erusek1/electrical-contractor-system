@@ -24,6 +24,7 @@ namespace ElectricalContractorSystem.Services
         public static void FixMaterialEntry(MaterialEntry entry, JobStage stage)
         {
             entry.Stage = stage;
+            entry.StageId = stage.StageId;
         }
     }
     
@@ -41,7 +42,7 @@ namespace ElectricalContractorSystem.Services
             if (room != null && room.Items != null)
             {
                 room.Items.Remove(item);
-                // Use reflection to call protected method or make it public in the view model
+                // Use the public RaisePropertyChanged method
                 viewModel.RaisePropertyChanged("SelectedRoom");
             }
         }
