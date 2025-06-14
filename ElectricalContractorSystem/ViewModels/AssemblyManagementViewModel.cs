@@ -178,20 +178,9 @@ namespace ElectricalContractorSystem.ViewModels
         
         private void ExecuteCreateAssembly(object parameter)
         {
-            var dialog = new Views.CreateAssemblyDialog();
-            if (dialog.ShowDialog() == true)
-            {
-                var assembly = dialog.Assembly;
-                assembly.CreatedBy = Environment.UserName;
-                
-                _assemblyService.CreateAssembly(
-                    assembly.AssemblyCode,
-                    assembly.Name,
-                    assembly.Category,
-                    assembly.CreatedBy);
-                    
-                LoadData();
-            }
+            // TODO: Remove dialog reference - implement inline creation
+            System.Windows.MessageBox.Show("Create assembly feature will be implemented in the UI.", "Create Assembly", 
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
         }
         
         private bool CanExecuteEditAssembly(object parameter)
@@ -203,12 +192,9 @@ namespace ElectricalContractorSystem.ViewModels
         {
             if (SelectedAssembly == null) return;
             
-            var dialog = new Views.EditAssemblyDialog(SelectedAssembly);
-            if (dialog.ShowDialog() == true)
-            {
-                _databaseService.UpdateAssembly(SelectedAssembly);
-                LoadData();
-            }
+            // TODO: Remove dialog reference - implement inline editing
+            System.Windows.MessageBox.Show($"Edit assembly '{SelectedAssembly.Name}' feature will be implemented in the UI.", "Edit Assembly", 
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
         }
         
         private bool CanExecuteCreateVariant(object parameter)
@@ -220,20 +206,9 @@ namespace ElectricalContractorSystem.ViewModels
         {
             if (SelectedAssembly == null) return;
             
-            var dialog = new Views.CreateVariantDialog(SelectedAssembly);
-            if (dialog.ShowDialog() == true)
-            {
-                var variantName = dialog.VariantName;
-                var componentChanges = dialog.ComponentChanges;
-                
-                _assemblyService.CreateAssemblyVariant(
-                    SelectedAssembly.AssemblyId,
-                    variantName,
-                    componentChanges,
-                    Environment.UserName);
-                    
-                LoadAssemblyVariants();
-            }
+            // TODO: Remove dialog reference - implement inline variant creation
+            System.Windows.MessageBox.Show($"Create variant for '{SelectedAssembly.Name}' feature will be implemented in the UI.", "Create Variant", 
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
         }
         
         private bool CanExecuteDeleteAssembly(object parameter)
@@ -266,17 +241,9 @@ namespace ElectricalContractorSystem.ViewModels
         {
             if (SelectedAssembly == null || SelectedMaterial == null) return;
             
-            var dialog = new Views.AddComponentDialog();
-            if (dialog.ShowDialog() == true)
-            {
-                _assemblyService.AddComponentToAssembly(
-                    SelectedAssembly.AssemblyId,
-                    SelectedMaterial.MaterialId,
-                    dialog.Quantity,
-                    dialog.Notes);
-                    
-                LoadAssemblyDetails();
-            }
+            // TODO: Remove dialog reference - implement inline component addition
+            System.Windows.MessageBox.Show("Add component feature will be implemented in the UI.", "Add Component", 
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
         }
         
         private void ExecuteRemoveComponent(object parameter)
