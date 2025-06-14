@@ -30,6 +30,15 @@ namespace ElectricalContractorSystem.ViewModels
         }
 
         /// <summary>
+        /// Public method to raise property changed event (for external usage)
+        /// </summary>
+        /// <param name="propertyName">Name of the property that changed</param>
+        public void RaisePropertyChanged(string propertyName)
+        {
+            OnPropertyChanged(propertyName);
+        }
+
+        /// <summary>
         /// Sets a property value and raises PropertyChanged if the value changed
         /// </summary>
         /// <typeparam name="T">Type of the property</typeparam>
