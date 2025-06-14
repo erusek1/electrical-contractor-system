@@ -68,6 +68,25 @@ namespace ElectricalContractorSystem
             {
                 weeklyLaborBtn.Click += WeeklyLaborEntry_Click;
             }
+            
+            // Wire up new assembly and pricing buttons
+            var assemblyManagementBtn = this.FindName("AssemblyManagementButton") as System.Windows.Controls.Button;
+            if (assemblyManagementBtn != null)
+            {
+                assemblyManagementBtn.Click += AssemblyManagement_Click;
+            }
+            
+            var materialPriceTrackingBtn = this.FindName("MaterialPriceTrackingButton") as System.Windows.Controls.Button;
+            if (materialPriceTrackingBtn != null)
+            {
+                materialPriceTrackingBtn.Click += MaterialPriceTracking_Click;
+            }
+            
+            var priceListManagementBtn = this.FindName("PriceListManagementButton") as System.Windows.Controls.Button;
+            if (priceListManagementBtn != null)
+            {
+                priceListManagementBtn.Click += ManagePriceList_Click;
+            }
         }
         
         private void ShowDatabaseError(string message)
@@ -445,6 +464,61 @@ namespace ElectricalContractorSystem
             view.ShowDialog();
         }
         
+        private void AssemblyManagement_Click(object sender, RoutedEventArgs e)
+        {
+            if (!CheckDatabaseConnection())
+            {
+                MessageBox.Show("Assembly Management requires database connection.\n\n" +
+                    "Features include:\n" +
+                    "• Create assemblies with quick codes (o, s, hh, etc.)\n" +
+                    "• Define materials and labor for each assembly\n" +
+                    "• Create variants for different configurations\n" +
+                    "• Track assembly usage patterns",
+                    "Database Required",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                return;
+            }
+            
+            var assemblyService = new AssemblyService(_databaseService);
+            var pricingService = new PricingService(_databaseService);
+            var viewModel = new AssemblyManagementViewModel(_databaseService, assemblyService, pricingService);
+            var view = new AssemblyManagementView
+            {
+                DataContext = viewModel
+            };
+            
+            MainContent.Content = view;
+            this.Title = "Electrical Contractor Management System - Assembly Management";
+        }
+        
+        private void MaterialPriceTracking_Click(object sender, RoutedEventArgs e)
+        {
+            if (!CheckDatabaseConnection())
+            {
+                MessageBox.Show("Material Price Tracking requires database connection.\n\n" +
+                    "Features include:\n" +
+                    "• Track material price changes over time\n" +
+                    "• Get alerts for significant price increases\n" +
+                    "• View price trends and history\n" +
+                    "• Identify bulk purchase opportunities",
+                    "Database Required",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                return;
+            }
+            
+            var pricingService = new PricingService(_databaseService);
+            var viewModel = new MaterialPriceTrackingViewModel(_databaseService, pricingService);
+            var view = new MaterialPriceTrackingView
+            {
+                DataContext = viewModel
+            };
+            
+            MainContent.Content = view;
+            this.Title = "Electrical Contractor Management System - Material Price Tracking";
+        }
+        
         #endregion
         
         #region Reports Menu Items
@@ -492,10 +566,18 @@ namespace ElectricalContractorSystem
                 "• Use quick codes: 'hh' for high hat, 'O' for outlet, 'S' for switch\n" +
                 "• Add rooms and drag items from price list\n" +
                 "• Labor and materials calculate automatically\n\n" +
+                "Assemblies:\n" +
+                "• Create assemblies with your standard codes (o, s, hh, etc.)\n" +
+                "• Define materials and labor minutes by stage\n" +
+                "• Create variants for different configurations\n\n" +
                 "Jobs:\n" +
                 "• Track projects from estimate to completion\n" +
                 "• Enter weekly labor hours with validation\n" +
                 "• Track materials by job and stage\n\n" +
+                "Price Tracking:\n" +
+                "• Monitor material price changes\n" +
+                "• Get alerts for significant increases\n" +
+                "• Track price history and trends\n\n" +
                 "For detailed instructions, see /docs folder", 
                 "User Guide", 
                 MessageBoxButton.OK, 
@@ -523,6 +605,8 @@ namespace ElectricalContractorSystem
                 "Features:\n" +
                 "• Estimate builder with room-by-room specifications\n" +
                 "• Quick item codes (hh, O, S, 3W, etc.)\n" +
+                "• Assembly management with variants\n" +
+                "• Material price tracking and alerts\n" +
                 "• Job tracking and management\n" +
                 "• Weekly labor entry with validation\n" +
                 "• Material tracking by job and stage\n" +
