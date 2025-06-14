@@ -608,7 +608,8 @@ namespace ElectricalContractorSystem.Services
                     {
                         while (reader.Read())
                         {
-                            estimates.Add(service.ReadEstimate(reader));
+                            // Fix: Call ReadEstimate correctly - it's not an extension method on DatabaseService
+                            estimates.Add(ReadEstimate(reader));
                         }
                     }
                 }
@@ -621,6 +622,33 @@ namespace ElectricalContractorSystem.Services
             }
             
             return estimates;
+        }
+        
+        // Add the ReadEstimate method that was missing
+        private static Estimate ReadEstimate(MySqlDataReader reader)
+        {
+            return new Estimate
+            {
+                EstimateId = reader.GetInt32("estimate_id"),
+                EstimateNumber = reader.GetString("estimate_number"),
+                CustomerId = reader.GetInt32("customer_id"),
+                ProjectName = reader.GetString("project_name"),
+                ProjectDescription = reader.IsDBNull(reader.GetOrdinal("project_description")) ? null : reader.GetString("project_description"),
+                ServiceAddress = reader.IsDBNull(reader.GetOrdinal("service_address")) ? null : reader.GetString("service_address"),
+                ServiceCity = reader.IsDBNull(reader.GetOrdinal("service_city")) ? null : reader.GetString("service_city"),
+                ServiceState = reader.IsDBNull(reader.GetOrdinal("service_state")) ? null : reader.GetString("service_state"),
+                ServiceZip = reader.IsDBNull(reader.GetOrdinal("service_zip")) ? null : reader.GetString("service_zip"),
+                Status = (EstimateStatus)Enum.Parse(typeof(EstimateStatus), reader.GetString("status")),
+                LaborRate = reader.GetDecimal("labor_rate"),
+                MaterialMarkup = reader.GetDecimal("material_markup"),
+                ValidUntilDate = reader.IsDBNull(reader.GetOrdinal("valid_until_date")) ? null : (DateTime?)reader.GetDateTime("valid_until_date"),
+                Notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString("notes"),
+                CreatedDate = reader.GetDateTime("created_date"),
+                UpdatedDate = reader.IsDBNull(reader.GetOrdinal("updated_date")) ? null : (DateTime?)reader.GetDateTime("updated_date"),
+                CreatedBy = reader.GetString("created_by"),
+                ApprovedDate = reader.IsDBNull(reader.GetOrdinal("approved_date")) ? null : (DateTime?)reader.GetDateTime("approved_date"),
+                ConvertedToJobId = reader.IsDBNull(reader.GetOrdinal("converted_to_job_id")) ? null : (int?)reader.GetInt32("converted_to_job_id")
+            };
         }
         
         #endregion
