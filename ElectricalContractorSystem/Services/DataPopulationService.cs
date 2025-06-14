@@ -207,7 +207,7 @@ namespace ElectricalContractorSystem.Services
                                     EmployeeId = employee.EmployeeId,
                                     Date = workDate,
                                     Hours = hours,
-                                    Stage = jobStage, // Changed from JobStage to Stage
+                                    Stage = jobStage,
                                     Notes = ""
                                 });
                             }
@@ -248,16 +248,19 @@ namespace ElectricalContractorSystem.Services
                     var jobStage = new JobStage
                     {
                         JobId = job.JobId,
-                        StageName = stage
+                        StageName = stage,
+                        StageId = i + 1 // Temporary ID
                     };
 
                     entries.Add(new MaterialEntry
                     {
+                        EntryId = entries.Count + 1,
                         JobId = job.JobId,
+                        StageId = jobStage.StageId,
                         VendorId = vendor.VendorId,
                         Date = date,
                         Cost = (decimal)(random.Next(100, 2000) + random.NextDouble()),
-                        Stage = jobStage, // Changed from JobStage to Stage
+                        Stage = jobStage,
                         InvoiceNumber = $"INV-{random.Next(10000, 99999)}",
                         InvoiceTotal = (decimal)(random.Next(500, 5000) + random.NextDouble()),
                         Notes = GetRandomMaterialDescription()
