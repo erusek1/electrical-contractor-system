@@ -63,14 +63,25 @@ namespace ElectricalContractorSystem.Models
         
         public int AdjustMinutes(int baseMinutes, LaborStage stage)
         {
-            var multiplier = stage switch
+            decimal multiplier;
+            switch (stage)
             {
-                LaborStage.Rough => RoughMultiplier,
-                LaborStage.Finish => FinishMultiplier,
-                LaborStage.Service => ServiceMultiplier,
-                LaborStage.Extra => ExtraMultiplier,
-                _ => 1.00m
-            };
+                case LaborStage.Rough:
+                    multiplier = RoughMultiplier;
+                    break;
+                case LaborStage.Finish:
+                    multiplier = FinishMultiplier;
+                    break;
+                case LaborStage.Service:
+                    multiplier = ServiceMultiplier;
+                    break;
+                case LaborStage.Extra:
+                    multiplier = ExtraMultiplier;
+                    break;
+                default:
+                    multiplier = 1.00m;
+                    break;
+            }
             
             return (int)Math.Round(baseMinutes * multiplier);
         }
