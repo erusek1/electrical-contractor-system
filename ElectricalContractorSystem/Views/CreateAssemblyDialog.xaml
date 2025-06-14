@@ -1,0 +1,114 @@
+<Window x:Class="ElectricalContractorSystem.Views.CreateAssemblyDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Create New Assembly" Height="450" Width="500"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Assembly Code -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,10">
+            <TextBlock Text="Assembly Code:*" FontWeight="SemiBold"/>
+            <TextBlock Text="Use short codes like 'o' for outlet, 's' for switch, 'hh' for high hat" 
+                       FontStyle="Italic" FontSize="11" Foreground="Gray" Margin="0,2"/>
+            <TextBox Name="CodeTextBox" Text="{Binding AssemblyCode}" MaxLength="20"/>
+        </StackPanel>
+        
+        <!-- Assembly Name -->
+        <StackPanel Grid.Row="1" Margin="0,0,0,10">
+            <TextBlock Text="Assembly Name:*" FontWeight="SemiBold"/>
+            <TextBox Name="NameTextBox" Text="{Binding AssemblyName}"/>
+        </StackPanel>
+        
+        <!-- Category -->
+        <StackPanel Grid.Row="2" Margin="0,0,0,10">
+            <TextBlock Text="Category:*" FontWeight="SemiBold"/>
+            <ComboBox Name="CategoryComboBox" 
+                      IsEditable="True"
+                      Text="{Binding Category}">
+                <ComboBoxItem>Outlets</ComboBoxItem>
+                <ComboBoxItem>Switches</ComboBoxItem>
+                <ComboBoxItem>Lighting</ComboBoxItem>
+                <ComboBoxItem>Service</ComboBoxItem>
+                <ComboBoxItem>Special</ComboBoxItem>
+            </ComboBox>
+        </StackPanel>
+        
+        <!-- Description -->
+        <StackPanel Grid.Row="3" Margin="0,0,0,10">
+            <TextBlock Text="Description:" FontWeight="SemiBold"/>
+            <TextBox Name="DescriptionTextBox" 
+                     Text="{Binding Description}"
+                     TextWrapping="Wrap"
+                     AcceptsReturn="True"
+                     Height="60"
+                     VerticalScrollBarVisibility="Auto"/>
+        </StackPanel>
+        
+        <!-- Labor Minutes -->
+        <GroupBox Grid.Row="4" Header="Labor Minutes by Stage" Margin="0,0,0,10" Padding="10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                
+                <StackPanel Grid.Column="0" Margin="0,0,5,0">
+                    <TextBlock Text="Rough:" FontWeight="SemiBold"/>
+                    <TextBox Text="{Binding RoughMinutes}"/>
+                </StackPanel>
+                
+                <StackPanel Grid.Column="1" Margin="5,0">
+                    <TextBlock Text="Finish:" FontWeight="SemiBold"/>
+                    <TextBox Text="{Binding FinishMinutes}"/>
+                </StackPanel>
+                
+                <StackPanel Grid.Column="2" Margin="5,0">
+                    <TextBlock Text="Service:" FontWeight="SemiBold"/>
+                    <TextBox Text="{Binding ServiceMinutes}"/>
+                </StackPanel>
+                
+                <StackPanel Grid.Column="3" Margin="5,0,0,0">
+                    <TextBlock Text="Extra:" FontWeight="SemiBold"/>
+                    <TextBox Text="{Binding ExtraMinutes}"/>
+                </StackPanel>
+            </Grid>
+        </GroupBox>
+        
+        <!-- Is Default -->
+        <CheckBox Grid.Row="5" 
+                  Content="Set as default for this code" 
+                  IsChecked="{Binding IsDefault}"
+                  Margin="0,0,0,10"/>
+        
+        <!-- Note -->
+        <TextBlock Grid.Row="6" 
+                   Text="Note: Materials will be added after creating the assembly."
+                   FontStyle="Italic"
+                   TextWrapping="Wrap"
+                   VerticalAlignment="Bottom"
+                   Margin="0,10"/>
+        
+        <!-- Buttons -->
+        <StackPanel Grid.Row="7" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Name="CreateButton" Content="Create" Width="100" Margin="0,0,10,0" 
+                    IsDefault="True" Click="CreateButton_Click"/>
+            <Button Name="CancelButton" Content="Cancel" Width="100" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>
