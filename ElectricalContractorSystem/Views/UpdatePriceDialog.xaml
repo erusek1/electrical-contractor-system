@@ -1,0 +1,94 @@
+<Window x:Class="ElectricalContractorSystem.Views.UpdatePriceDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Update Material Price" Height="400" Width="500"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Material Info -->
+        <TextBlock Grid.Row="0" FontSize="16" FontWeight="Bold" Margin="0,0,0,10">
+            <TextBlock.Text>
+                <MultiBinding StringFormat="{}{0} ({1})">
+                    <Binding Path="Material.Name"/>
+                    <Binding Path="Material.MaterialCode"/>
+                </MultiBinding>
+            </TextBlock.Text>
+        </TextBlock>
+        
+        <!-- Current Price -->
+        <StackPanel Grid.Row="1" Margin="0,0,0,10">
+            <TextBlock Text="Current Price:" FontWeight="SemiBold"/>
+            <TextBlock FontSize="14">
+                <TextBlock.Text>
+                    <Binding Path="Material.CurrentPrice" StringFormat="${0:F2}"/>
+                </TextBlock.Text>
+            </TextBlock>
+        </StackPanel>
+        
+        <!-- New Price -->
+        <StackPanel Grid.Row="2" Margin="0,0,0,10">
+            <TextBlock Text="New Price:*" FontWeight="SemiBold"/>
+            <TextBox Name="NewPriceTextBox" FontSize="14" Padding="5">
+                <TextBox.Text>
+                    <Binding Path="NewPrice" StringFormat="{}{0:F2}" UpdateSourceTrigger="PropertyChanged">
+                        <Binding.ValidationRules>
+                            <DataErrorValidationRule/>
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+            </TextBox>
+        </StackPanel>
+        
+        <!-- Vendor -->
+        <StackPanel Grid.Row="3" Margin="0,0,0,10">
+            <TextBlock Text="Vendor:" FontWeight="SemiBold"/>
+            <ComboBox Name="VendorComboBox" 
+                      ItemsSource="{Binding Vendors}"
+                      DisplayMemberPath="Name"
+                      SelectedValuePath="VendorId"
+                      SelectedValue="{Binding VendorId}"/>
+        </StackPanel>
+        
+        <!-- Purchase Order -->
+        <StackPanel Grid.Row="4" Margin="0,0,0,10">
+            <TextBlock Text="Purchase Order #:" FontWeight="SemiBold"/>
+            <TextBox Name="POTextBox" Text="{Binding PurchaseOrderNumber}"/>
+        </StackPanel>
+        
+        <!-- Quantity Purchased -->
+        <StackPanel Grid.Row="5" Margin="0,0,0,10">
+            <TextBlock Text="Quantity Purchased:" FontWeight="SemiBold"/>
+            <TextBox Name="QuantityTextBox" Text="{Binding QuantityPurchased}"/>
+        </StackPanel>
+        
+        <!-- Price Change Info -->
+        <Border Grid.Row="6" BorderBrush="LightGray" BorderThickness="1" Padding="10" Margin="0,10">
+            <StackPanel>
+                <TextBlock FontWeight="SemiBold" Margin="0,0,0,5">Price Change Analysis:</TextBlock>
+                <TextBlock Name="PriceChangeText" TextWrapping="Wrap"/>
+            </StackPanel>
+        </Border>
+        
+        <!-- Buttons -->
+        <StackPanel Grid.Row="8" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Name="UpdateButton" Content="Update Price" Width="100" Margin="0,0,10,0" 
+                    IsDefault="True" Click="UpdateButton_Click"/>
+            <Button Name="CancelButton" Content="Cancel" Width="100" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>
