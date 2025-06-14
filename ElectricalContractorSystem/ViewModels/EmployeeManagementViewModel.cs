@@ -79,6 +79,7 @@ namespace ElectricalContractorSystem.ViewModels
             catch (Exception ex)
             {
                 // Log error
+                System.Diagnostics.Debug.WriteLine($"Error loading employees: {ex.Message}");
                 Employees = new ObservableCollection<Employee>();
             }
         }
