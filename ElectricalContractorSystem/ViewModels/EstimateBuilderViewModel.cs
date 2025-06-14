@@ -59,7 +59,18 @@ namespace ElectricalContractorSystem.ViewModels
             get => _selectedRoom;
             set
             {
+                if (_selectedRoom != null)
+                {
+                    _selectedRoom.PropertyChanged -= OnRoomPropertyChanged;
+                }
+                
                 _selectedRoom = value;
+                
+                if (_selectedRoom != null)
+                {
+                    _selectedRoom.PropertyChanged += OnRoomPropertyChanged;
+                }
+                
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(SelectedRoomItems));
                 CommandManager.InvalidateRequerySuggested();
@@ -111,7 +122,7 @@ namespace ElectricalContractorSystem.ViewModels
         // Calculated properties
         public decimal TotalLaborHours => CurrentEstimate?.TotalLaborHours ?? 0;
         public decimal TotalMaterialCost => CurrentEstimate?.TotalMaterialCost ?? 0;
-        public decimal TotalCost => CurrentEstimate?.TotalCost ?? 0;
+        public decimal TotalCost => CurrentEstimate?.TotalPrice ?? 0; // Fixed: Changed from TotalCost to TotalPrice
         
         public string EstimateTitle => IsNewEstimate ? 
             "New Estimate" : 
@@ -143,6 +154,9 @@ namespace ElectricalContractorSystem.ViewModels
                 RoomOrder = Rooms.Count
             };
             
+            // Subscribe to property changes
+            newRoom.PropertyChanged += OnRoomPropertyChanged;
+            
             Rooms.Add(newRoom);
             CurrentEstimate.Rooms.Add(newRoom);
             SelectedRoom = newRoom;
@@ -160,6 +174,9 @@ namespace ElectricalContractorSystem.ViewModels
                 var roomToDelete = SelectedRoom;
                 var index = Rooms.IndexOf(roomToDelete);
                 
+                // Unsubscribe from events
+                roomToDelete.PropertyChanged -= OnRoomPropertyChanged;
+                
                 Rooms.Remove(roomToDelete);
                 CurrentEstimate.Rooms.Remove(roomToDelete);
                 
@@ -174,6 +191,8 @@ namespace ElectricalContractorSystem.ViewModels
                 {
                     SelectedRoom = Rooms[Math.Min(index, Rooms.Count - 1)];
                 }
+                
+                UpdateTotals();
             }
         }
         
@@ -195,6 +214,11 @@ namespace ElectricalContractorSystem.ViewModels
                 CurrentEstimate.LineItems.Add(lineItem);
                 
                 OnPropertyChanged(nameof(SelectedRoomItems));
+                
+                // Notify room of changes
+                SelectedRoom.OnPropertyChanged(nameof(EstimateRoom.ItemCount));
+                SelectedRoom.OnPropertyChanged(nameof(EstimateRoom.RoomTotal));
+                
                 UpdateTotals();
             }
         }
@@ -214,6 +238,11 @@ namespace ElectricalContractorSystem.ViewModels
                 }
                 
                 OnPropertyChanged(nameof(SelectedRoomItems));
+                
+                // Notify room of changes
+                SelectedRoom.OnPropertyChanged(nameof(EstimateRoom.ItemCount));
+                SelectedRoom.OnPropertyChanged(nameof(EstimateRoom.RoomTotal));
+                
                 UpdateTotals();
             }
         }
@@ -240,9 +269,14 @@ namespace ElectricalContractorSystem.ViewModels
                 clonedRoom.RoomName = $"{SelectedRoom.RoomName} (Copy)";
                 clonedRoom.RoomOrder = Rooms.Count;
                 
+                // Subscribe to property changes
+                clonedRoom.PropertyChanged += OnRoomPropertyChanged;
+                
                 Rooms.Add(clonedRoom);
                 CurrentEstimate.Rooms.Add(clonedRoom);
                 SelectedRoom = clonedRoom;
+                
+                UpdateTotals();
             }
         }
         
@@ -334,12 +368,19 @@ namespace ElectricalContractorSystem.ViewModels
         
         private void LoadEstimateData()
         {
+            // Unsubscribe from all room events
+            foreach (var room in Rooms)
+            {
+                room.PropertyChanged -= OnRoomPropertyChanged;
+            }
+            
             Rooms.Clear();
             
             if (CurrentEstimate != null)
             {
                 foreach (var room in CurrentEstimate.Rooms.OrderBy(r => r.RoomOrder))
                 {
+                    room.PropertyChanged += OnRoomPropertyChanged;
                     Rooms.Add(room);
                 }
                 
@@ -358,6 +399,21 @@ namespace ElectricalContractorSystem.ViewModels
             OnPropertyChanged(nameof(TotalLaborHours));
             OnPropertyChanged(nameof(TotalMaterialCost));
             OnPropertyChanged(nameof(TotalCost));
+        }
+        
+        private void OnRoomPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            // Refresh the room list when room properties change
+            if (e.PropertyName == nameof(EstimateRoom.RoomName))
+            {
+                // Force the UI to update
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    var temp = Rooms.ToList();
+                    Rooms.Clear();
+                    temp.ForEach(r => Rooms.Add(r));
+                });
+            }
         }
         
         #endregion
