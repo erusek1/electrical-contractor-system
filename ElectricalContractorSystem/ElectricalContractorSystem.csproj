@@ -138,8 +138,12 @@
     <Compile Include="Helpers\StringEqualityToVisibilityConverter.cs" />
     <Compile Include="Helpers\StringNotEqualityConverter.cs" />
     <Compile Include="Helpers\TextConverter.cs" />
+    <Compile Include="Models\AssemblyComponent.cs" />
+    <Compile Include="Models\AssemblyTemplate.cs" />
+    <Compile Include="Models\AssemblyVariant.cs" />
     <Compile Include="Models\BulkUpdateJobItem.cs" />
     <Compile Include="Models\Customer.cs" />
+    <Compile Include="Models\DifficultyPreset.cs" />
     <Compile Include="Models\Employee.cs" />
     <Compile Include="Models\Estimate.cs" />
     <Compile Include="Models\EstimateItem.cs" />
@@ -148,11 +152,17 @@
     <Compile Include="Models\EstimateRoom.cs" />
     <Compile Include="Models\EstimateStageSummary.cs" />
     <Compile Include="Models\EstimateStatus.cs" />
+    <Compile Include="Models\Inventory.cs" />
+    <Compile Include="Models\InventoryRequest.cs" />
+    <Compile Include="Models\InventoryTransaction.cs" />
     <Compile Include="Models\Job.cs" />
     <Compile Include="Models\JobStage.cs" />
+    <Compile Include="Models\LaborAdjustment.cs" />
     <Compile Include="Models\LaborEntry.cs" />
     <Compile Include="Models\LaborMinute.cs" />
+    <Compile Include="Models\Material.cs" />
     <Compile Include="Models\MaterialEntry.cs" />
+    <Compile Include="Models\MaterialPriceHistory.cs" />
     <Compile Include="Models\MaterialStage.cs" />
     <Compile Include="Models\PermitItem.cs" />
     <Compile Include="Models\PermitItemType.cs" />
@@ -161,7 +171,12 @@
     <Compile Include="Models\RoomSpecification.cs" />
     <Compile Include="Models\RoomTemplate.cs" />
     <Compile Include="Models\RoomTemplateItem.cs" />
+    <Compile Include="Models\ServiceType.cs" />
+    <Compile Include="Models\StorageLocation.cs" />
+    <Compile Include="Models\StorageSubLocation.cs" />
     <Compile Include="Models\Vendor.cs" />
+    <Compile Include="Models\VendorItem.cs" />
+    <Compile Include="Services\AssemblyService.cs" />
     <Compile Include="Services\BulkUpdateService.cs" />
     <Compile Include="Services\DataPopulationService.cs" />
     <Compile Include="Services\DataUtilityService.cs" />
@@ -170,11 +185,19 @@
     <Compile Include="Services\DatabaseService.Customer.cs" />
     <Compile Include="Services\DatabaseService.Estimating.cs" />
     <Compile Include="Services\DatabaseService.Extended.cs" />
+    <Compile Include="Services\DatabaseServiceEstimateFixes.cs" />
+    <Compile Include="Services\DatabaseServiceExtensions.cs" />
+    <Compile Include="Services\DatabaseServicePricingExtensions.cs" />
     <Compile Include="Services\EstimateConversionService.cs" />
     <Compile Include="Services\EstimatePdfService.cs" />
     <Compile Include="Services\EstimateService.cs" />
+    <Compile Include="Services\EstimateServiceExtensions.cs" />
+    <Compile Include="Services\ModelAndServiceFixes.cs" />
     <Compile Include="Services\PriceListService.cs" />
+    <Compile Include="Services\PricingService.cs" />
     <Compile Include="Services\ReportService.cs" />
+    <Compile Include="Services\ReportServiceFixes.cs" />
+    <Compile Include="ViewModels\AssemblyManagementViewModel.cs" />
     <Compile Include="ViewModels\BulkStatusUpdateDialogViewModel.cs" />
     <Compile Include="ViewModels\ConversionOptions.cs" />
     <Compile Include="ViewModels\CustomerManagementViewModel.cs" />
@@ -191,11 +214,15 @@
     <Compile Include="ViewModels\JobManagementViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
     <Compile Include="ViewModels\MaterialEntryViewModel.cs" />
+    <Compile Include="ViewModels\MaterialPriceTrackingViewModel.cs" />
     <Compile Include="ViewModels\PriceListManagementViewModel.cs" />
     <Compile Include="ViewModels\ViewModelBase.cs" />
     <Compile Include="ViewModels\WeeklyLaborEntryViewModel.cs" />
     <Compile Include="Views\AddCustomerDialog.xaml.cs">
       <DependentUpon>AddCustomerDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\AssemblyManagementView.xaml.cs">
+      <DependentUpon>AssemblyManagementView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\BulkStatusUpdateDialog.xaml.cs">
       <DependentUpon>BulkStatusUpdateDialog.xaml</DependentUpon>
@@ -239,6 +266,9 @@
     <Compile Include="Views\MaterialEntryView.xaml.cs">
       <DependentUpon>MaterialEntryView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\MaterialPriceTrackingView.xaml.cs">
+      <DependentUpon>MaterialPriceTrackingView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\NewJobDialog.xaml.cs">
       <DependentUpon>NewJobDialog.xaml</DependentUpon>
     </Compile>
@@ -268,6 +298,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="Views\AddCustomerDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\AssemblyManagementView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -324,6 +358,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\MaterialEntryView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\MaterialPriceTrackingView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
