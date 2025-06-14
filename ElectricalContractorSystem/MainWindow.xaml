@@ -54,6 +54,9 @@
                 <MenuItem Header="_Manage Price List" Click="ManagePriceList_Click"/>
                 <MenuItem Header="_Import from Excel" Click="ImportPriceList_Click"/>
                 <MenuItem Header="_Export to Excel" Click="ExportPriceList_Click"/>
+                <Separator/>
+                <MenuItem Header="_Assembly Management" Click="AssemblyManagement_Click"/>
+                <MenuItem Header="_Material Price Tracking" Click="MaterialPriceTracking_Click"/>
             </MenuItem>
             
             <MenuItem Header="_Reports">
@@ -76,84 +79,134 @@
         <ContentControl Grid.Row="1" x:Name="MainContent">
             <!-- Default Home Screen Content -->
             <Grid Background="#F5F5F5">
-                <StackPanel HorizontalAlignment="Center" 
-                            VerticalAlignment="Center">
-                    <TextBlock Text="Welcome to Electrical Contractor Management System" 
-                               FontSize="28" 
-                               FontWeight="Light"
-                               Margin="0,0,0,20"
-                               HorizontalAlignment="Center"/>
-                    
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="30"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel HorizontalAlignment="Center" 
+                                VerticalAlignment="Center"
+                                Margin="0,40,0,40">
+                        <TextBlock Text="Welcome to Electrical Contractor Management System" 
+                                   FontSize="28" 
+                                   FontWeight="Light"
+                                   Margin="0,0,0,20"
+                                   HorizontalAlignment="Center"/>
                         
-                        <!-- Estimates Section -->
-                        <StackPanel Grid.Column="0">
-                            <TextBlock Text="Estimates" 
-                                       FontSize="20" 
-                                       FontWeight="Medium"
-                                       Margin="0,0,0,15"
-                                       HorizontalAlignment="Center"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="30"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="30"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
                             
-                            <Button Name="NewEstimateButton" 
-                                    Content="New Estimate" 
-                                    Width="200"
-                                    Height="50"
-                                    FontSize="16"
-                                    Margin="0,5"
-                                    Background="#2196F3"
-                                    Foreground="White"
-                                    BorderThickness="0"
-                                    Cursor="Hand"/>
+                            <!-- Estimates Section -->
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Estimates" 
+                                           FontSize="20" 
+                                           FontWeight="Medium"
+                                           Margin="0,0,0,15"
+                                           HorizontalAlignment="Center"/>
+                                
+                                <Button Name="NewEstimateButton" 
+                                        Content="New Estimate" 
+                                        Width="200"
+                                        Height="50"
+                                        FontSize="16"
+                                        Margin="0,5"
+                                        Background="#2196F3"
+                                        Foreground="White"
+                                        BorderThickness="0"
+                                        Cursor="Hand"/>
+                                
+                                <Button Name="ManageEstimatesButton" 
+                                        Content="Manage Estimates" 
+                                        Width="200"
+                                        Height="50"
+                                        FontSize="16"
+                                        Margin="0,5"
+                                        Background="#1976D2"
+                                        Foreground="White"
+                                        BorderThickness="0"
+                                        Cursor="Hand"/>
+                            </StackPanel>
                             
-                            <Button Name="ManageEstimatesButton" 
-                                    Content="Manage Estimates" 
-                                    Width="200"
-                                    Height="50"
-                                    FontSize="16"
-                                    Margin="0,5"
-                                    Background="#1976D2"
-                                    Foreground="White"
-                                    BorderThickness="0"
-                                    Cursor="Hand"/>
-                        </StackPanel>
-                        
-                        <!-- Jobs Section -->
-                        <StackPanel Grid.Column="2">
-                            <TextBlock Text="Jobs" 
-                                       FontSize="20" 
-                                       FontWeight="Medium"
-                                       Margin="0,0,0,15"
-                                       HorizontalAlignment="Center"/>
+                            <!-- Jobs Section -->
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Jobs" 
+                                           FontSize="20" 
+                                           FontWeight="Medium"
+                                           Margin="0,0,0,15"
+                                           HorizontalAlignment="Center"/>
+                                
+                                <Button Name="JobManagementButton" 
+                                        Content="Job Management" 
+                                        Width="200"
+                                        Height="50"
+                                        FontSize="16"
+                                        Margin="0,5"
+                                        Background="#1976D2"
+                                        Foreground="White"
+                                        BorderThickness="0"
+                                        Cursor="Hand"/>
+                                
+                                <Button Name="WeeklyLaborEntryButton" 
+                                        Content="Weekly Labor Entry" 
+                                        Width="200"
+                                        Height="50"
+                                        FontSize="16"
+                                        Margin="0,5"
+                                        Background="#1976D2"
+                                        Foreground="White"
+                                        BorderThickness="0"
+                                        Cursor="Hand"/>
+                            </StackPanel>
                             
-                            <Button Name="JobManagementButton" 
-                                    Content="Job Management" 
-                                    Width="200"
-                                    Height="50"
-                                    FontSize="16"
-                                    Margin="0,5"
-                                    Background="#1976D2"
-                                    Foreground="White"
-                                    BorderThickness="0"
-                                    Cursor="Hand"/>
-                            
-                            <Button Name="WeeklyLaborEntryButton" 
-                                    Content="Weekly Labor Entry" 
-                                    Width="200"
-                                    Height="50"
-                                    FontSize="16"
-                                    Margin="0,5"
-                                    Background="#1976D2"
-                                    Foreground="White"
-                                    BorderThickness="0"
-                                    Cursor="Hand"/>
-                        </StackPanel>
-                    </Grid>
-                </StackPanel>
+                            <!-- Price Management Section -->
+                            <StackPanel Grid.Column="4">
+                                <TextBlock Text="Price Management" 
+                                           FontSize="20" 
+                                           FontWeight="Medium"
+                                           Margin="0,0,0,15"
+                                           HorizontalAlignment="Center"/>
+                                
+                                <Button Name="AssemblyManagementButton" 
+                                        Content="Assembly Management" 
+                                        Width="200"
+                                        Height="50"
+                                        FontSize="16"
+                                        Margin="0,5"
+                                        Background="#4CAF50"
+                                        Foreground="White"
+                                        BorderThickness="0"
+                                        Cursor="Hand"
+                                        ToolTip="Manage assemblies with quick codes (o, s, hh, etc.)"/>
+                                
+                                <Button Name="MaterialPriceTrackingButton" 
+                                        Content="Material Price Tracking" 
+                                        Width="200"
+                                        Height="50"
+                                        FontSize="16"
+                                        Margin="0,5"
+                                        Background="#388E3C"
+                                        Foreground="White"
+                                        BorderThickness="0"
+                                        Cursor="Hand"
+                                        ToolTip="Track material prices and get alerts"/>
+                                
+                                <Button Name="PriceListManagementButton" 
+                                        Content="Price List Management" 
+                                        Width="200"
+                                        Height="50"
+                                        FontSize="16"
+                                        Margin="0,5"
+                                        Background="#2E7D32"
+                                        Foreground="White"
+                                        BorderThickness="0"
+                                        Cursor="Hand"
+                                        ToolTip="Manage your complete price list"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
             </Grid>
         </ContentControl>
     </Grid>
