@@ -28,12 +28,6 @@ namespace ElectricalContractorSystem.Services
         }
     }
     
-    // Extension for MaterialEntry model to add missing Stage property
-    public partial class MaterialEntry
-    {
-        public JobStage Stage { get; set; }
-    }
-    
     // Extension for EstimateBuilderViewModel fix
     public static class EstimateBuilderViewModelExtensions
     {
