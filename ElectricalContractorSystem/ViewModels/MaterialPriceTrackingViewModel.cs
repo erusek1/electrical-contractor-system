@@ -87,7 +87,7 @@ namespace ElectricalContractorSystem.ViewModels
             set => SetProperty(ref _priceAlerts, value);
         }
         
-        public ObservableCollection<string> Categories { get; }
+        public ObservableCollection<string> Categories { get; private set; }
         
         public Material SelectedMaterial
         {
@@ -172,15 +172,15 @@ namespace ElectricalContractorSystem.ViewModels
         
         #region Commands
         
-        public ICommand RefreshCommand { get; }
-        public ICommand UpdatePriceCommand { get; }
-        public ICommand ViewHistoryCommand { get; }
-        public ICommand BulkUpdateCommand { get; }
-        public ICommand ImportPricesCommand { get; }
-        public ICommand ExportPricesCommand { get; }
-        public ICommand DismissAlertCommand { get; }
-        public ICommand ApplyPriceChangeCommand { get; }
-        public ICommand ViewTrendsCommand { get; }
+        public ICommand RefreshCommand { get; private set; }
+        public ICommand UpdatePriceCommand { get; private set; }
+        public ICommand ViewHistoryCommand { get; private set; }
+        public ICommand BulkUpdateCommand { get; private set; }
+        public ICommand ImportPricesCommand { get; private set; }
+        public ICommand ExportPricesCommand { get; private set; }
+        public ICommand DismissAlertCommand { get; private set; }
+        public ICommand ApplyPriceChangeCommand { get; private set; }
+        public ICommand ViewTrendsCommand { get; private set; }
         
         #endregion
         
@@ -200,20 +200,9 @@ namespace ElectricalContractorSystem.ViewModels
         {
             if (SelectedMaterial == null) return;
             
-            var dialog = new Views.UpdatePriceDialog(SelectedMaterial);
-            if (dialog.ShowDialog() == true)
-            {
-                _pricingService.UpdateMaterialPrice(
-                    SelectedMaterial.MaterialId,
-                    dialog.NewPrice,
-                    Environment.UserName,
-                    dialog.VendorId,
-                    dialog.PurchaseOrderNumber,
-                    dialog.QuantityPurchased);
-                    
-                LoadData();
-                LoadPriceHistory();
-            }
+            // TODO: Remove dialog reference - update price directly or use a different mechanism
+            System.Windows.MessageBox.Show("Update price feature will be implemented in the dialog.", "Update Price", 
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
         }
         
         private bool CanExecuteViewHistory(object parameter)
@@ -225,34 +214,16 @@ namespace ElectricalContractorSystem.ViewModels
         {
             if (SelectedMaterial == null) return;
             
-            var dialog = new Views.PriceHistoryDialog(SelectedMaterial, PriceHistory);
-            dialog.ShowDialog();
+            // TODO: Remove dialog reference - view history directly or use a different mechanism
+            System.Windows.MessageBox.Show($"Price history for {SelectedMaterial.Name} will be shown here.", "Price History", 
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
         }
         
         private void ExecuteBulkUpdate(object parameter)
         {
-            var dialog = new Views.BulkPriceUpdateDialog();
-            if (dialog.ShowDialog() == true)
-            {
-                var updates = dialog.PriceUpdates;
-                
-                foreach (var update in updates)
-                {
-                    _pricingService.UpdateMaterialPrice(
-                        update.MaterialId,
-                        update.NewPrice,
-                        Environment.UserName,
-                        update.VendorId);
-                }
-                
-                LoadData();
-                
-                System.Windows.MessageBox.Show(
-                    $"Updated prices for {updates.Count} materials.",
-                    "Bulk Update Complete",
-                    System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Information);
-            }
+            // TODO: Remove dialog reference - implement bulk update differently
+            System.Windows.MessageBox.Show("Bulk update feature will be implemented.", "Bulk Update", 
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
         }
         
         private void ExecuteImportPrices(object parameter)
@@ -317,8 +288,9 @@ namespace ElectricalContractorSystem.ViewModels
         {
             if (SelectedMaterial == null) return;
             
-            var dialog = new Views.PriceTrendsDialog(SelectedMaterial, _pricingService);
-            dialog.ShowDialog();
+            // TODO: Remove dialog reference - view trends differently
+            System.Windows.MessageBox.Show($"Price trends for {SelectedMaterial.Name} will be shown here.", "Price Trends", 
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
         }
         
         #endregion
