@@ -126,6 +126,46 @@ namespace ElectricalContractorSystem.Services
             }
         }
 
+        public List<EstimateStageSummary> GetEstimateStageSummaries(MySqlConnection connection, int estimateId)
+        {
+            var summaries = new List<EstimateStageSummary>();
+            var query = @"SELECT summary_id, stage, labor_hours, material_cost, labor_cost
+                         FROM EstimateStageSummaries
+                         WHERE estimate_id = @estimateId
+                         ORDER BY FIELD(stage, 'Demo', 'Rough', 'Service', 'Finish', 'Extra', 'Temp Service', 'Inspection', 'Other')";
+
+            using (var command = new MySqlCommand(query, connection))
+            {
+                command.Parameters.AddWithValue("@estimateId", estimateId);
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        summaries.Add(new EstimateStageSummary
+                        {
+                            SummaryId = reader.GetInt32("summary_id"),
+                            EstimateId = estimateId,
+                            Stage = reader.GetString("stage"),
+                            LaborHours = reader.GetDecimal("labor_hours"),
+                            MaterialCost = reader.GetDecimal("material_cost"),
+                            LaborCost = reader.GetDecimal("labor_cost")
+                        });
+                    }
+                }
+            }
+
+            return summaries;
+        }
+
+        public List<EstimateStageSummary> GetEstimateStageSummaries(int estimateId)
+        {
+            using (var connection = _databaseService.GetConnection())
+            {
+                connection.Open();
+                return GetEstimateStageSummaries(connection, estimateId);
+            }
+        }
+
         public List<EstimateRoom> GetEstimateRooms(MySqlConnection connection, int estimateId)
         {
             var rooms = new List<EstimateRoom>();
