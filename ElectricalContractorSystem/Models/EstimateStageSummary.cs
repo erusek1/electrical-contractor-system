@@ -9,6 +9,9 @@ namespace ElectricalContractorSystem.Models
         public decimal MaterialCost { get; set; }
         public int StageOrder { get; set; }
         
+        // Add LaborCost property for compatibility
+        public decimal LaborCost { get; set; }
+        
         // Additional properties for compatibility
         public string StageName 
         { 
