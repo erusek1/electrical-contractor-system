@@ -249,7 +249,7 @@ namespace ElectricalContractorSystem.ViewModels
         {
             if (SelectedItem == null) return;
 
-            var dialog = new CreateAssemblyDialog(SelectedItem);
+            var dialog = new Views.CreateAssemblyDialog(SelectedItem);
             
             if (dialog.ShowDialog() == true)
             {
@@ -344,18 +344,13 @@ namespace ElectricalContractorSystem.ViewModels
                         MessageBoxButton.OK,
                         MessageBoxImage.Information);
 
-                    // Open assembly management if desired
-                    var result = MessageBox.Show(
-                        "Would you like to open the Assembly Management window to view or edit the new assembly?",
-                        "Open Assembly Management",
-                        MessageBoxButton.YesNo,
-                        MessageBoxImage.Question);
-
-                    if (result == MessageBoxResult.Yes)
-                    {
-                        var assemblyManagementView = new AssemblyManagementView(_databaseService);
-                        assemblyManagementView.Show();
-                    }
+                    // Since AssemblyManagementView is a UserControl, we can't show it directly
+                    // The user will need to navigate to it through the main window
+                    MessageBox.Show(
+                        "To view or edit the new assembly, please navigate to the Assembly Management section from the main menu.",
+                        "Next Steps",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
                 }
                 catch (Exception ex)
                 {
