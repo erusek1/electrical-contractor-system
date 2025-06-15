@@ -15,7 +15,11 @@ namespace ElectricalContractorSystem.ViewModels
         private Job _selectedJob;
         private string _activeTab = "labor";
 
-        public JobCostTrackingViewModel(DatabaseService databaseService)
+        public JobCostTrackingViewModel(DatabaseService databaseService) : this(databaseService, null)
+        {
+        }
+
+        public JobCostTrackingViewModel(DatabaseService databaseService, int? preselectedJobId)
         {
             _databaseService = databaseService ?? throw new ArgumentNullException(nameof(databaseService));
             
@@ -25,7 +29,21 @@ namespace ElectricalContractorSystem.ViewModels
             try
             {
                 LoadJobs();
-                if (AvailableJobs?.Count > 0)
+                
+                // If a job ID was provided, try to select it
+                if (preselectedJobId.HasValue && AvailableJobs != null)
+                {
+                    var jobToSelect = AvailableJobs.FirstOrDefault(j => j.JobId == preselectedJobId.Value);
+                    if (jobToSelect != null)
+                    {
+                        SelectedJob = jobToSelect;
+                    }
+                    else if (AvailableJobs.Count > 0)
+                    {
+                        SelectedJob = AvailableJobs.First();
+                    }
+                }
+                else if (AvailableJobs?.Count > 0)
                 {
                     SelectedJob = AvailableJobs.First();
                 }
