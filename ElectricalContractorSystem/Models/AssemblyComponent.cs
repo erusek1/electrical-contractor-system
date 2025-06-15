@@ -6,7 +6,8 @@ namespace ElectricalContractorSystem.Models
         
         public int AssemblyId { get; set; }
         
-        public int MaterialId { get; set; }
+        // Changed from MaterialId to PriceListItemId
+        public int PriceListItemId { get; set; }
         
         public decimal Quantity { get; set; } = 1;
         
@@ -16,11 +17,24 @@ namespace ElectricalContractorSystem.Models
         
         // Navigation properties
         public virtual AssemblyTemplate Assembly { get; set; }
-        public virtual Material Material { get; set; }
+        public virtual PriceListItem PriceListItem { get; set; }
         
         // Calculated properties
-        public decimal TotalCost => Quantity * (Material?.PriceWithTax ?? 0);
+        public decimal TotalCost => Quantity * (PriceListItem?.SellPrice ?? 0);
         
-        public string DisplayText => $"{Quantity} x {Material?.Name ?? "Unknown"}";
+        public string DisplayText => $"{Quantity} x {PriceListItem?.Name ?? "Unknown"}";
+        
+        // Backward compatibility properties for migration
+        public int MaterialId 
+        { 
+            get => PriceListItemId; 
+            set => PriceListItemId = value; 
+        }
+        
+        public Material Material 
+        { 
+            get => null; // No longer used
+            set { } // Ignore sets
+        }
     }
 }
