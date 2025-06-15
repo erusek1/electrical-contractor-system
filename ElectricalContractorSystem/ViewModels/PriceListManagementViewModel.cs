@@ -249,117 +249,145 @@ namespace ElectricalContractorSystem.ViewModels
         {
             if (SelectedItem == null) return;
 
-            var dialog = new Views.CreateAssemblyDialog(SelectedItem);
-            
-            if (dialog.ShowDialog() == true)
+            try
             {
-                try
+                // Simplified approach - just create the assembly with default labor distribution
+                string assemblyCode = SelectedItem.ItemCode;
+                string assemblyName = SelectedItem.Name;
+                
+                // Default labor distribution
+                int totalMinutes = SelectedItem.LaborMinutes ?? 50; // Default 50 minutes if not specified
+                int roughMinutes = (int)(totalMinutes * 0.4);
+                int finishMinutes = (int)(totalMinutes * 0.4);
+                int serviceMinutes = totalMinutes - roughMinutes - finishMinutes;
+                
+                // Smart defaults for common items
+                if (assemblyCode?.ToLower() == "o" || assemblyName?.ToLower().Contains("outlet") == true)
                 {
-                    // Create the assembly template
-                    var assembly = new AssemblyTemplate
-                    {
-                        AssemblyCode = dialog.AssemblyCode,
-                        Name = dialog.AssemblyName,
-                        Description = dialog.AssemblyDescription,
-                        Category = SelectedItem.Category ?? "General",
-                        RoughMinutes = dialog.RoughMinutes,
-                        FinishMinutes = dialog.FinishMinutes,
-                        ServiceMinutes = dialog.ServiceMinutes,
-                        ExtraMinutes = dialog.ExtraMinutes,
-                        IsDefault = true,
-                        IsActive = true,
-                        CreatedDate = DateTime.Now,
-                        CreatedBy = "System" // TODO: Get current user
-                    };
+                    roughMinutes = 30;
+                    finishMinutes = 20;
+                    serviceMinutes = 0;
+                }
+                else if (assemblyCode?.ToLower() == "s" || assemblyName?.ToLower().Contains("switch") == true)
+                {
+                    roughMinutes = 25;
+                    finishMinutes = 15;
+                    serviceMinutes = 0;
+                }
+                else if (assemblyCode?.ToLower() == "hh" || assemblyName?.ToLower().Contains("high hat") == true)
+                {
+                    roughMinutes = 45;
+                    finishMinutes = 30;
+                    serviceMinutes = 0;
+                }
+                else if (assemblyCode?.ToLower() == "gfi" || assemblyName?.ToLower().Contains("gfi") == true)
+                {
+                    roughMinutes = 35;
+                    finishMinutes = 25;
+                    serviceMinutes = 0;
+                }
 
-                    // Save the assembly
-                    _databaseService.SaveAssembly(assembly);
+                // Create the assembly template
+                var assembly = new AssemblyTemplate
+                {
+                    AssemblyCode = assemblyCode,
+                    Name = assemblyName,
+                    Description = SelectedItem.Description,
+                    Category = SelectedItem.Category ?? "General",
+                    RoughMinutes = roughMinutes,
+                    FinishMinutes = finishMinutes,
+                    ServiceMinutes = serviceMinutes,
+                    ExtraMinutes = 0,
+                    IsDefault = true,
+                    IsActive = true,
+                    CreatedDate = DateTime.Now,
+                    CreatedBy = "System" // TODO: Get current user
+                };
 
-                    // Create the material from the price list item
-                    var material = new Material
-                    {
-                        MaterialCode = SelectedItem.ItemCode,
-                        Name = SelectedItem.Name,
-                        Description = SelectedItem.Description,
-                        Category = SelectedItem.Category ?? "General",
-                        UnitOfMeasure = "Each",
-                        CurrentPrice = SelectedItem.BaseCost,
-                        TaxRate = SelectedItem.TaxRate ?? 6.4m,
-                        IsActive = true,
-                        CreatedDate = DateTime.Now
-                    };
+                // Save the assembly
+                _databaseService.SaveAssembly(assembly);
 
-                    // Check if material already exists
-                    var existingMaterials = _databaseService.GetAllMaterials();
-                    var existingMaterial = existingMaterials.FirstOrDefault(m => m.MaterialCode == material.MaterialCode);
-                    
-                    if (existingMaterial == null)
+                // Create the material from the price list item
+                var material = new Material
+                {
+                    MaterialCode = SelectedItem.ItemCode,
+                    Name = SelectedItem.Name,
+                    Description = SelectedItem.Description,
+                    Category = SelectedItem.Category ?? "General",
+                    UnitOfMeasure = "Each",
+                    CurrentPrice = SelectedItem.BaseCost,
+                    TaxRate = SelectedItem.TaxRate ?? 6.4m,
+                    IsActive = true,
+                    CreatedDate = DateTime.Now
+                };
+
+                // Check if material already exists
+                var existingMaterials = _databaseService.GetAllMaterials();
+                var existingMaterial = existingMaterials.FirstOrDefault(m => m.MaterialCode == material.MaterialCode);
+                
+                if (existingMaterial == null)
+                {
+                    // Save new material
+                    using (var connection = _databaseService.GetConnection())
                     {
-                        // Save new material
-                        using (var connection = _databaseService.GetConnection())
+                        connection.Open();
+                        var query = @"INSERT INTO Materials (material_code, name, description, category, 
+                                    unit_of_measure, current_price, tax_rate, is_active, created_date)
+                                    VALUES (@code, @name, @desc, @category, @unit, @price, @tax, @active, @created)";
+                        
+                        using (var command = new MySql.Data.MySqlClient.MySqlCommand(query, connection))
                         {
-                            connection.Open();
-                            var query = @"INSERT INTO Materials (material_code, name, description, category, 
-                                        unit_of_measure, current_price, tax_rate, is_active, created_date)
-                                        VALUES (@code, @name, @desc, @category, @unit, @price, @tax, @active, @created)";
+                            command.Parameters.AddWithValue("@code", material.MaterialCode);
+                            command.Parameters.AddWithValue("@name", material.Name);
+                            command.Parameters.AddWithValue("@desc", material.Description ?? (object)DBNull.Value);
+                            command.Parameters.AddWithValue("@category", material.Category);
+                            command.Parameters.AddWithValue("@unit", material.UnitOfMeasure);
+                            command.Parameters.AddWithValue("@price", material.CurrentPrice);
+                            command.Parameters.AddWithValue("@tax", material.TaxRate);
+                            command.Parameters.AddWithValue("@active", material.IsActive);
+                            command.Parameters.AddWithValue("@created", material.CreatedDate);
                             
-                            using (var command = new MySql.Data.MySqlClient.MySqlCommand(query, connection))
-                            {
-                                command.Parameters.AddWithValue("@code", material.MaterialCode);
-                                command.Parameters.AddWithValue("@name", material.Name);
-                                command.Parameters.AddWithValue("@desc", material.Description ?? (object)DBNull.Value);
-                                command.Parameters.AddWithValue("@category", material.Category);
-                                command.Parameters.AddWithValue("@unit", material.UnitOfMeasure);
-                                command.Parameters.AddWithValue("@price", material.CurrentPrice);
-                                command.Parameters.AddWithValue("@tax", material.TaxRate);
-                                command.Parameters.AddWithValue("@active", material.IsActive);
-                                command.Parameters.AddWithValue("@created", material.CreatedDate);
-                                
-                                command.ExecuteNonQuery();
-                                material.MaterialId = (int)command.LastInsertedId;
-                            }
+                            command.ExecuteNonQuery();
+                            material.MaterialId = (int)command.LastInsertedId;
                         }
                     }
-                    else
-                    {
-                        material = existingMaterial;
-                    }
-
-                    // Create the assembly component linking the material to the assembly
-                    var component = new AssemblyComponent
-                    {
-                        AssemblyId = assembly.AssemblyId,
-                        MaterialId = material.MaterialId,
-                        Quantity = 1,
-                        IsOptional = false
-                    };
-
-                    _databaseService.SaveAssemblyComponent(component);
-
-                    MessageBox.Show(
-                        $"Assembly '{assembly.Name}' created successfully!\n\n" +
-                        $"Code: {assembly.AssemblyCode}\n" +
-                        $"Total Labor: {assembly.TotalLaborMinutes} minutes",
-                        "Assembly Created",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
-
-                    // Since AssemblyManagementView is a UserControl, we can't show it directly
-                    // The user will need to navigate to it through the main window
-                    MessageBox.Show(
-                        "To view or edit the new assembly, please navigate to the Assembly Management section from the main menu.",
-                        "Next Steps",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
                 }
-                catch (Exception ex)
+                else
                 {
-                    MessageBox.Show(
-                        $"Error creating assembly: {ex.Message}",
-                        "Error",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error);
+                    material = existingMaterial;
                 }
+
+                // Create the assembly component linking the material to the assembly
+                var component = new AssemblyComponent
+                {
+                    AssemblyId = assembly.AssemblyId,
+                    MaterialId = material.MaterialId,
+                    Quantity = 1,
+                    IsOptional = false
+                };
+
+                _databaseService.SaveAssemblyComponent(component);
+
+                MessageBox.Show(
+                    $"Assembly '{assembly.Name}' created successfully!\n\n" +
+                    $"Code: {assembly.AssemblyCode}\n" +
+                    $"Labor Distribution:\n" +
+                    $"  Rough: {roughMinutes} minutes\n" +
+                    $"  Finish: {finishMinutes} minutes\n" +
+                    $"  Service: {serviceMinutes} minutes\n" +
+                    $"  Total: {roughMinutes + finishMinutes + serviceMinutes} minutes\n\n" +
+                    "To adjust labor minutes or add more components, navigate to Assembly Management from the main menu.",
+                    "Assembly Created",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Error creating assembly: {ex.Message}",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
         }
 
