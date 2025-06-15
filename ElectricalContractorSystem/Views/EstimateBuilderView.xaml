@@ -7,6 +7,10 @@
              mc:Ignorable="d" 
              d:DesignHeight="800" d:DesignWidth="1200">
     
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+    
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -117,6 +121,7 @@
             <Grid Grid.Column="1">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
                 
@@ -146,7 +151,50 @@
                     </Grid>
                 </Border>
                 
-                <DataGrid Grid.Row="1" 
+                <!-- Quick Entry Bar -->
+                <Border Grid.Row="1" Background="#ECF0F1" Padding="15">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="60"/>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="100"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <TextBox Grid.Column="0" 
+                                 Text="{Binding QuickEntryQuantity}"
+                                 Tag="Qty"
+                                 Margin="0,0,5,0"/>
+                        
+                        <TextBox Grid.Column="1" 
+                                 Text="{Binding QuickEntryCode, UpdateSourceTrigger=PropertyChanged}"
+                                 Tag="Code (o, s, hh)"
+                                 Margin="0,0,5,0"
+                                 KeyDown="QuickEntryCode_KeyDown"/>
+                        
+                        <ComboBox Grid.Column="2" 
+                                  ItemsSource="{Binding QuickEntryMatches}"
+                                  SelectedItem="{Binding SelectedQuickEntry}"
+                                  DisplayMemberPath="DisplayText"
+                                  IsEditable="False"
+                                  Margin="0,0,5,0"
+                                  Visibility="{Binding HasQuickEntryMatches, Converter={StaticResource BoolToVis}}"/>
+                        
+                        <TextBox Grid.Column="3" 
+                                 Text="{Binding QuickEntryLaborHours}"
+                                 Tag="Labor Hrs"
+                                 Margin="0,0,5,0"
+                                 Visibility="{Binding ShowManualLaborEntry, Converter={StaticResource BoolToVis}}"/>
+                        
+                        <Button Grid.Column="4" 
+                                Content="Add" 
+                                Command="{Binding QuickAddCommand}"
+                                Background="#27AE60" Foreground="White"/>
+                    </Grid>
+                </Border>
+                
+                <DataGrid Grid.Row="2" 
                           ItemsSource="{Binding SelectedRoomItems}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
@@ -164,6 +212,14 @@
                         <DataGridTextColumn Header="Description" 
                                             Binding="{Binding Description}" 
                                             Width="*" 
+                                            IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Type" 
+                                            Binding="{Binding Mode}" 
+                                            Width="80" 
+                                            IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Labor" 
+                                            Binding="{Binding TotalLaborMinutes, StringFormat='{}{0} min'}" 
+                                            Width="80" 
                                             IsReadOnly="True"/>
                         <DataGridTextColumn Header="Unit Price" 
                                             Binding="{Binding UnitPrice, StringFormat='${0:N2}'}" 
@@ -189,34 +245,71 @@
                 </DataGrid>
             </Grid>
             
-            <!-- Price List -->
+            <!-- Price List / Assembly List -->
             <Border Grid.Column="2" Background="#F8F9FA" 
                     BorderBrush="#E0E0E0" BorderThickness="1,0,0,0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     
-                    <TextBlock Grid.Row="0" Text="Price List" 
+                    <TextBlock Grid.Row="0" Text="Add Items" 
                                FontSize="18" FontWeight="SemiBold" 
                                Margin="15,15,15,10"/>
                     
-                    <TextBox Grid.Row="1" 
+                    <!-- Mode Selector -->
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="15,0,15,10">
+                        <RadioButton Content="Assemblies" 
+                                     IsChecked="{Binding ShowAssemblies}"
+                                     Margin="0,0,15,0"/>
+                        <RadioButton Content="Price List" 
+                                     IsChecked="{Binding ShowPriceList}"/>
+                    </StackPanel>
+                    
+                    <TextBox Grid.Row="2" 
                              Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                              Tag="Search items..."
                              Margin="15,0,15,10"
                              Padding="8"/>
                     
-                    <DataGrid Grid.Row="2" 
+                    <!-- Assembly List -->
+                    <DataGrid Grid.Row="3" 
+                              ItemsSource="{Binding FilteredAssemblies}"
+                              SelectedItem="{Binding SelectedAssembly}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              GridLinesVisibility="Horizontal"
+                              BorderThickness="0"
+                              Visibility="{Binding ShowAssemblies, Converter={StaticResource BoolToVis}}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Code" 
+                                                Binding="{Binding Code}" 
+                                                Width="60"/>
+                            <DataGridTextColumn Header="Name" 
+                                                Binding="{Binding Name}" 
+                                                Width="*"/>
+                            <DataGridTextColumn Header="Labor" 
+                                                Binding="{Binding TotalLaborMinutes, StringFormat='{}{0}m'}" 
+                                                Width="60"/>
+                            <DataGridTextColumn Header="Price" 
+                                                Binding="{Binding TotalPrice, StringFormat='${0:N2}'}" 
+                                                Width="70"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    
+                    <!-- Price List -->
+                    <DataGrid Grid.Row="3" 
                               ItemsSource="{Binding FilteredPriceListItems}"
                               SelectedItem="{Binding SelectedPriceListItem}"
                               AutoGenerateColumns="False"
                               CanUserAddRows="False"
                               GridLinesVisibility="Horizontal"
-                              BorderThickness="0">
+                              BorderThickness="0"
+                              Visibility="{Binding ShowPriceList, Converter={StaticResource BoolToVis}}">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Code" 
                                                 Binding="{Binding ItemCode}" 
@@ -230,7 +323,7 @@
                         </DataGrid.Columns>
                     </DataGrid>
                     
-                    <Button Grid.Row="3" 
+                    <Button Grid.Row="4" 
                             Content="Add Selected Item" 
                             Command="{Binding AddItemCommand}"
                             Background="#3498DB" Foreground="White"
@@ -250,8 +343,25 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 
+                <!-- Stage Breakdown (when available) -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" 
+                            Visibility="{Binding ShowStageBreakdown, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="Labor by Stage: " Foreground="White" Opacity="0.7" 
+                               VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBlock Foreground="White" VerticalAlignment="Center">
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="Rough: {0}h | Finish: {1}h | Service: {2}h | Extra: {3}h">
+                                <Binding Path="RoughHours"/>
+                                <Binding Path="FinishHours"/>
+                                <Binding Path="ServiceHours"/>
+                                <Binding Path="ExtraHours"/>
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                </StackPanel>
+                
                 <StackPanel Grid.Column="1" Margin="0,0,30,0">
-                    <TextBlock Text="Labor Hours" FontSize="12" Foreground="White" Opacity="0.7"/>
+                    <TextBlock Text="Total Labor" FontSize="12" Foreground="White" Opacity="0.7"/>
                     <TextBlock Text="{Binding TotalLaborHours, StringFormat='{}{0:N1} hrs'}" 
                                FontSize="20" FontWeight="Bold" Foreground="White"/>
                 </StackPanel>
