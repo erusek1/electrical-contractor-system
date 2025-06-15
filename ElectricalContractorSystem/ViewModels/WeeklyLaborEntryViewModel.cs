@@ -155,15 +155,8 @@ namespace ElectricalContractorSystem.ViewModels
         {
             try
             {
-                Employees = new ObservableCollection<Employee>
-                {
-                    new Employee { EmployeeId = 1, Name = "Erik", HourlyRate = 85.00m, Status = "Active" },
-                    new Employee { EmployeeId = 2, Name = "Lee", HourlyRate = 65.00m, Status = "Active" },
-                    new Employee { EmployeeId = 3, Name = "Carlos", HourlyRate = 65.00m, Status = "Active" },
-                    new Employee { EmployeeId = 4, Name = "Jake", HourlyRate = 65.00m, Status = "Active" },
-                    new Employee { EmployeeId = 5, Name = "Trevor", HourlyRate = 65.00m, Status = "Active" },
-                    new Employee { EmployeeId = 6, Name = "Ryan", HourlyRate = 65.00m, Status = "Active" }
-                };
+                var employees = _databaseService.GetAllEmployees();
+                Employees = new ObservableCollection<Employee>(employees.Where(e => e.Status == "Active").OrderBy(e => e.Name));
             }
             catch (Exception ex)
             {
@@ -233,11 +226,12 @@ namespace ElectricalContractorSystem.ViewModels
                         }
                     };
                     
+                    // Load actual data from database
                     LoadEmployeeWeekData(timeEntry, employee.EmployeeId);
                     EmployeeTimeEntries.Add(timeEntry);
                 }
 
-                LoadSampleTimeEntries();
+                // Don't load sample data - keep it clean
                 UpdateWeeklySummaries();
                 OnPropertyChanged(nameof(EmployeeTimeEntries));
             }
@@ -253,127 +247,16 @@ namespace ElectricalContractorSystem.ViewModels
             try
             {
                 // TODO: Implement database loading for the selected week
+                // For now, initialize with empty entries
+                timeEntry.Monday = new LaborEntryDay { JobNumber = "", Stage = "", Hours = 0 };
+                timeEntry.Tuesday = new LaborEntryDay { JobNumber = "", Stage = "", Hours = 0 };
+                timeEntry.Wednesday = new LaborEntryDay { JobNumber = "", Stage = "", Hours = 0 };
+                timeEntry.Thursday = new LaborEntryDay { JobNumber = "", Stage = "", Hours = 0 };
+                timeEntry.Friday = new LaborEntryDay { JobNumber = "", Stage = "", Hours = 0 };
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error loading employee week data: {ex.Message}");
-            }
-        }
-
-        private void LoadSampleTimeEntries()
-        {
-            var weekOffset = (CurrentWeekStart - GetStartOfWeek(DateTime.Today)).Days / 7;
-            
-            var erikEntry = EmployeeTimeEntries.FirstOrDefault(e => e.EmployeeName == "Erik");
-            if (erikEntry != null)
-            {
-                if (weekOffset == 0)
-                {
-                    erikEntry.Monday = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 5 };
-                    erikEntry.Tuesday = new LaborEntryDay { JobNumber = "621", Stage = "Rough", Hours = 8 };
-                    erikEntry.Wednesday = new LaborEntryDay { JobNumber = "621", Stage = "Rough", Hours = 6 };
-                    erikEntry.Thursday = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 8 };
-                    erikEntry.Friday = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 7 };
-                }
-                else if (weekOffset == -1)
-                {
-                    erikEntry.Monday = new LaborEntryDay { JobNumber = "619", Stage = "Rough", Hours = 8 };
-                    erikEntry.Tuesday = new LaborEntryDay { JobNumber = "619", Stage = "Rough", Hours = 8 };
-                    erikEntry.Wednesday = new LaborEntryDay { JobNumber = "619", Stage = "Rough", Hours = 8 };
-                    erikEntry.Thursday = new LaborEntryDay { JobNumber = "619", Stage = "Rough", Hours = 8 };
-                    erikEntry.Friday = new LaborEntryDay { JobNumber = "619", Stage = "Rough", Hours = 8 };
-                }
-                else
-                {
-                    erikEntry.Monday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 6 };
-                    erikEntry.Tuesday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
-                    erikEntry.Wednesday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
-                    erikEntry.Thursday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
-                    erikEntry.Friday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 6 };
-                }
-            }
-
-            var leeEntry = EmployeeTimeEntries.FirstOrDefault(e => e.EmployeeName == "Lee");
-            if (leeEntry != null)
-            {
-                if (weekOffset == 0)
-                {
-                    leeEntry.Monday = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 8 };
-                    leeEntry.Tuesday = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 8 };
-                    leeEntry.Wednesday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
-                    leeEntry.Thursday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
-                    leeEntry.Friday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
-                }
-                else
-                {
-                    leeEntry.Monday = new LaborEntryDay { JobNumber = "621", Stage = "Service", Hours = 8 };
-                    leeEntry.Tuesday = new LaborEntryDay { JobNumber = "621", Stage = "Service", Hours = 8 };
-                    leeEntry.Wednesday = new LaborEntryDay { JobNumber = "621", Stage = "Service", Hours = 8 };
-                    leeEntry.Thursday = new LaborEntryDay { JobNumber = "621", Stage = "Service", Hours = 8 };
-                    leeEntry.Friday = new LaborEntryDay { JobNumber = "621", Stage = "Service", Hours = 8 };
-                }
-            }
-
-            var carlosEntry = EmployeeTimeEntries.FirstOrDefault(e => e.EmployeeName == "Carlos");
-            if (carlosEntry != null)
-            {
-                carlosEntry.Monday = new LaborEntryDay { JobNumber = "621", Stage = "Rough", Hours = 8 };
-                carlosEntry.Tuesday = new LaborEntryDay { JobNumber = "621", Stage = "Rough", Hours = 8 };
-                carlosEntry.Wednesday = new LaborEntryDay { JobNumber = "621", Stage = "Service", Hours = 8 };
-                carlosEntry.Thursday = new LaborEntryDay { JobNumber = "621", Stage = "Service", Hours = 8 };
-                carlosEntry.Friday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
-            }
-
-            var jakeEntry = EmployeeTimeEntries.FirstOrDefault(e => e.EmployeeName == "Jake");
-            if (jakeEntry != null)
-            {
-                if (weekOffset == 0)
-                {
-                    jakeEntry.Monday = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 8 };
-                    jakeEntry.Tuesday = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 8 };
-                    jakeEntry.Wednesday = new LaborEntryDay { JobNumber = "619", Stage = "Finish", Hours = 4 };
-                    jakeEntry.Thursday = new LaborEntryDay { JobNumber = "", Stage = "", Hours = 0 };
-                    jakeEntry.Friday = new LaborEntryDay { JobNumber = "", Stage = "", Hours = 0 };
-                }
-                else
-                {
-                    jakeEntry.Monday = new LaborEntryDay { JobNumber = "619", Stage = "Rough", Hours = 8 };
-                    jakeEntry.Tuesday = new LaborEntryDay { JobNumber = "619", Stage = "Rough", Hours = 8 };
-                    jakeEntry.Wednesday = new LaborEntryDay { JobNumber = "619", Stage = "Rough", Hours = 8 };
-                    jakeEntry.Thursday = new LaborEntryDay { JobNumber = "619", Stage = "Rough", Hours = 8 };
-                    jakeEntry.Friday = new LaborEntryDay { JobNumber = "619", Stage = "Rough", Hours = 8 };
-                }
-            }
-
-            var trevorEntry = EmployeeTimeEntries.FirstOrDefault(e => e.EmployeeName == "Trevor");
-            if (trevorEntry != null)
-            {
-                trevorEntry.Monday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
-                trevorEntry.Tuesday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
-                trevorEntry.Wednesday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
-                trevorEntry.Thursday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 8 };
-                trevorEntry.Friday = new LaborEntryDay { JobNumber = "623", Stage = "Demo", Hours = 6 };
-            }
-
-            var ryanEntry = EmployeeTimeEntries.FirstOrDefault(e => e.EmployeeName == "Ryan");
-            if (ryanEntry != null)
-            {
-                if (weekOffset == -1)
-                {
-                    ryanEntry.Monday = new LaborEntryDay { JobNumber = "621", Stage = "Extra", Hours = 10 };
-                    ryanEntry.Tuesday = new LaborEntryDay { JobNumber = "621", Stage = "Extra", Hours = 10 };
-                    ryanEntry.Wednesday = new LaborEntryDay { JobNumber = "621", Stage = "Extra", Hours = 10 };
-                    ryanEntry.Thursday = new LaborEntryDay { JobNumber = "621", Stage = "Extra", Hours = 10 };
-                    ryanEntry.Friday = new LaborEntryDay { JobNumber = "621", Stage = "Extra", Hours = 5 };
-                }
-                else
-                {
-                    ryanEntry.Monday = new LaborEntryDay { JobNumber = "", Stage = "", Hours = 0 };
-                    ryanEntry.Tuesday = new LaborEntryDay { JobNumber = "", Stage = "", Hours = 0 };
-                    ryanEntry.Wednesday = new LaborEntryDay { JobNumber = "", Stage = "", Hours = 0 };
-                    ryanEntry.Thursday = new LaborEntryDay { JobNumber = "", Stage = "", Hours = 0 };
-                    ryanEntry.Friday = new LaborEntryDay { JobNumber = "", Stage = "", Hours = 0 };
-                }
             }
         }
 
