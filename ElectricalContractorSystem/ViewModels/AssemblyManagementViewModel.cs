@@ -630,12 +630,22 @@ namespace ElectricalContractorSystem.ViewModels
                         AssemblyId = SelectedAssembly.AssemblyId,
                         MaterialId = SelectedMaterial.MaterialId,
                         Quantity = EditQuantity,
-                        IsOptional = false
+                        IsOptional = false,
+                        Material = SelectedMaterial // Set the material reference
                     };
                     
+                    // Save to database and get the generated ComponentId
                     _databaseService.SaveAssemblyComponent(newComponent);
-                    newComponent.Material = SelectedMaterial;
-                    Components.Add(newComponent);
+                    
+                    // Reload the component from database to get the ComponentId
+                    var savedComponent = _databaseService.GetAssemblyComponents(SelectedAssembly.AssemblyId)
+                        .FirstOrDefault(c => c.MaterialId == newComponent.MaterialId && 
+                                           c.Quantity == newComponent.Quantity);
+                    
+                    if (savedComponent != null)
+                    {
+                        Components.Add(savedComponent);
+                    }
                 }
                 else
                 {
@@ -646,12 +656,12 @@ namespace ElectricalContractorSystem.ViewModels
                     
                     _databaseService.UpdateAssemblyComponent(SelectedComponent);
                     
-                    // Refresh display
-                    var index = Components.IndexOf(SelectedComponent);
-                    Components[index] = SelectedComponent;
+                    // Refresh display by reloading components
+                    LoadAssemblyDetails();
                 }
                 
                 IsEditingComponent = false;
+                SelectedMaterial = null; // Clear selection
                 OnPropertyChanged(nameof(TotalMaterialCost));
             }
             catch (Exception ex)
@@ -664,6 +674,7 @@ namespace ElectricalContractorSystem.ViewModels
         private void CancelEditComponent()
         {
             IsEditingComponent = false;
+            SelectedMaterial = null; // Clear selection
         }
         
         private void DeleteComponent()
