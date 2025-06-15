@@ -271,10 +271,10 @@
                                                             Binding="{Binding Quantity}" 
                                                             Width="80"/>
                                         <DataGridTextColumn Header="Unit Cost" 
-                                                            Binding="{Binding PriceListItem.SellPrice, StringFormat='${0:N2}'}}" 
+                                                            Binding="{Binding PriceListItem.SellPrice, StringFormat='${0:N2}'}" 
                                                             Width="100"/>
                                         <DataGridTextColumn Header="Total Cost" 
-                                                            Binding="{Binding TotalCost, StringFormat='${0:N2}'}}" 
+                                                            Binding="{Binding TotalCost, StringFormat='${0:N2}'}" 
                                                             Width="100"/>
                                         <DataGridTemplateColumn Width="50">
                                             <DataGridTemplateColumn.CellTemplate>
