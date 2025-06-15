@@ -5,46 +5,81 @@ namespace ElectricalContractorSystem.Models
     public class Inventory
     {
         public int InventoryId { get; set; }
-        public string ItemCode { get; set; }
-        public int LocationId { get; set; }
-        public int? SubLocationId { get; set; }
-        public decimal QuantityOnHand { get; set; }
-        public decimal QuantityAllocated { get; set; }
-        public decimal? MinQuantity { get; set; }
-        public decimal? MaxQuantity { get; set; }
-        public decimal? ReorderPoint { get; set; }
-        public DateTime? LastCountedDate { get; set; }
-        public string LastCountedBy { get; set; }
-        public string Notes { get; set; }
-
-        // Navigation properties
-        public PriceListItem PriceListItem { get; set; }
-        public StorageLocation Location { get; set; }
-        public StorageSubLocation SubLocation { get; set; }
-
-        // Calculated properties
-        public decimal AvailableQuantity => QuantityOnHand - QuantityAllocated;
         
-        public string StockStatus
+        public int ItemId { get; set; } // References PriceList.item_id
+        
+        public int? LocationId { get; set; } // References StorageLocation
+        
+        public decimal QuantityOnHand { get; set; } = 0;
+        
+        public decimal QuantityAllocated { get; set; } = 0;
+        
+        public decimal QuantityAvailable => QuantityOnHand - QuantityAllocated;
+        
+        public decimal? ReorderPoint { get; set; }
+        
+        public decimal? ReorderQuantity { get; set; }
+        
+        public DateTime? LastCountDate { get; set; }
+        
+        public string LastCountBy { get; set; }
+        
+        public string Notes { get; set; }
+        
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
+        
+        public DateTime? UpdatedDate { get; set; }
+        
+        // Navigation properties
+        public virtual PriceListItem PriceListItem { get; set; }
+        public virtual StorageLocation Location { get; set; }
+        
+        // Helper methods
+        public bool NeedsReorder()
         {
-            get
-            {
-                if (QuantityOnHand <= (MinQuantity ?? 0))
-                    return "Critical";
-                else if (QuantityOnHand <= (ReorderPoint ?? 0))
-                    return "Low";
-                else
-                    return "OK";
-            }
+            return ReorderPoint.HasValue && QuantityAvailable <= ReorderPoint.Value;
         }
-
-        public bool NeedsReorder => QuantityOnHand <= (ReorderPoint ?? 0);
-
-        public Inventory()
+        
+        public void AllocateQuantity(decimal quantity, int jobId)
         {
-            QuantityOnHand = 0;
-            QuantityAllocated = 0;
-            MinQuantity = 0;
+            if (quantity > QuantityAvailable)
+                throw new InvalidOperationException($"Cannot allocate {quantity}. Only {QuantityAvailable} available.");
+                
+            QuantityAllocated += quantity;
+            UpdatedDate = DateTime.Now;
+        }
+        
+        public void ReleaseQuantity(decimal quantity)
+        {
+            if (quantity > QuantityAllocated)
+                throw new InvalidOperationException($"Cannot release {quantity}. Only {QuantityAllocated} allocated.");
+                
+            QuantityAllocated -= quantity;
+            UpdatedDate = DateTime.Now;
+        }
+        
+        public void AdjustQuantity(decimal newQuantityOnHand, string adjustedBy, string reason)
+        {
+            QuantityOnHand = newQuantityOnHand;
+            LastCountDate = DateTime.Now;
+            LastCountBy = adjustedBy;
+            Notes = $"Adjusted: {reason} - {DateTime.Now:yyyy-MM-dd HH:mm}";
+            UpdatedDate = DateTime.Now;
+        }
+        
+        public void ReceiveQuantity(decimal quantity)
+        {
+            QuantityOnHand += quantity;
+            UpdatedDate = DateTime.Now;
+        }
+        
+        public void IssueQuantity(decimal quantity)
+        {
+            if (quantity > QuantityAvailable)
+                throw new InvalidOperationException($"Cannot issue {quantity}. Only {QuantityAvailable} available.");
+                
+            QuantityOnHand -= quantity;
+            UpdatedDate = DateTime.Now;
         }
     }
 }
