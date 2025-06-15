@@ -1,56 +1,174 @@
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace ElectricalContractorSystem.Models
 {
     /// <summary>
     /// Represents an employee in the electrical contracting business
     /// </summary>
-    public class Employee
+    public class Employee : INotifyPropertyChanged
     {
+        private int _employeeId;
+        private string _name;
+        private decimal _hourlyRate;
+        private decimal? _burdenRate;
+        private decimal? _vehicleCostPerHour;
+        private decimal? _vehicleCostPerMonth;
+        private decimal? _overheadPercentage;
+        private string _status;
+        private string _notes;
+
         /// <summary>
         /// Database ID of the employee
         /// </summary>
-        public int EmployeeId { get; set; }
+        public int EmployeeId
+        {
+            get => _employeeId;
+            set
+            {
+                _employeeId = value;
+                OnPropertyChanged();
+            }
+        }
 
         /// <summary>
         /// Employee name
         /// </summary>
-        public string Name { get; set; }
+        public string Name
+        {
+            get => _name;
+            set
+            {
+                _name = value;
+                OnPropertyChanged();
+            }
+        }
 
         /// <summary>
         /// Hourly rate
         /// </summary>
-        public decimal HourlyRate { get; set; }
+        public decimal HourlyRate
+        {
+            get => _hourlyRate;
+            set
+            {
+                _hourlyRate = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(EffectiveRate));
+                OnPropertyChanged(nameof(TotalHourlyCost));
+                OnPropertyChanged(nameof(YearlyLaborCost));
+                OnPropertyChanged(nameof(YearlyOverheadCost));
+                OnPropertyChanged(nameof(TotalYearlyCost));
+                OnPropertyChanged(nameof(CostPerBillableHour));
+            }
+        }
 
         /// <summary>
         /// Burden rate (additional employment costs like taxes, insurance, benefits)
         /// </summary>
-        public decimal? BurdenRate { get; set; }
+        public decimal? BurdenRate
+        {
+            get => _burdenRate;
+            set
+            {
+                _burdenRate = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(FullCostRate));
+                OnPropertyChanged(nameof(EffectiveRate));
+                OnPropertyChanged(nameof(TotalHourlyCost));
+                OnPropertyChanged(nameof(YearlyOverheadCost));
+                OnPropertyChanged(nameof(TotalYearlyCost));
+                OnPropertyChanged(nameof(CostPerBillableHour));
+            }
+        }
         
         /// <summary>
         /// Vehicle cost per hour for this employee
         /// </summary>
-        public decimal? VehicleCostPerHour { get; set; }
+        public decimal? VehicleCostPerHour
+        {
+            get => _vehicleCostPerHour;
+            set
+            {
+                _vehicleCostPerHour = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(EffectiveRate));
+                // Update monthly cost if per hour changes (assuming 173.33 hours/month)
+                if (value.HasValue)
+                {
+                    _vehicleCostPerMonth = value.Value * 173.33m;
+                    OnPropertyChanged(nameof(VehicleCostPerMonth));
+                }
+            }
+        }
         
         /// <summary>
         /// Vehicle cost per month for this employee
         /// </summary>
-        public decimal? VehicleCostPerMonth { get; set; }
+        public decimal? VehicleCostPerMonth
+        {
+            get => _vehicleCostPerMonth;
+            set
+            {
+                _vehicleCostPerMonth = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(TotalHourlyCost));
+                OnPropertyChanged(nameof(YearlyVehicleCost));
+                OnPropertyChanged(nameof(TotalYearlyCost));
+                OnPropertyChanged(nameof(CostPerBillableHour));
+                // Update hourly cost if monthly changes (assuming 173.33 hours/month)
+                if (value.HasValue)
+                {
+                    _vehicleCostPerHour = value.Value / 173.33m;
+                    OnPropertyChanged(nameof(VehicleCostPerHour));
+                }
+            }
+        }
         
         /// <summary>
         /// Overhead percentage to apply to hourly rate
         /// </summary>
-        public decimal? OverheadPercentage { get; set; }
+        public decimal? OverheadPercentage
+        {
+            get => _overheadPercentage;
+            set
+            {
+                _overheadPercentage = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(EffectiveRate));
+                OnPropertyChanged(nameof(TotalHourlyCost));
+                OnPropertyChanged(nameof(YearlyOverheadCost));
+                OnPropertyChanged(nameof(TotalYearlyCost));
+                OnPropertyChanged(nameof(CostPerBillableHour));
+            }
+        }
 
         /// <summary>
         /// Employee status (Active, Inactive)
         /// </summary>
-        public string Status { get; set; }
+        public string Status
+        {
+            get => _status;
+            set
+            {
+                _status = value;
+                OnPropertyChanged();
+            }
+        }
 
         /// <summary>
         /// Additional notes
         /// </summary>
-        public string Notes { get; set; }
+        public string Notes
+        {
+            get => _notes;
+            set
+            {
+                _notes = value;
+                OnPropertyChanged();
+            }
+        }
 
         /// <summary>
         /// Navigation property to collection of LaborEntries
@@ -198,6 +316,13 @@ namespace ElectricalContractorSystem.Models
         public override string ToString()
         {
             return Name;
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        public void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }
