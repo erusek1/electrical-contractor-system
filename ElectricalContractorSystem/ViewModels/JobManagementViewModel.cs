@@ -233,19 +233,19 @@ namespace ElectricalContractorSystem.ViewModels
             Jobs = new ObservableCollection<Job>();
             FilteredJobs = new ObservableCollection<Job>();
 
-            // Initialize commands - using simple RelayCommand for now
-            NewJobCommand = new RelayCommand(() => CreateNewJob());
-            ImportJobsCommand = new RelayCommand(() => ImportJobsFromExcel());
-            EditJobCommand = new RelayCommand(() => EditJob(), () => CanEditJob());
-            DeleteJobCommand = new RelayCommand(() => DeleteJob(), () => CanDeleteJob());
-            ViewJobDetailsCommand = new RelayCommand(() => ViewJobDetails(), () => CanViewJobDetails());
-            EnterJobDataCommand = new RelayCommand(() => EnterJobData(), () => CanEnterJobData());
-            RefreshJobsCommand = new RelayCommand(() => LoadJobs());
-            ShowActiveJobsCommand = new RelayCommand(() => ShowActiveJobs());
-            ShowCompletedJobsCommand = new RelayCommand(() => ShowCompletedJobs());
-            ShowAllJobsCommand = new RelayCommand(() => ShowAllJobs());
-            ClearSearchCommand = new RelayCommand(() => ClearSearch());
-            BulkStatusUpdateCommand = new RelayCommand(() => OpenBulkStatusUpdate());
+            // Initialize commands with parameter support
+            NewJobCommand = new RelayCommand(CreateNewJob);
+            ImportJobsCommand = new RelayCommand(ImportJobsFromExcel);
+            EditJobCommand = new RelayCommand(EditJob, CanEditJob);
+            DeleteJobCommand = new RelayCommand(DeleteJob, CanDeleteJob);
+            ViewJobDetailsCommand = new RelayCommand(ViewJobDetails, CanViewJobDetails);
+            EnterJobDataCommand = new RelayCommand(EnterJobData, CanEnterJobData);
+            RefreshJobsCommand = new RelayCommand(LoadJobs);
+            ShowActiveJobsCommand = new RelayCommand(ShowActiveJobs);
+            ShowCompletedJobsCommand = new RelayCommand(ShowCompletedJobs);
+            ShowAllJobsCommand = new RelayCommand(ShowAllJobs);
+            ClearSearchCommand = new RelayCommand(ClearSearch);
+            BulkStatusUpdateCommand = new RelayCommand(OpenBulkStatusUpdate);
 
             // Load data
             LoadJobs();
@@ -254,7 +254,7 @@ namespace ElectricalContractorSystem.ViewModels
         /// <summary>
         /// Loads jobs from the database
         /// </summary>
-        private void LoadJobs()
+        private void LoadJobs(object parameter = null)
         {
             IsLoading = true;
             ErrorMessage = null;
@@ -377,7 +377,7 @@ namespace ElectricalContractorSystem.ViewModels
 
         #region Command Handlers
 
-        private void CreateNewJob()
+        private void CreateNewJob(object parameter)
         {
             try
             {
@@ -396,7 +396,7 @@ namespace ElectricalContractorSystem.ViewModels
             }
         }
 
-        private void ImportJobsFromExcel()
+        private void ImportJobsFromExcel(object parameter)
         {
             try
             {
@@ -421,14 +421,15 @@ namespace ElectricalContractorSystem.ViewModels
             }
         }
 
-        private void EditJob()
+        private void EditJob(object parameter)
         {
-            if (SelectedJob == null)
+            Job jobToEdit = parameter as Job ?? SelectedJob;
+            if (jobToEdit == null)
                 return;
 
             try
             {
-                var dialog = new JobEditDialog(SelectedJob.JobId);
+                var dialog = new JobEditDialog(jobToEdit.JobId);
                 var result = dialog.ShowDialog();
 
                 if (result == true)
@@ -443,18 +444,20 @@ namespace ElectricalContractorSystem.ViewModels
             }
         }
 
-        private bool CanEditJob()
+        private bool CanEditJob(object parameter)
         {
-            return SelectedJob != null;
+            Job job = parameter as Job ?? SelectedJob;
+            return job != null;
         }
 
-        private void DeleteJob()
+        private void DeleteJob(object parameter)
         {
-            if (SelectedJob == null)
+            Job jobToDelete = parameter as Job ?? SelectedJob;
+            if (jobToDelete == null)
                 return;
 
             var result = System.Windows.MessageBox.Show(
-                $"Are you sure you want to delete job {SelectedJob.JobNumber}?\n\nThis will permanently remove the job and all associated data.",
+                $"Are you sure you want to delete job {jobToDelete.JobNumber}?\n\nThis will permanently remove the job and all associated data.",
                 "Confirm Deletion",
                 System.Windows.MessageBoxButton.YesNo,
                 System.Windows.MessageBoxImage.Warning);
@@ -464,14 +467,14 @@ namespace ElectricalContractorSystem.ViewModels
                 try
                 {
                     // Note: You'll need to implement DeleteJob in DatabaseService
-                    // _databaseService.DeleteJob(SelectedJob.JobId);
+                    // _databaseService.DeleteJob(jobToDelete.JobId);
                     
                     // For now, just remove from the collection
-                    Jobs.Remove(SelectedJob);
+                    Jobs.Remove(jobToDelete);
                     ApplyFilters();
                     UpdateSummaryStatistics();
                     
-                    System.Windows.MessageBox.Show($"Job {SelectedJob.JobNumber} deleted successfully.", "Job Deleted");
+                    System.Windows.MessageBox.Show($"Job {jobToDelete.JobNumber} deleted successfully.", "Job Deleted");
                 }
                 catch (Exception ex)
                 {
@@ -480,58 +483,109 @@ namespace ElectricalContractorSystem.ViewModels
             }
         }
 
-        private bool CanDeleteJob()
+        private bool CanDeleteJob(object parameter)
         {
-            return SelectedJob != null;
+            Job job = parameter as Job ?? SelectedJob;
+            return job != null;
         }
 
-        private void ViewJobDetails()
+        private void ViewJobDetails(object parameter)
         {
-            if (SelectedJob == null)
+            Job jobToView = parameter as Job ?? SelectedJob;
+            if (jobToView == null)
                 return;
 
-            System.Windows.MessageBox.Show($"View Job {SelectedJob.JobNumber} Details functionality will be implemented next.");
+            try
+            {
+                // Navigate to job details view (JobCostTrackingView)
+                var mainWindow = System.Windows.Application.Current.MainWindow as MainWindow;
+                if (mainWindow != null)
+                {
+                    var viewModel = mainWindow.DataContext as MainViewModel;
+                    if (viewModel != null)
+                    {
+                        // Set the selected job
+                        viewModel.SelectedJobId = jobToView.JobId;
+                        
+                        // Navigate to Job Cost Tracking
+                        if (viewModel.ShowJobCostTrackingCommand.CanExecute(null))
+                        {
+                            viewModel.ShowJobCostTrackingCommand.Execute(null);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Error viewing job details: {ex.Message}", "Error");
+            }
         }
 
-        private bool CanViewJobDetails()
+        private bool CanViewJobDetails(object parameter)
         {
-            return SelectedJob != null;
+            Job job = parameter as Job ?? SelectedJob;
+            return job != null;
         }
 
-        private void EnterJobData()
+        private void EnterJobData(object parameter)
         {
-            if (SelectedJob == null)
+            Job jobToEnter = parameter as Job ?? SelectedJob;
+            if (jobToEnter == null)
                 return;
 
-            System.Windows.MessageBox.Show($"Enter Data for Job {SelectedJob.JobNumber} functionality will be implemented next.");
+            try
+            {
+                // Navigate to weekly labor entry with the selected job
+                var mainWindow = System.Windows.Application.Current.MainWindow as MainWindow;
+                if (mainWindow != null)
+                {
+                    var viewModel = mainWindow.DataContext as MainViewModel;
+                    if (viewModel != null)
+                    {
+                        // Set the selected job
+                        viewModel.SelectedJobId = jobToEnter.JobId;
+                        
+                        // Navigate to Weekly Labor Entry
+                        if (viewModel.ShowWeeklyLaborEntryCommand.CanExecute(null))
+                        {
+                            viewModel.ShowWeeklyLaborEntryCommand.Execute(null);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Error opening data entry: {ex.Message}", "Error");
+            }
         }
 
-        private bool CanEnterJobData()
+        private bool CanEnterJobData(object parameter)
         {
-            return SelectedJob != null && SelectedJob.Status != "Complete";
+            Job job = parameter as Job ?? SelectedJob;
+            return job != null && job.Status != "Complete";
         }
 
-        private void ShowActiveJobs()
+        private void ShowActiveJobs(object parameter)
         {
             ActiveFilter = "active";
         }
 
-        private void ShowCompletedJobs()
+        private void ShowCompletedJobs(object parameter)
         {
             ActiveFilter = "completed";
         }
 
-        private void ShowAllJobs()
+        private void ShowAllJobs(object parameter)
         {
             ActiveFilter = "all";
         }
 
-        private void ClearSearch()
+        private void ClearSearch(object parameter)
         {
             SearchText = string.Empty;
         }
 
-        private void OpenBulkStatusUpdate()
+        private void OpenBulkStatusUpdate(object parameter)
         {
             try
             {
