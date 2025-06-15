@@ -235,8 +235,8 @@
                                         </Grid.ColumnDefinitions>
                                         
                                         <ComboBox Grid.Column="0" 
-                                                  ItemsSource="{Binding Materials}"
-                                                  SelectedItem="{Binding SelectedMaterial}"
+                                                  ItemsSource="{Binding PriceListItems}"
+                                                  SelectedItem="{Binding SelectedPriceListItem}"
                                                   DisplayMemberPath="Name"
                                                   Margin="0,0,10,0"/>
                                         
@@ -261,20 +261,20 @@
                                           BorderThickness="1"
                                           BorderBrush="#E0E0E0">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Material" 
-                                                            Binding="{Binding Material.Name}" 
+                                        <DataGridTextColumn Header="Item" 
+                                                            Binding="{Binding PriceListItem.Name}" 
                                                             Width="*"/>
                                         <DataGridTextColumn Header="Code" 
-                                                            Binding="{Binding Material.MaterialCode}" 
+                                                            Binding="{Binding PriceListItem.ItemCode}" 
                                                             Width="80"/>
                                         <DataGridTextColumn Header="Quantity" 
                                                             Binding="{Binding Quantity}" 
                                                             Width="80"/>
                                         <DataGridTextColumn Header="Unit Cost" 
-                                                            Binding="{Binding Material.PriceWithTax, StringFormat='${0:N2}'}" 
+                                                            Binding="{Binding PriceListItem.SellPrice, StringFormat='${0:N2}'}}" 
                                                             Width="100"/>
                                         <DataGridTextColumn Header="Total Cost" 
-                                                            Binding="{Binding TotalCost, StringFormat='${0:N2}'}" 
+                                                            Binding="{Binding TotalCost, StringFormat='${0:N2}'}}" 
                                                             Width="100"/>
                                         <DataGridTemplateColumn Width="50">
                                             <DataGridTemplateColumn.CellTemplate>
