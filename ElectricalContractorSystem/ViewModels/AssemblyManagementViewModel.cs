@@ -18,10 +18,10 @@ namespace ElectricalContractorSystem.ViewModels
         
         private ObservableCollection<AssemblyTemplate> _assemblies;
         private ObservableCollection<AssemblyTemplate> _filteredAssemblies;
-        private ObservableCollection<Material> _materials;
+        private ObservableCollection<PriceListItem> _priceListItems;
         private AssemblyTemplate _selectedAssembly;
         private AssemblyTemplate _selectedVariant;
-        private Material _selectedMaterial;
+        private PriceListItem _selectedPriceListItem;
         private string _searchText;
         private string _selectedCategory;
         private bool _showInactiveAssemblies;
@@ -53,7 +53,7 @@ namespace ElectricalContractorSystem.ViewModels
             // Initialize collections
             Assemblies = new ObservableCollection<AssemblyTemplate>();
             FilteredAssemblies = new ObservableCollection<AssemblyTemplate>();
-            Materials = new ObservableCollection<Material>();
+            PriceListItems = new ObservableCollection<PriceListItem>();
             Categories = new ObservableCollection<string>();
             
             // Initialize commands
@@ -89,10 +89,10 @@ namespace ElectricalContractorSystem.ViewModels
             set => SetProperty(ref _filteredAssemblies, value);
         }
         
-        public ObservableCollection<Material> Materials
+        public ObservableCollection<PriceListItem> PriceListItems
         {
-            get => _materials;
-            set => SetProperty(ref _materials, value);
+            get => _priceListItems;
+            set => SetProperty(ref _priceListItems, value);
         }
         
         public ObservableCollection<string> Categories { get; }
@@ -125,12 +125,12 @@ namespace ElectricalContractorSystem.ViewModels
             }
         }
         
-        public Material SelectedMaterial
+        public PriceListItem SelectedPriceListItem
         {
-            get => _selectedMaterial;
+            get => _selectedPriceListItem;
             set
             {
-                SetProperty(ref _selectedMaterial, value);
+                SetProperty(ref _selectedPriceListItem, value);
                 CommandManager.InvalidateRequerySuggested();
             }
         }
@@ -460,18 +460,18 @@ namespace ElectricalContractorSystem.ViewModels
         
         private bool CanExecuteAddComponent(object parameter)
         {
-            return SelectedAssembly != null && SelectedMaterial != null && ComponentQuantity > 0;
+            return SelectedAssembly != null && SelectedPriceListItem != null && ComponentQuantity > 0;
         }
         
         private void ExecuteAddComponent(object parameter)
         {
-            if (SelectedAssembly == null || SelectedMaterial == null) return;
+            if (SelectedAssembly == null || SelectedPriceListItem == null) return;
             
             try
             {
                 // Check if component already exists
                 var existingComponent = SelectedAssembly.Components
-                    .FirstOrDefault(c => c.MaterialId == SelectedMaterial.MaterialId);
+                    .FirstOrDefault(c => c.PriceListItemId == SelectedPriceListItem.ItemId);
                 
                 if (existingComponent != null)
                 {
@@ -484,7 +484,7 @@ namespace ElectricalContractorSystem.ViewModels
                     // Add new component
                     _assemblyService.AddComponentToAssembly(
                         SelectedAssembly.AssemblyId,
-                        SelectedMaterial.MaterialId,
+                        SelectedPriceListItem.ItemId,
                         ComponentQuantity,
                         null);
                 }
@@ -492,7 +492,7 @@ namespace ElectricalContractorSystem.ViewModels
                 LoadAssemblyDetails();
                 ComponentQuantity = 1; // Reset quantity
                 
-                MessageBox.Show($"Added {SelectedMaterial.Name} to assembly.", "Component Added", 
+                MessageBox.Show($"Added {SelectedPriceListItem.Name} to assembly.", "Component Added", 
                     MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
@@ -538,7 +538,7 @@ namespace ElectricalContractorSystem.ViewModels
             {
                 _assemblyService.AddComponentToAssembly(
                     newAssembly.AssemblyId,
-                    component.MaterialId,
+                    component.PriceListItemId,
                     component.Quantity,
                     component.Notes);
             }
@@ -592,12 +592,12 @@ namespace ElectricalContractorSystem.ViewModels
                 Assemblies.Add(assembly);
             }
             
-            // Load materials
-            var materials = _databaseService.GetAllMaterials();
-            Materials.Clear();
-            foreach (var material in materials.OrderBy(m => m.Category).ThenBy(m => m.Name))
+            // Load price list items (instead of materials)
+            var priceListItems = _databaseService.GetAllPriceListItems();
+            PriceListItems.Clear();
+            foreach (var item in priceListItems.Where(p => p.IsActive).OrderBy(p => p.Category).ThenBy(p => p.Name))
             {
-                Materials.Add(material);
+                PriceListItems.Add(item);
             }
             
             // Load categories
