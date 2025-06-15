@@ -24,17 +24,39 @@ namespace ElectricalContractorSystem.Services
                 {
                     while (reader.Read())
                     {
-                        employees.Add(new Employee
+                        var employee = new Employee
                         {
                             EmployeeId = reader.GetInt32("employee_id"),
                             Name = reader.GetString("name"),
                             HourlyRate = reader.GetDecimal("hourly_rate"),
                             BurdenRate = reader.IsDBNull(reader.GetOrdinal("burden_rate")) ? (decimal?)null : reader.GetDecimal("burden_rate"),
-                            VehicleCostPerMonth = reader.IsDBNull(reader.GetOrdinal("vehicle_cost_per_month")) ? (decimal?)null : reader.GetDecimal("vehicle_cost_per_month"),
-                            OverheadPercentage = reader.IsDBNull(reader.GetOrdinal("overhead_percentage")) ? (decimal?)null : reader.GetDecimal("overhead_percentage"),
                             Status = reader.GetString("status"),
                             Notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString("notes")
-                        });
+                        };
+                        
+                        // Check if we have vehicle_cost_per_hour column
+                        var ordinalHour = reader.GetOrdinal("vehicle_cost_per_hour");
+                        if (ordinalHour >= 0 && !reader.IsDBNull(ordinalHour))
+                        {
+                            employee.VehicleCostPerHour = reader.GetDecimal("vehicle_cost_per_hour");
+                        }
+                        
+                        // Check if we have vehicle_cost_per_month column
+                        var ordinalMonth = reader.GetOrdinal("vehicle_cost_per_month");
+                        if (ordinalMonth >= 0 && !reader.IsDBNull(ordinalMonth))
+                        {
+                            employee.VehicleCostPerMonth = reader.GetDecimal("vehicle_cost_per_month");
+                        }
+                        
+                        // If we only have monthly cost, calculate hourly
+                        if (employee.VehicleCostPerMonth.HasValue && !employee.VehicleCostPerHour.HasValue)
+                        {
+                            employee.VehicleCostPerHour = employee.VehicleCostPerMonth.Value / 173.33m;
+                        }
+                        
+                        employee.OverheadPercentage = reader.IsDBNull(reader.GetOrdinal("overhead_percentage")) ? (decimal?)null : reader.GetDecimal("overhead_percentage");
+                        
+                        employees.Add(employee);
                     }
                 }
             }
@@ -45,8 +67,8 @@ namespace ElectricalContractorSystem.Services
         public void SaveEmployee(Employee employee)
         {
             const string query = @"
-                INSERT INTO Employees (name, hourly_rate, burden_rate, vehicle_cost_per_month, overhead_percentage, status, notes)
-                VALUES (@name, @hourlyRate, @burdenRate, @vehicleCost, @overhead, @status, @notes)";
+                INSERT INTO Employees (name, hourly_rate, burden_rate, vehicle_cost_per_hour, vehicle_cost_per_month, overhead_percentage, status, notes)
+                VALUES (@name, @hourlyRate, @burdenRate, @vehicleCostHour, @vehicleCostMonth, @overhead, @status, @notes)";
             
             using (var connection = GetConnection())
             {
@@ -56,7 +78,8 @@ namespace ElectricalContractorSystem.Services
                     command.Parameters.AddWithValue("@name", employee.Name);
                     command.Parameters.AddWithValue("@hourlyRate", employee.HourlyRate);
                     command.Parameters.AddWithValue("@burdenRate", employee.BurdenRate ?? (object)DBNull.Value);
-                    command.Parameters.AddWithValue("@vehicleCost", employee.VehicleCostPerMonth ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@vehicleCostHour", employee.VehicleCostPerHour ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@vehicleCostMonth", employee.VehicleCostPerMonth ?? (object)DBNull.Value);
                     command.Parameters.AddWithValue("@overhead", employee.OverheadPercentage ?? (object)DBNull.Value);
                     command.Parameters.AddWithValue("@status", employee.Status ?? "Active");
                     command.Parameters.AddWithValue("@notes", employee.Notes ?? (object)DBNull.Value);
@@ -74,7 +97,8 @@ namespace ElectricalContractorSystem.Services
                 SET name = @name, 
                     hourly_rate = @hourlyRate, 
                     burden_rate = @burdenRate,
-                    vehicle_cost_per_month = @vehicleCost,
+                    vehicle_cost_per_hour = @vehicleCostHour,
+                    vehicle_cost_per_month = @vehicleCostMonth,
                     overhead_percentage = @overhead,
                     status = @status, 
                     notes = @notes
@@ -89,7 +113,8 @@ namespace ElectricalContractorSystem.Services
                     command.Parameters.AddWithValue("@name", employee.Name);
                     command.Parameters.AddWithValue("@hourlyRate", employee.HourlyRate);
                     command.Parameters.AddWithValue("@burdenRate", employee.BurdenRate ?? (object)DBNull.Value);
-                    command.Parameters.AddWithValue("@vehicleCost", employee.VehicleCostPerMonth ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@vehicleCostHour", employee.VehicleCostPerHour ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@vehicleCostMonth", employee.VehicleCostPerMonth ?? (object)DBNull.Value);
                     command.Parameters.AddWithValue("@overhead", employee.OverheadPercentage ?? (object)DBNull.Value);
                     command.Parameters.AddWithValue("@status", employee.Status ?? "Active");
                     command.Parameters.AddWithValue("@notes", employee.Notes ?? (object)DBNull.Value);
