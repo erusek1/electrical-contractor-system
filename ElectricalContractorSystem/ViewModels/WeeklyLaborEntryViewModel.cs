@@ -21,6 +21,7 @@ namespace ElectricalContractorSystem.ViewModels
         private Employee _selectedEmployee;
         private string _newEmployeeName;
         private decimal _newEmployeeRate;
+        private int? _selectedJobId;
         private readonly List<string> _stageNames = new List<string> { "", "Demo", "Rough", "Service", "Finish", "Extra", "Inspection", "Temp Service", "Other" };
 
         public WeeklyLaborEntryViewModel(DatabaseService databaseService)
@@ -50,6 +51,27 @@ namespace ElectricalContractorSystem.ViewModels
         }
 
         #region Properties
+
+        public int? SelectedJobId
+        {
+            get => _selectedJobId;
+            set
+            {
+                if (SetProperty(ref _selectedJobId, value))
+                {
+                    // If a job is selected, pre-populate it for new entries
+                    if (value.HasValue && ActiveJobs != null)
+                    {
+                        var selectedJob = ActiveJobs.FirstOrDefault(j => j.JobId == value.Value);
+                        if (selectedJob != null)
+                        {
+                            // You can implement logic here to pre-select this job for new entries
+                            // For example, setting it as the default for today's entries
+                        }
+                    }
+                }
+            }
+        }
 
         public DateTime CurrentWeekStart
         {
@@ -253,10 +275,38 @@ namespace ElectricalContractorSystem.ViewModels
                 timeEntry.Wednesday = new LaborEntryDay { JobNumber = "", Stage = "", Hours = 0 };
                 timeEntry.Thursday = new LaborEntryDay { JobNumber = "", Stage = "", Hours = 0 };
                 timeEntry.Friday = new LaborEntryDay { JobNumber = "", Stage = "", Hours = 0 };
+                
+                // If a job was pre-selected, set it for today's entry
+                if (SelectedJobId.HasValue && ActiveJobs != null)
+                {
+                    var selectedJob = ActiveJobs.FirstOrDefault(j => j.JobId == SelectedJobId.Value);
+                    if (selectedJob != null)
+                    {
+                        var dayOfWeek = DateTime.Today.DayOfWeek;
+                        var todayEntry = GetDayEntry(timeEntry, dayOfWeek);
+                        if (todayEntry != null && string.IsNullOrEmpty(todayEntry.JobNumber))
+                        {
+                            todayEntry.JobNumber = selectedJob.JobNumber;
+                        }
+                    }
+                }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error loading employee week data: {ex.Message}");
+            }
+        }
+
+        private LaborEntryDay GetDayEntry(EmployeeTimeEntry timeEntry, DayOfWeek dayOfWeek)
+        {
+            switch (dayOfWeek)
+            {
+                case DayOfWeek.Monday: return timeEntry.Monday;
+                case DayOfWeek.Tuesday: return timeEntry.Tuesday;
+                case DayOfWeek.Wednesday: return timeEntry.Wednesday;
+                case DayOfWeek.Thursday: return timeEntry.Thursday;
+                case DayOfWeek.Friday: return timeEntry.Friday;
+                default: return null;
             }
         }
 
