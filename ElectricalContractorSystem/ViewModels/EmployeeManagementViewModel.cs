@@ -42,10 +42,61 @@ namespace ElectricalContractorSystem.ViewModels
             get => _selectedEmployee;
             set
             {
+                // Unsubscribe from previous employee's property changes
+                if (_selectedEmployee != null)
+                {
+                    _selectedEmployee.PropertyChanged -= OnEmployeePropertyChanged;
+                }
+                
                 _selectedEmployee = value;
+                
+                // Subscribe to new employee's property changes
+                if (_selectedEmployee != null)
+                {
+                    _selectedEmployee.PropertyChanged += OnEmployeePropertyChanged;
+                }
+                
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(IsEmployeeSelected));
                 UpdateCalculatedFields();
+            }
+        }
+
+        private void OnEmployeePropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            // Auto-save when specific properties change
+            if (e.PropertyName == nameof(Employee.HourlyRate) || 
+                e.PropertyName == nameof(Employee.BurdenRate) ||
+                e.PropertyName == nameof(Employee.VehicleCostPerHour) ||
+                e.PropertyName == nameof(Employee.OverheadPercentage))
+            {
+                var employee = sender as Employee;
+                if (employee != null)
+                {
+                    SaveEmployeeData(employee);
+                }
+            }
+            
+            // Update calculated fields when relevant properties change
+            UpdateCalculatedFields();
+            UpdateStatistics();
+        }
+
+        private void SaveEmployeeData(Employee employee)
+        {
+            try
+            {
+                _databaseService.UpdateEmployee(employee);
+                StatusMessage = $"Auto-saved {employee.Name}'s rates";
+                
+                // Update the effective rate calculation after save
+                employee.OnPropertyChanged(nameof(employee.EffectiveRate));
+                UpdateStatistics();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error auto-saving employee: {ex.Message}");
+                StatusMessage = $"Error auto-saving {employee.Name}";
             }
         }
 
@@ -128,6 +179,13 @@ namespace ElectricalContractorSystem.ViewModels
             try
             {
                 var employees = _databaseService.GetAllEmployees();
+                
+                // Subscribe to property changes for each employee
+                foreach (var employee in employees)
+                {
+                    employee.PropertyChanged += OnEmployeePropertyChanged;
+                }
+                
                 Employees = new ObservableCollection<Employee>(employees.OrderBy(e => e.Name));
                 StatusMessage = $"Loaded {employees.Count} employees";
             }
@@ -142,7 +200,7 @@ namespace ElectricalContractorSystem.ViewModels
 
         private void SaveEmployee(object parameter)
         {
-            var employee = parameter as Employee;
+            var employee = parameter as Employee ?? SelectedEmployee;
             if (employee == null) return;
 
             try
@@ -177,6 +235,10 @@ namespace ElectricalContractorSystem.ViewModels
             try
             {
                 _databaseService.SaveEmployee(newEmployee);
+                
+                // Subscribe to property changes
+                newEmployee.PropertyChanged += OnEmployeePropertyChanged;
+                
                 LoadEmployees();
                 
                 // Select the new employee
@@ -193,7 +255,7 @@ namespace ElectricalContractorSystem.ViewModels
 
         private void DeleteEmployee(object parameter)
         {
-            var employee = parameter as Employee;
+            var employee = parameter as Employee ?? SelectedEmployee;
             if (employee == null) return;
 
             var result = System.Windows.MessageBox.Show(
@@ -207,6 +269,10 @@ namespace ElectricalContractorSystem.ViewModels
                 try
                 {
                     _databaseService.DeleteEmployee(employee.EmployeeId);
+                    
+                    // Unsubscribe from property changes
+                    employee.PropertyChanged -= OnEmployeePropertyChanged;
+                    
                     LoadEmployees();
                     if (SelectedEmployee?.EmployeeId == employee.EmployeeId)
                     {
