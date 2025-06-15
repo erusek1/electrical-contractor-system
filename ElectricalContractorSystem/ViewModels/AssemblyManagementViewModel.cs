@@ -6,6 +6,7 @@ using ElectricalContractorSystem.Helpers;
 using ElectricalContractorSystem.Models;
 using ElectricalContractorSystem.Services;
 using System.Collections.Generic;
+using System.Windows;
 
 namespace ElectricalContractorSystem.ViewModels
 {
@@ -25,6 +26,24 @@ namespace ElectricalContractorSystem.ViewModels
         private string _selectedCategory;
         private bool _showInactiveAssemblies;
         
+        // New assembly creation fields
+        private bool _isCreatingAssembly;
+        private string _newAssemblyCode;
+        private string _newAssemblyName;
+        private string _newAssemblyCategory;
+        private string _newAssemblyDescription;
+        private int _newRoughMinutes;
+        private int _newFinishMinutes;
+        private int _newServiceMinutes;
+        private int _newExtraMinutes;
+        
+        // Edit mode fields
+        private bool _isEditingAssembly;
+        private AssemblyTemplate _editingAssembly;
+        
+        // Component addition fields
+        private decimal _componentQuantity = 1;
+        
         public AssemblyManagementViewModel(DatabaseService databaseService)
         {
             _databaseService = databaseService;
@@ -40,7 +59,11 @@ namespace ElectricalContractorSystem.ViewModels
             // Initialize commands
             RefreshCommand = new RelayCommand(ExecuteRefresh);
             CreateAssemblyCommand = new RelayCommand(ExecuteCreateAssembly);
+            SaveNewAssemblyCommand = new RelayCommand(ExecuteSaveNewAssembly, CanExecuteSaveNewAssembly);
+            CancelNewAssemblyCommand = new RelayCommand(ExecuteCancelNewAssembly);
             EditAssemblyCommand = new RelayCommand(ExecuteEditAssembly, CanExecuteEditAssembly);
+            SaveEditAssemblyCommand = new RelayCommand(ExecuteSaveEditAssembly, CanExecuteSaveEditAssembly);
+            CancelEditAssemblyCommand = new RelayCommand(ExecuteCancelEditAssembly);
             CreateVariantCommand = new RelayCommand(ExecuteCreateVariant, CanExecuteCreateVariant);
             DeleteAssemblyCommand = new RelayCommand(ExecuteDeleteAssembly, CanExecuteDeleteAssembly);
             AddComponentCommand = new RelayCommand(ExecuteAddComponent, CanExecuteAddComponent);
@@ -142,6 +165,83 @@ namespace ElectricalContractorSystem.ViewModels
             }
         }
         
+        // New assembly creation properties
+        public bool IsCreatingAssembly
+        {
+            get => _isCreatingAssembly;
+            set => SetProperty(ref _isCreatingAssembly, value);
+        }
+        
+        public string NewAssemblyCode
+        {
+            get => _newAssemblyCode;
+            set
+            {
+                SetProperty(ref _newAssemblyCode, value);
+                CommandManager.InvalidateRequerySuggested();
+            }
+        }
+        
+        public string NewAssemblyName
+        {
+            get => _newAssemblyName;
+            set
+            {
+                SetProperty(ref _newAssemblyName, value);
+                CommandManager.InvalidateRequerySuggested();
+            }
+        }
+        
+        public string NewAssemblyCategory
+        {
+            get => _newAssemblyCategory;
+            set => SetProperty(ref _newAssemblyCategory, value);
+        }
+        
+        public string NewAssemblyDescription
+        {
+            get => _newAssemblyDescription;
+            set => SetProperty(ref _newAssemblyDescription, value);
+        }
+        
+        public int NewRoughMinutes
+        {
+            get => _newRoughMinutes;
+            set => SetProperty(ref _newRoughMinutes, value);
+        }
+        
+        public int NewFinishMinutes
+        {
+            get => _newFinishMinutes;
+            set => SetProperty(ref _newFinishMinutes, value);
+        }
+        
+        public int NewServiceMinutes
+        {
+            get => _newServiceMinutes;
+            set => SetProperty(ref _newServiceMinutes, value);
+        }
+        
+        public int NewExtraMinutes
+        {
+            get => _newExtraMinutes;
+            set => SetProperty(ref _newExtraMinutes, value);
+        }
+        
+        // Edit mode properties
+        public bool IsEditingAssembly
+        {
+            get => _isEditingAssembly;
+            set => SetProperty(ref _isEditingAssembly, value);
+        }
+        
+        // Component addition properties
+        public decimal ComponentQuantity
+        {
+            get => _componentQuantity;
+            set => SetProperty(ref _componentQuantity, value);
+        }
+        
         // Calculated properties
         public decimal TotalMaterialCost => SelectedAssembly?.TotalMaterialCost ?? 0;
         public decimal TotalLaborHours => SelectedAssembly?.TotalLaborHours ?? 0;
@@ -158,7 +258,11 @@ namespace ElectricalContractorSystem.ViewModels
         
         public ICommand RefreshCommand { get; }
         public ICommand CreateAssemblyCommand { get; }
+        public ICommand SaveNewAssemblyCommand { get; }
+        public ICommand CancelNewAssemblyCommand { get; }
         public ICommand EditAssemblyCommand { get; }
+        public ICommand SaveEditAssemblyCommand { get; }
+        public ICommand CancelEditAssemblyCommand { get; }
         public ICommand CreateVariantCommand { get; }
         public ICommand DeleteAssemblyCommand { get; }
         public ICommand AddComponentCommand { get; }
@@ -178,9 +282,67 @@ namespace ElectricalContractorSystem.ViewModels
         
         private void ExecuteCreateAssembly(object parameter)
         {
-            // TODO: Remove dialog reference - implement inline creation
-            System.Windows.MessageBox.Show("Create assembly feature will be implemented in the UI.", "Create Assembly", 
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            // Clear the form fields
+            NewAssemblyCode = string.Empty;
+            NewAssemblyName = string.Empty;
+            NewAssemblyCategory = Categories.FirstOrDefault(c => c != "All Categories") ?? "General";
+            NewAssemblyDescription = string.Empty;
+            NewRoughMinutes = 0;
+            NewFinishMinutes = 0;
+            NewServiceMinutes = 0;
+            NewExtraMinutes = 0;
+            
+            // Show the creation panel
+            IsCreatingAssembly = true;
+            IsEditingAssembly = false;
+        }
+        
+        private bool CanExecuteSaveNewAssembly(object parameter)
+        {
+            return !string.IsNullOrWhiteSpace(NewAssemblyCode) && 
+                   !string.IsNullOrWhiteSpace(NewAssemblyName);
+        }
+        
+        private void ExecuteSaveNewAssembly(object parameter)
+        {
+            try
+            {
+                // Check if assembly code already exists
+                var existing = _assemblyService.GetAssembliesByCode(NewAssemblyCode);
+                bool isDefault = !existing.Any();
+                
+                var newAssembly = _assemblyService.CreateAssembly(
+                    NewAssemblyCode,
+                    NewAssemblyName,
+                    NewAssemblyCategory,
+                    Environment.UserName);
+                
+                newAssembly.Description = NewAssemblyDescription;
+                newAssembly.RoughMinutes = NewRoughMinutes;
+                newAssembly.FinishMinutes = NewFinishMinutes;
+                newAssembly.ServiceMinutes = NewServiceMinutes;
+                newAssembly.ExtraMinutes = NewExtraMinutes;
+                newAssembly.IsDefault = isDefault;
+                
+                _databaseService.UpdateAssembly(newAssembly);
+                
+                LoadData();
+                SelectedAssembly = newAssembly;
+                IsCreatingAssembly = false;
+                
+                MessageBox.Show($"Assembly '{NewAssemblyName}' created successfully!", "Success", 
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error creating assembly: {ex.Message}", "Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        
+        private void ExecuteCancelNewAssembly(object parameter)
+        {
+            IsCreatingAssembly = false;
         }
         
         private bool CanExecuteEditAssembly(object parameter)
@@ -192,9 +354,64 @@ namespace ElectricalContractorSystem.ViewModels
         {
             if (SelectedAssembly == null) return;
             
-            // TODO: Remove dialog reference - implement inline editing
-            System.Windows.MessageBox.Show($"Edit assembly '{SelectedAssembly.Name}' feature will be implemented in the UI.", "Edit Assembly", 
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            _editingAssembly = SelectedAssembly;
+            
+            // Load current values into edit fields
+            NewAssemblyCode = SelectedAssembly.AssemblyCode;
+            NewAssemblyName = SelectedAssembly.Name;
+            NewAssemblyCategory = SelectedAssembly.Category;
+            NewAssemblyDescription = SelectedAssembly.Description;
+            NewRoughMinutes = SelectedAssembly.RoughMinutes;
+            NewFinishMinutes = SelectedAssembly.FinishMinutes;
+            NewServiceMinutes = SelectedAssembly.ServiceMinutes;
+            NewExtraMinutes = SelectedAssembly.ExtraMinutes;
+            
+            IsEditingAssembly = true;
+            IsCreatingAssembly = false;
+        }
+        
+        private bool CanExecuteSaveEditAssembly(object parameter)
+        {
+            return !string.IsNullOrWhiteSpace(NewAssemblyCode) && 
+                   !string.IsNullOrWhiteSpace(NewAssemblyName);
+        }
+        
+        private void ExecuteSaveEditAssembly(object parameter)
+        {
+            if (_editingAssembly == null) return;
+            
+            try
+            {
+                _editingAssembly.AssemblyCode = NewAssemblyCode;
+                _editingAssembly.Name = NewAssemblyName;
+                _editingAssembly.Category = NewAssemblyCategory;
+                _editingAssembly.Description = NewAssemblyDescription;
+                _editingAssembly.RoughMinutes = NewRoughMinutes;
+                _editingAssembly.FinishMinutes = NewFinishMinutes;
+                _editingAssembly.ServiceMinutes = NewServiceMinutes;
+                _editingAssembly.ExtraMinutes = NewExtraMinutes;
+                
+                _databaseService.UpdateAssembly(_editingAssembly);
+                
+                LoadData();
+                SelectedAssembly = _editingAssembly;
+                IsEditingAssembly = false;
+                _editingAssembly = null;
+                
+                MessageBox.Show($"Assembly '{NewAssemblyName}' updated successfully!", "Success", 
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error updating assembly: {ex.Message}", "Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        
+        private void ExecuteCancelEditAssembly(object parameter)
+        {
+            IsEditingAssembly = false;
+            _editingAssembly = null;
         }
         
         private bool CanExecuteCreateVariant(object parameter)
@@ -206,9 +423,18 @@ namespace ElectricalContractorSystem.ViewModels
         {
             if (SelectedAssembly == null) return;
             
-            // TODO: Remove dialog reference - implement inline variant creation
-            System.Windows.MessageBox.Show($"Create variant for '{SelectedAssembly.Name}' feature will be implemented in the UI.", "Create Variant", 
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            // Pre-fill with selected assembly data for variant
+            NewAssemblyCode = SelectedAssembly.AssemblyCode; // Same code for variant
+            NewAssemblyName = SelectedAssembly.Name + " - Variant";
+            NewAssemblyCategory = SelectedAssembly.Category;
+            NewAssemblyDescription = SelectedAssembly.Description;
+            NewRoughMinutes = SelectedAssembly.RoughMinutes;
+            NewFinishMinutes = SelectedAssembly.FinishMinutes;
+            NewServiceMinutes = SelectedAssembly.ServiceMinutes;
+            NewExtraMinutes = SelectedAssembly.ExtraMinutes;
+            
+            IsCreatingAssembly = true;
+            IsEditingAssembly = false;
         }
         
         private bool CanExecuteDeleteAssembly(object parameter)
@@ -220,11 +446,11 @@ namespace ElectricalContractorSystem.ViewModels
         {
             if (SelectedAssembly == null) return;
             
-            if (System.Windows.MessageBox.Show(
+            if (MessageBox.Show(
                 $"Are you sure you want to delete assembly '{SelectedAssembly.Name}'?",
                 "Confirm Delete",
-                System.Windows.MessageBoxButton.YesNo,
-                System.Windows.MessageBoxImage.Warning) == System.Windows.MessageBoxResult.Yes)
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning) == MessageBoxResult.Yes)
             {
                 SelectedAssembly.IsActive = false;
                 _databaseService.UpdateAssembly(SelectedAssembly);
@@ -234,27 +460,57 @@ namespace ElectricalContractorSystem.ViewModels
         
         private bool CanExecuteAddComponent(object parameter)
         {
-            return SelectedAssembly != null && SelectedMaterial != null;
+            return SelectedAssembly != null && SelectedMaterial != null && ComponentQuantity > 0;
         }
         
         private void ExecuteAddComponent(object parameter)
         {
             if (SelectedAssembly == null || SelectedMaterial == null) return;
             
-            // TODO: Remove dialog reference - implement inline component addition
-            System.Windows.MessageBox.Show("Add component feature will be implemented in the UI.", "Add Component", 
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            try
+            {
+                // Check if component already exists
+                var existingComponent = SelectedAssembly.Components
+                    .FirstOrDefault(c => c.MaterialId == SelectedMaterial.MaterialId);
+                
+                if (existingComponent != null)
+                {
+                    // Update quantity
+                    existingComponent.Quantity += ComponentQuantity;
+                    _databaseService.UpdateAssemblyComponent(existingComponent);
+                }
+                else
+                {
+                    // Add new component
+                    _assemblyService.AddComponentToAssembly(
+                        SelectedAssembly.AssemblyId,
+                        SelectedMaterial.MaterialId,
+                        ComponentQuantity,
+                        null);
+                }
+                
+                LoadAssemblyDetails();
+                ComponentQuantity = 1; // Reset quantity
+                
+                MessageBox.Show($"Added {SelectedMaterial.Name} to assembly.", "Component Added", 
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error adding component: {ex.Message}", "Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
         
         private void ExecuteRemoveComponent(object parameter)
         {
             if (parameter is AssemblyComponent component)
             {
-                if (System.Windows.MessageBox.Show(
+                if (MessageBox.Show(
                     $"Remove {component.DisplayText} from assembly?",
                     "Confirm Remove",
-                    System.Windows.MessageBoxButton.YesNo,
-                    System.Windows.MessageBoxImage.Question) == System.Windows.MessageBoxResult.Yes)
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question) == MessageBoxResult.Yes)
                 {
                     _assemblyService.RemoveComponentFromAssembly(component.ComponentId);
                     LoadAssemblyDetails();
@@ -300,7 +556,7 @@ namespace ElectricalContractorSystem.ViewModels
         
         private void ExecuteImportFromExcel(object parameter)
         {
-            System.Windows.MessageBox.Show(
+            MessageBox.Show(
                 "To import assemblies from Excel:\n\n" +
                 "1. Ensure your Excel file has columns for:\n" +
                 "   - Code (Column C)\n" +
@@ -311,15 +567,15 @@ namespace ElectricalContractorSystem.ViewModels
                 "   python migration/import_assemblies_from_excel.py\n\n" +
                 "The script will parse formulas and create assemblies automatically.",
                 "Import from Excel",
-                System.Windows.MessageBoxButton.OK,
-                System.Windows.MessageBoxImage.Information);
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
         }
         
         private void ExecuteExportToExcel(object parameter)
         {
             // TODO: Implement export to Excel
-            System.Windows.MessageBox.Show("Export to Excel feature coming soon!", "Export", 
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            MessageBox.Show("Export to Excel feature coming soon!", "Export", 
+                MessageBoxButton.OK, MessageBoxImage.Information);
         }
         
         #endregion
