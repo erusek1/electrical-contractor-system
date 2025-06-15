@@ -85,19 +85,22 @@ namespace ElectricalContractorSystem.Models
         }
         
         // Factory method to create from AssemblyTemplate
-        public static EstimateLineItem CreateFromAssembly(AssemblyTemplate assembly)
+        public static EstimateLineItem CreateFromAssembly(AssemblyTemplate assembly, decimal laborRate)
         {
+            // Calculate total price including labor and materials
+            var totalPrice = assembly.CalculateTotalCost(laborRate, null, 22.0m);
+            
             return new EstimateLineItem
             {
                 AssemblyId = assembly.AssemblyId,
-                ItemCode = assembly.Code,
+                ItemCode = assembly.AssemblyCode,
                 ItemDescription = assembly.Name,
-                UnitPrice = assembly.TotalPrice,
-                MaterialCost = assembly.MaterialCost,
-                RoughLaborMinutes = assembly.RoughLaborMinutes,
-                FinishLaborMinutes = assembly.FinishLaborMinutes,
-                ServiceLaborMinutes = assembly.ServiceLaborMinutes,
-                ExtraLaborMinutes = assembly.ExtraLaborMinutes,
+                UnitPrice = totalPrice,
+                MaterialCost = assembly.TotalMaterialCost,
+                RoughLaborMinutes = assembly.RoughMinutes,
+                FinishLaborMinutes = assembly.FinishMinutes,
+                ServiceLaborMinutes = assembly.ServiceMinutes,
+                ExtraLaborMinutes = assembly.ExtraMinutes,
                 Quantity = 1,
                 LineOrder = 0,
                 Mode = EntryMode.Assembly
