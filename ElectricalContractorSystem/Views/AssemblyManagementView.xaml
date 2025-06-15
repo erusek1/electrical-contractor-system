@@ -3,8 +3,14 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:helpers="clr-namespace:ElectricalContractorSystem.Helpers"
              mc:Ignorable="d" 
              d:DesignHeight="800" d:DesignWidth="1200">
+    
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <helpers:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter"/>
+    </UserControl.Resources>
     
     <Grid>
         <Grid.RowDefinitions>
@@ -486,17 +492,4 @@
             </Grid>
         </Grid>
     </Grid>
-    
-    <UserControl.Resources>
-        <!-- Add the InverseBooleanToVisibilityConverter -->
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-        <Style x:Key="InverseBooleanToVisibilityConverter" TargetType="FrameworkElement">
-            <Setter Property="Visibility" Value="Visible"/>
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding Path=.}" Value="True">
-                    <Setter Property="Visibility" Value="Collapsed"/>
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
-    </UserControl.Resources>
 </UserControl>
