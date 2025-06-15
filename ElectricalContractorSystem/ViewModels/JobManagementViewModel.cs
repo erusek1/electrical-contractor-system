@@ -497,23 +497,22 @@ namespace ElectricalContractorSystem.ViewModels
 
             try
             {
-                // Navigate to job details view (JobCostTrackingView)
-                var mainWindow = System.Windows.Application.Current.MainWindow as MainWindow;
-                if (mainWindow != null)
+                // Create Job Cost Tracking view with the selected job
+                var view = new JobCostTrackingView();
+                var viewModel = new JobCostTrackingViewModel(_databaseService, jobToView.JobId);
+                view.DataContext = viewModel;
+                
+                // Create a new window to show the job details
+                var window = new System.Windows.Window
                 {
-                    var viewModel = mainWindow.DataContext as MainViewModel;
-                    if (viewModel != null)
-                    {
-                        // Set the selected job
-                        viewModel.SelectedJobId = jobToView.JobId;
-                        
-                        // Navigate to Job Cost Tracking
-                        if (viewModel.ShowJobCostTrackingCommand.CanExecute(null))
-                        {
-                            viewModel.ShowJobCostTrackingCommand.Execute(null);
-                        }
-                    }
-                }
+                    Title = $"Job Cost Tracking - {jobToView.JobNumber}",
+                    Content = view,
+                    Width = 1200,
+                    Height = 800,
+                    WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen
+                };
+                
+                window.ShowDialog();
             }
             catch (Exception ex)
             {
@@ -535,23 +534,26 @@ namespace ElectricalContractorSystem.ViewModels
 
             try
             {
-                // Navigate to weekly labor entry with the selected job
-                var mainWindow = System.Windows.Application.Current.MainWindow as MainWindow;
-                if (mainWindow != null)
+                // Create Weekly Labor Entry view with the selected job pre-selected
+                var view = new WeeklyLaborEntryView();
+                var viewModel = new WeeklyLaborEntryViewModel(_databaseService);
+                
+                // Pre-select the job
+                viewModel.SelectedJobId = jobToEnter.JobId;
+                
+                view.DataContext = viewModel;
+                
+                // Create a new window to show the labor entry
+                var window = new System.Windows.Window
                 {
-                    var viewModel = mainWindow.DataContext as MainViewModel;
-                    if (viewModel != null)
-                    {
-                        // Set the selected job
-                        viewModel.SelectedJobId = jobToEnter.JobId;
-                        
-                        // Navigate to Weekly Labor Entry
-                        if (viewModel.ShowWeeklyLaborEntryCommand.CanExecute(null))
-                        {
-                            viewModel.ShowWeeklyLaborEntryCommand.Execute(null);
-                        }
-                    }
-                }
+                    Title = $"Enter Labor Data - Job {jobToEnter.JobNumber}",
+                    Content = view,
+                    Width = 1200,
+                    Height = 800,
+                    WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen
+                };
+                
+                window.ShowDialog();
             }
             catch (Exception ex)
             {
