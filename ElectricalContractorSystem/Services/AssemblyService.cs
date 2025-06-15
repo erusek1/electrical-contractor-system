@@ -34,7 +34,7 @@ namespace ElectricalContractorSystem.Services
         }
         
         public AssemblyTemplate CreateAssemblyVariant(int parentAssemblyId, string variantName, 
-            List<(int materialId, decimal quantity)> componentChanges, string createdBy)
+            List<(int priceListItemId, decimal quantity)> componentChanges, string createdBy)
         {
             var parentAssembly = _databaseService.GetAssemblyById(parentAssemblyId);
             if (parentAssembly == null) return null;
@@ -46,7 +46,7 @@ namespace ElectricalContractorSystem.Services
             foreach (var change in componentChanges)
             {
                 var existingComponent = variant.Components
-                    .FirstOrDefault(c => c.MaterialId == change.materialId);
+                    .FirstOrDefault(c => c.PriceListItemId == change.priceListItemId);
                     
                 if (existingComponent != null)
                 {
@@ -87,12 +87,12 @@ namespace ElectricalContractorSystem.Services
         
         #region Component Management
         
-        public void AddComponentToAssembly(int assemblyId, int materialId, decimal quantity, string notes = null)
+        public void AddComponentToAssembly(int assemblyId, int priceListItemId, decimal quantity, string notes = null)
         {
             var component = new AssemblyComponent
             {
                 AssemblyId = assemblyId,
-                MaterialId = materialId,
+                PriceListItemId = priceListItemId,
                 Quantity = quantity,
                 Notes = notes
             };
