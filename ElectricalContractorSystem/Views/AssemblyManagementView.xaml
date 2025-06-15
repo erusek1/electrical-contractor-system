@@ -189,7 +189,7 @@
                         
                         <StackPanel Grid.Column="4">
                             <TextBlock Text="Total Hours" FontWeight="Bold" Margin="0,0,0,5"/>
-                            <TextBlock Text="{Binding TotalLaborHours, StringFormat='{}{0:N1} hrs'}" 
+                            <TextBlock Text="{Binding TotalLaborHours, Mode=OneWay, StringFormat='{}{0:N1} hrs'}" 
                                        FontSize="18" Foreground="#3498DB"/>
                         </StackPanel>
                     </Grid>
@@ -270,7 +270,7 @@
                             <Border Grid.Row="2" Background="#F8F9FA" Padding="15" Margin="0,10,0,0">
                                 <TextBlock HorizontalAlignment="Right">
                                     <Run Text="Total Material Cost: " FontWeight="Bold"/>
-                                    <Run Text="{Binding TotalMaterialCost, StringFormat='${0:N2}'}" 
+                                    <Run Text="{Binding TotalMaterialCost, Mode=OneWay, StringFormat='${0:N2}'}" 
                                          FontSize="18" Foreground="#27AE60"/>
                                 </TextBlock>
                             </Border>
@@ -294,10 +294,10 @@
                                                         Binding="{Binding IsDefault}" 
                                                         Width="60"/>
                                 <DataGridTextColumn Header="Material Cost" 
-                                                    Binding="{Binding TotalMaterialCost, StringFormat='${0:N2}'}" 
+                                                    Binding="{Binding TotalMaterialCost, Mode=OneWay, StringFormat='${0:N2}'}" 
                                                     Width="100"/>
                                 <DataGridTextColumn Header="Labor Hours" 
-                                                    Binding="{Binding TotalLaborHours, StringFormat='{}{0:N1}'}" 
+                                                    Binding="{Binding TotalLaborHours, Mode=OneWay, StringFormat='{}{0:N1}'}" 
                                                     Width="100"/>
                                 <DataGridTemplateColumn Width="100">
                                     <DataGridTemplateColumn.CellTemplate>
