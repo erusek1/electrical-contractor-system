@@ -529,9 +529,10 @@ namespace ElectricalContractorSystem.ViewModels
         
         private void LoadAssemblies()
         {
-            var assemblies = _assemblyService.GetActiveAssemblies();
+            // Use SearchAssemblies with empty string to get all assemblies
+            var assemblies = _assemblyService.SearchAssemblies("");
             Assemblies.Clear();
-            foreach (var assembly in assemblies.OrderBy(a => a.Category).ThenBy(a => a.AssemblyCode))
+            foreach (var assembly in assemblies.Where(a => a.IsActive).OrderBy(a => a.Category).ThenBy(a => a.AssemblyCode))
             {
                 Assemblies.Add(assembly);
             }
@@ -603,32 +604,40 @@ namespace ElectricalContractorSystem.ViewModels
             // Find matching assemblies
             var matchingAssemblies = Assemblies
                 .Where(a => a.AssemblyCode.ToLower().StartsWith(codeLower))
-                .Select(a => new { 
-                    Item = a, 
-                    DisplayText = $"{a.AssemblyCode} - {a.Name} (Assembly)",
-                    IsAssembly = true 
-                });
+                .ToList();
             
             // Find matching price list items
             var matchingPriceItems = PriceListItems
                 .Where(p => p.ItemCode.ToLower().StartsWith(codeLower))
-                .Select(p => new { 
-                    Item = p, 
-                    DisplayText = $"{p.ItemCode} - {p.Name} (Price List)",
-                    IsAssembly = false 
-                });
+                .ToList();
             
-            // Add all matches
-            foreach (var match in matchingAssemblies.Concat(matchingPriceItems))
+            // Add assembly matches
+            foreach (var assembly in matchingAssemblies)
             {
-                QuickEntryMatches.Add(match);
+                QuickEntryMatches.Add(new
+                {
+                    Item = assembly,
+                    DisplayText = $"{assembly.AssemblyCode} - {assembly.Name} (Assembly)",
+                    IsAssembly = true
+                });
+            }
+            
+            // Add price list matches
+            foreach (var priceItem in matchingPriceItems)
+            {
+                QuickEntryMatches.Add(new
+                {
+                    Item = priceItem,
+                    DisplayText = $"{priceItem.ItemCode} - {priceItem.Name} (Price List)",
+                    IsAssembly = false
+                });
             }
             
             // Auto-select if only one match
             if (QuickEntryMatches.Count == 1)
             {
-                var match = QuickEntryMatches[0];
-                SelectedQuickEntry = match.IsAssembly ? (object)match.Item : match.Item;
+                dynamic match = QuickEntryMatches[0];
+                SelectedQuickEntry = match.Item;
             }
             
             OnPropertyChanged(nameof(HasQuickEntryMatches));
