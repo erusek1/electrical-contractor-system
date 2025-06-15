@@ -17,9 +17,6 @@
         <!-- Menu Bar -->
         <Menu Grid.Row="0">
             <MenuItem Header="_File">
-                <MenuItem Header="_New Estimate" Click="NewEstimate_Click"/>
-                <MenuItem Header="_Open Estimate" Click="OpenEstimate_Click"/>
-                <Separator/>
                 <MenuItem Header="E_xit" Click="Exit_Click"/>
             </MenuItem>
             
