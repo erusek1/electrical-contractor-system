@@ -57,7 +57,7 @@ namespace ElectricalContractorSystem.Models
                     case TransactionType.Return:
                         return $"Returned {Quantity} from Job #{Job?.JobNumber ?? "Unknown"}";
                     case TransactionType.Transfer:
-                        return $"Transferred {Quantity} from {FromLocation?.Name ?? "Unknown"} to {ToLocation?.Name ?? "Unknown"}";
+                        return $"Transferred {Quantity} from {FromLocation?.LocationName ?? "Unknown"} to {ToLocation?.LocationName ?? "Unknown"}";
                     default:
                         return $"{TransactionType} {Quantity}";
                 }
