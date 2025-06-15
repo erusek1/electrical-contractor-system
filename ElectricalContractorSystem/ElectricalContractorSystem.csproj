@@ -130,6 +130,7 @@
     <Compile Include="Helpers\HoursStatusTextConverter.cs" />
     <Compile Include="Helpers\IntToVisibilityConverter.cs" />
     <Compile Include="Helpers\InverseBooleanConverter.cs" />
+    <Compile Include="Helpers\InverseBooleanToVisibilityConverter.cs" />
     <Compile Include="Helpers\NotNullConverter.cs" />
     <Compile Include="Helpers\NotNullOrEmptyConverter.cs" />
     <Compile Include="Helpers\RelayCommand.cs" />
