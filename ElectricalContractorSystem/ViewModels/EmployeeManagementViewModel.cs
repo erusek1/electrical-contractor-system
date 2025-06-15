@@ -15,6 +15,9 @@ namespace ElectricalContractorSystem.ViewModels
         private readonly DatabaseService _databaseService;
         private ObservableCollection<Employee> _employees;
         private Employee _selectedEmployee;
+        private decimal _monthlyOverhead;
+        private decimal _totalMonthlyHours = 160; // Default to 160 hours/month
+        private string _statusMessage;
 
         public EmployeeManagementViewModel(DatabaseService databaseService)
         {
@@ -30,6 +33,7 @@ namespace ElectricalContractorSystem.ViewModels
             {
                 _employees = value;
                 OnPropertyChanged();
+                UpdateStatistics();
             }
         }
 
@@ -45,6 +49,52 @@ namespace ElectricalContractorSystem.ViewModels
             }
         }
 
+        public decimal MonthlyOverhead
+        {
+            get => _monthlyOverhead;
+            set
+            {
+                _monthlyOverhead = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(OverheadPerHour));
+            }
+        }
+
+        public decimal TotalMonthlyHours
+        {
+            get => _totalMonthlyHours;
+            set
+            {
+                _totalMonthlyHours = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(OverheadPerHour));
+            }
+        }
+
+        public decimal OverheadPerHour => TotalMonthlyHours > 0 ? MonthlyOverhead / TotalMonthlyHours : 0;
+
+        public string StatusMessage
+        {
+            get => _statusMessage;
+            set
+            {
+                _statusMessage = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public int ActiveEmployeeCount => Employees?.Count(e => e.Status == "Active") ?? 0;
+        
+        public decimal AverageEffectiveRate
+        {
+            get
+            {
+                var activeEmployees = Employees?.Where(e => e.Status == "Active").ToList();
+                if (activeEmployees == null || !activeEmployees.Any()) return 0;
+                return activeEmployees.Average(e => e.EffectiveRate);
+            }
+        }
+
         public bool IsEmployeeSelected => SelectedEmployee != null;
 
         // Calculated properties for display
@@ -56,17 +106,21 @@ namespace ElectricalContractorSystem.ViewModels
         public decimal? CostPerBillableHour => SelectedEmployee?.CostPerBillableHour;
 
         // Commands
-        public ICommand SaveCommand { get; private set; }
+        public ICommand SaveEmployeeCommand { get; private set; }
         public ICommand AddEmployeeCommand { get; private set; }
         public ICommand DeleteEmployeeCommand { get; private set; }
         public ICommand RefreshCommand { get; private set; }
+        public ICommand CalculateEffectiveRatesCommand { get; private set; }
+        public ICommand ApplyOverheadToAllCommand { get; private set; }
 
         private void InitializeCommands()
         {
-            SaveCommand = new RelayCommand(SaveEmployee, CanSaveEmployee);
+            SaveEmployeeCommand = new RelayCommand(SaveEmployee);
             AddEmployeeCommand = new RelayCommand(AddEmployee);
-            DeleteEmployeeCommand = new RelayCommand(DeleteEmployee, CanDeleteEmployee);
+            DeleteEmployeeCommand = new RelayCommand(DeleteEmployee);
             RefreshCommand = new RelayCommand(RefreshEmployees);
+            CalculateEffectiveRatesCommand = new RelayCommand(CalculateEffectiveRates);
+            ApplyOverheadToAllCommand = new RelayCommand(ApplyOverheadToAll);
         }
 
         private void LoadEmployees()
@@ -75,36 +129,37 @@ namespace ElectricalContractorSystem.ViewModels
             {
                 var employees = _databaseService.GetAllEmployees();
                 Employees = new ObservableCollection<Employee>(employees.OrderBy(e => e.Name));
+                StatusMessage = $"Loaded {employees.Count} employees";
             }
             catch (Exception ex)
             {
                 // Log error
                 System.Diagnostics.Debug.WriteLine($"Error loading employees: {ex.Message}");
                 Employees = new ObservableCollection<Employee>();
+                StatusMessage = "Error loading employees";
             }
         }
 
         private void SaveEmployee(object parameter)
         {
-            if (SelectedEmployee == null) return;
+            var employee = parameter as Employee;
+            if (employee == null) return;
 
             try
             {
-                _databaseService.UpdateEmployee(SelectedEmployee);
-                LoadEmployees(); // Reload to ensure consistency
-                System.Windows.MessageBox.Show("Employee information saved successfully.", "Success", 
-                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                _databaseService.UpdateEmployee(employee);
+                StatusMessage = $"Saved {employee.Name} successfully";
+                
+                // Update the effective rate calculation after save
+                employee.OnPropertyChanged(nameof(employee.EffectiveRate));
+                UpdateStatistics();
             }
             catch (Exception ex)
             {
                 System.Windows.MessageBox.Show($"Error saving employee: {ex.Message}", "Error", 
                     System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                StatusMessage = $"Error saving {employee.Name}";
             }
-        }
-
-        private bool CanSaveEmployee(object parameter)
-        {
-            return SelectedEmployee != null;
         }
 
         private void AddEmployee(object parameter)
@@ -114,44 +169,110 @@ namespace ElectricalContractorSystem.ViewModels
                 Name = "New Employee",
                 HourlyRate = 0,
                 BurdenRate = 0,
-                VehicleCostPerMonth = 0,
-                OverheadPercentage = 10,
+                VehicleCostPerHour = 0,
+                OverheadPercentage = 0,
                 Status = "Active"
             };
 
-            _databaseService.SaveEmployee(newEmployee);
-            LoadEmployees();
-            
-            // Select the new employee
-            SelectedEmployee = Employees.FirstOrDefault(e => e.EmployeeId == newEmployee.EmployeeId);
+            try
+            {
+                _databaseService.SaveEmployee(newEmployee);
+                LoadEmployees();
+                
+                // Select the new employee
+                SelectedEmployee = Employees.FirstOrDefault(e => e.EmployeeId == newEmployee.EmployeeId);
+                StatusMessage = "Added new employee";
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Error adding employee: {ex.Message}", "Error", 
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                StatusMessage = "Error adding employee";
+            }
         }
 
         private void DeleteEmployee(object parameter)
         {
-            if (SelectedEmployee == null) return;
+            var employee = parameter as Employee;
+            if (employee == null) return;
 
             var result = System.Windows.MessageBox.Show(
-                $"Are you sure you want to delete employee '{SelectedEmployee.Name}'?\n\nThis action cannot be undone.",
+                $"Are you sure you want to delete employee '{employee.Name}'?\n\nThis action cannot be undone.",
                 "Confirm Delete",
                 System.Windows.MessageBoxButton.YesNo,
                 System.Windows.MessageBoxImage.Warning);
 
             if (result == System.Windows.MessageBoxResult.Yes)
             {
-                _databaseService.DeleteEmployee(SelectedEmployee.EmployeeId);
-                LoadEmployees();
-                SelectedEmployee = null;
+                try
+                {
+                    _databaseService.DeleteEmployee(employee.EmployeeId);
+                    LoadEmployees();
+                    if (SelectedEmployee?.EmployeeId == employee.EmployeeId)
+                    {
+                        SelectedEmployee = null;
+                    }
+                    StatusMessage = $"Deleted {employee.Name}";
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.MessageBox.Show($"Error deleting employee: {ex.Message}", "Error", 
+                        System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                    StatusMessage = "Error deleting employee";
+                }
             }
-        }
-
-        private bool CanDeleteEmployee(object parameter)
-        {
-            return SelectedEmployee != null;
         }
 
         private void RefreshEmployees(object parameter)
         {
             LoadEmployees();
+        }
+
+        private void CalculateEffectiveRates(object parameter)
+        {
+            foreach (var employee in Employees)
+            {
+                employee.OnPropertyChanged(nameof(employee.EffectiveRate));
+            }
+            UpdateStatistics();
+            StatusMessage = "Recalculated effective rates for all employees";
+        }
+
+        private void ApplyOverheadToAll(object parameter)
+        {
+            if (TotalMonthlyHours <= 0)
+            {
+                System.Windows.MessageBox.Show("Total monthly hours must be greater than 0", "Invalid Input", 
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+
+            var overheadPerHour = MonthlyOverhead / TotalMonthlyHours;
+            
+            foreach (var employee in Employees.Where(e => e.Status == "Active"))
+            {
+                // Calculate overhead as a percentage of base rate
+                if (employee.HourlyRate > 0)
+                {
+                    employee.OverheadPercentage = (overheadPerHour / employee.HourlyRate) * 100;
+                }
+            }
+            
+            // Save all changes
+            foreach (var employee in Employees.Where(e => e.Status == "Active"))
+            {
+                try
+                {
+                    _databaseService.UpdateEmployee(employee);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error updating employee {employee.Name}: {ex.Message}");
+                }
+            }
+            
+            UpdateStatistics();
+            StatusMessage = $"Applied overhead of ${overheadPerHour:F2}/hour to all active employees";
         }
 
         private void UpdateCalculatedFields()
@@ -162,6 +283,12 @@ namespace ElectricalContractorSystem.ViewModels
             OnPropertyChanged(nameof(YearlyOverheadCost));
             OnPropertyChanged(nameof(TotalYearlyCost));
             OnPropertyChanged(nameof(CostPerBillableHour));
+        }
+
+        private void UpdateStatistics()
+        {
+            OnPropertyChanged(nameof(ActiveEmployeeCount));
+            OnPropertyChanged(nameof(AverageEffectiveRate));
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
