@@ -13,20 +13,34 @@ namespace ElectricalContractorSystem.ViewModels
     public class EstimateBuilderViewModel : ViewModelBase
     {
         private readonly DatabaseService _databaseService;
+        private readonly AssemblyService _assemblyService;
         private Estimate _currentEstimate;
         private EstimateRoom _selectedRoom;
         private PriceListItem _selectedPriceListItem;
+        private AssemblyTemplate _selectedAssembly;
         private string _searchText;
         private bool _isNewEstimate;
+        private bool _showAssemblies = true;
+        private bool _showPriceList = false;
+        
+        // Quick entry properties
+        private string _quickEntryQuantity = "1";
+        private string _quickEntryCode = "";
+        private string _quickEntryLaborHours = "";
+        private object _selectedQuickEntry;
         
         public EstimateBuilderViewModel(DatabaseService databaseService)
         {
             _databaseService = databaseService;
+            _assemblyService = new AssemblyService(databaseService);
             
             // Initialize collections
             Rooms = new ObservableCollection<EstimateRoom>();
             PriceListItems = new ObservableCollection<PriceListItem>();
             FilteredPriceListItems = new ObservableCollection<PriceListItem>();
+            Assemblies = new ObservableCollection<AssemblyTemplate>();
+            FilteredAssemblies = new ObservableCollection<AssemblyTemplate>();
+            QuickEntryMatches = new ObservableCollection<dynamic>();
             
             // Initialize commands
             AddRoomCommand = new RelayCommand(ExecuteAddRoom);
@@ -37,8 +51,10 @@ namespace ElectricalContractorSystem.ViewModels
             DuplicateRoomCommand = new RelayCommand(ExecuteDuplicateRoom, CanExecuteDuplicateRoom);
             MoveRoomUpCommand = new RelayCommand(ExecuteMoveRoomUp, CanExecuteMoveRoomUp);
             MoveRoomDownCommand = new RelayCommand(ExecuteMoveRoomDown, CanExecuteMoveRoomDown);
+            QuickAddCommand = new RelayCommand(ExecuteQuickAdd, CanExecuteQuickAdd);
             
             LoadPriceListItems();
+            LoadAssemblies();
         }
         
         #region Properties
@@ -86,6 +102,9 @@ namespace ElectricalContractorSystem.ViewModels
         
         public ObservableCollection<PriceListItem> PriceListItems { get; }
         public ObservableCollection<PriceListItem> FilteredPriceListItems { get; }
+        public ObservableCollection<AssemblyTemplate> Assemblies { get; }
+        public ObservableCollection<AssemblyTemplate> FilteredAssemblies { get; }
+        public ObservableCollection<dynamic> QuickEntryMatches { get; }
         
         public PriceListItem SelectedPriceListItem
         {
@@ -98,6 +117,17 @@ namespace ElectricalContractorSystem.ViewModels
             }
         }
         
+        public AssemblyTemplate SelectedAssembly
+        {
+            get => _selectedAssembly;
+            set
+            {
+                _selectedAssembly = value;
+                OnPropertyChanged();
+                CommandManager.InvalidateRequerySuggested();
+            }
+        }
+        
         public string SearchText
         {
             get => _searchText;
@@ -105,7 +135,7 @@ namespace ElectricalContractorSystem.ViewModels
             {
                 _searchText = value;
                 OnPropertyChanged();
-                FilterPriceList();
+                FilterItems();
             }
         }
         
@@ -119,10 +149,89 @@ namespace ElectricalContractorSystem.ViewModels
             }
         }
         
+        public bool ShowAssemblies
+        {
+            get => _showAssemblies;
+            set
+            {
+                _showAssemblies = value;
+                _showPriceList = !value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ShowPriceList));
+                FilterItems();
+            }
+        }
+        
+        public bool ShowPriceList
+        {
+            get => _showPriceList;
+            set
+            {
+                _showPriceList = value;
+                _showAssemblies = !value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ShowAssemblies));
+                FilterItems();
+            }
+        }
+        
+        // Quick entry properties
+        public string QuickEntryQuantity
+        {
+            get => _quickEntryQuantity;
+            set
+            {
+                _quickEntryQuantity = value;
+                OnPropertyChanged();
+            }
+        }
+        
+        public string QuickEntryCode
+        {
+            get => _quickEntryCode;
+            set
+            {
+                _quickEntryCode = value;
+                OnPropertyChanged();
+                UpdateQuickEntryMatches();
+            }
+        }
+        
+        public string QuickEntryLaborHours
+        {
+            get => _quickEntryLaborHours;
+            set
+            {
+                _quickEntryLaborHours = value;
+                OnPropertyChanged();
+            }
+        }
+        
+        public object SelectedQuickEntry
+        {
+            get => _selectedQuickEntry;
+            set
+            {
+                _selectedQuickEntry = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ShowManualLaborEntry));
+            }
+        }
+        
+        public bool HasQuickEntryMatches => QuickEntryMatches.Count > 0;
+        public bool ShowManualLaborEntry => SelectedQuickEntry is PriceListItem;
+        
         // Calculated properties
         public decimal TotalLaborHours => CurrentEstimate?.TotalLaborHours ?? 0;
         public decimal TotalMaterialCost => CurrentEstimate?.TotalMaterialCost ?? 0;
-        public decimal TotalCost => CurrentEstimate?.TotalPrice ?? 0; // Fixed: Changed from TotalCost to TotalPrice
+        public decimal TotalCost => CurrentEstimate?.TotalPrice ?? 0;
+        
+        // Labor breakdown by stage
+        public decimal RoughHours => CalculateStageHours("Rough");
+        public decimal FinishHours => CalculateStageHours("Finish");
+        public decimal ServiceHours => CalculateStageHours("Service");
+        public decimal ExtraHours => CalculateStageHours("Extra");
+        public bool ShowStageBreakdown => CurrentEstimate?.LineItems.Any(i => i.Mode == EstimateLineItem.EntryMode.Assembly) ?? false;
         
         public string EstimateTitle => IsNewEstimate ? 
             "New Estimate" : 
@@ -140,6 +249,7 @@ namespace ElectricalContractorSystem.ViewModels
         public ICommand DuplicateRoomCommand { get; }
         public ICommand MoveRoomUpCommand { get; }
         public ICommand MoveRoomDownCommand { get; }
+        public ICommand QuickAddCommand { get; }
         
         #endregion
         
@@ -198,14 +308,28 @@ namespace ElectricalContractorSystem.ViewModels
         
         private bool CanExecuteAddItem(object parameter)
         {
-            return SelectedRoom != null && SelectedPriceListItem != null;
+            return SelectedRoom != null && 
+                   ((ShowAssemblies && SelectedAssembly != null) || 
+                    (ShowPriceList && SelectedPriceListItem != null));
         }
         
         private void ExecuteAddItem(object parameter)
         {
-            if (SelectedRoom != null && SelectedPriceListItem != null)
+            if (SelectedRoom == null) return;
+            
+            EstimateLineItem lineItem = null;
+            
+            if (ShowAssemblies && SelectedAssembly != null)
             {
-                var lineItem = EstimateLineItem.CreateFromPriceListItem(SelectedPriceListItem);
+                lineItem = EstimateLineItem.CreateFromAssembly(SelectedAssembly, CurrentEstimate.LaborRate);
+            }
+            else if (ShowPriceList && SelectedPriceListItem != null)
+            {
+                lineItem = EstimateLineItem.CreateFromPriceListItem(SelectedPriceListItem);
+            }
+            
+            if (lineItem != null)
+            {
                 lineItem.EstimateId = CurrentEstimate.EstimateId;
                 lineItem.RoomId = SelectedRoom.RoomId;
                 lineItem.LineOrder = SelectedRoom.LineItems.Count;
@@ -220,6 +344,64 @@ namespace ElectricalContractorSystem.ViewModels
                 SelectedRoom.OnPropertyChanged(nameof(EstimateRoom.RoomTotal));
                 
                 UpdateTotals();
+            }
+        }
+        
+        private bool CanExecuteQuickAdd(object parameter)
+        {
+            return SelectedRoom != null && 
+                   !string.IsNullOrWhiteSpace(QuickEntryQuantity) && 
+                   SelectedQuickEntry != null;
+        }
+        
+        private void ExecuteQuickAdd(object parameter)
+        {
+            if (!CanExecuteQuickAdd(null)) return;
+            
+            if (!int.TryParse(QuickEntryQuantity, out int quantity) || quantity <= 0)
+            {
+                quantity = 1;
+            }
+            
+            EstimateLineItem lineItem = null;
+            
+            if (SelectedQuickEntry is AssemblyTemplate assembly)
+            {
+                lineItem = EstimateLineItem.CreateFromAssembly(assembly, CurrentEstimate.LaborRate);
+            }
+            else if (SelectedQuickEntry is PriceListItem priceItem)
+            {
+                lineItem = EstimateLineItem.CreateFromPriceListItem(priceItem);
+                
+                // If manual labor hours entered, use those
+                if (!string.IsNullOrWhiteSpace(QuickEntryLaborHours) && 
+                    decimal.TryParse(QuickEntryLaborHours, out decimal hours))
+                {
+                    lineItem.LaborMinutes = (int)(hours * 60);
+                }
+            }
+            
+            if (lineItem != null)
+            {
+                lineItem.Quantity = quantity;
+                lineItem.EstimateId = CurrentEstimate.EstimateId;
+                lineItem.RoomId = SelectedRoom.RoomId;
+                lineItem.LineOrder = SelectedRoom.LineItems.Count;
+                
+                SelectedRoom.LineItems.Add(lineItem);
+                CurrentEstimate.LineItems.Add(lineItem);
+                
+                OnPropertyChanged(nameof(SelectedRoomItems));
+                SelectedRoom.OnPropertyChanged(nameof(EstimateRoom.ItemCount));
+                SelectedRoom.OnPropertyChanged(nameof(EstimateRoom.RoomTotal));
+                
+                UpdateTotals();
+                
+                // Clear quick entry fields
+                QuickEntryQuantity = "1";
+                QuickEntryCode = "";
+                QuickEntryLaborHours = "";
+                SelectedQuickEntry = null;
             }
         }
         
@@ -342,7 +524,30 @@ namespace ElectricalContractorSystem.ViewModels
             {
                 PriceListItems.Add(item);
             }
-            FilterPriceList();
+            FilterItems();
+        }
+        
+        private void LoadAssemblies()
+        {
+            var assemblies = _assemblyService.GetActiveAssemblies();
+            Assemblies.Clear();
+            foreach (var assembly in assemblies.OrderBy(a => a.Category).ThenBy(a => a.AssemblyCode))
+            {
+                Assemblies.Add(assembly);
+            }
+            FilterItems();
+        }
+        
+        private void FilterItems()
+        {
+            if (ShowAssemblies)
+            {
+                FilterAssemblies();
+            }
+            else
+            {
+                FilterPriceList();
+            }
         }
         
         private void FilterPriceList()
@@ -364,6 +569,69 @@ namespace ElectricalContractorSystem.ViewModels
             {
                 FilteredPriceListItems.Add(item);
             }
+        }
+        
+        private void FilterAssemblies()
+        {
+            FilteredAssemblies.Clear();
+            
+            var query = Assemblies.AsEnumerable();
+            
+            if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                var searchLower = SearchText.ToLower();
+                query = query.Where(a => 
+                    a.AssemblyCode.ToLower().Contains(searchLower) ||
+                    a.Name.ToLower().Contains(searchLower) ||
+                    (a.Description?.ToLower().Contains(searchLower) ?? false));
+            }
+            
+            foreach (var assembly in query)
+            {
+                FilteredAssemblies.Add(assembly);
+            }
+        }
+        
+        private void UpdateQuickEntryMatches()
+        {
+            QuickEntryMatches.Clear();
+            
+            if (string.IsNullOrWhiteSpace(QuickEntryCode)) return;
+            
+            var codeLower = QuickEntryCode.ToLower();
+            
+            // Find matching assemblies
+            var matchingAssemblies = Assemblies
+                .Where(a => a.AssemblyCode.ToLower().StartsWith(codeLower))
+                .Select(a => new { 
+                    Item = a, 
+                    DisplayText = $"{a.AssemblyCode} - {a.Name} (Assembly)",
+                    IsAssembly = true 
+                });
+            
+            // Find matching price list items
+            var matchingPriceItems = PriceListItems
+                .Where(p => p.ItemCode.ToLower().StartsWith(codeLower))
+                .Select(p => new { 
+                    Item = p, 
+                    DisplayText = $"{p.ItemCode} - {p.Name} (Price List)",
+                    IsAssembly = false 
+                });
+            
+            // Add all matches
+            foreach (var match in matchingAssemblies.Concat(matchingPriceItems))
+            {
+                QuickEntryMatches.Add(match);
+            }
+            
+            // Auto-select if only one match
+            if (QuickEntryMatches.Count == 1)
+            {
+                var match = QuickEntryMatches[0];
+                SelectedQuickEntry = match.IsAssembly ? (object)match.Item : match.Item;
+            }
+            
+            OnPropertyChanged(nameof(HasQuickEntryMatches));
         }
         
         private void LoadEstimateData()
@@ -399,6 +667,31 @@ namespace ElectricalContractorSystem.ViewModels
             OnPropertyChanged(nameof(TotalLaborHours));
             OnPropertyChanged(nameof(TotalMaterialCost));
             OnPropertyChanged(nameof(TotalCost));
+            OnPropertyChanged(nameof(RoughHours));
+            OnPropertyChanged(nameof(FinishHours));
+            OnPropertyChanged(nameof(ServiceHours));
+            OnPropertyChanged(nameof(ExtraHours));
+            OnPropertyChanged(nameof(ShowStageBreakdown));
+        }
+        
+        private decimal CalculateStageHours(string stage)
+        {
+            if (CurrentEstimate == null) return 0;
+            
+            var minutes = CurrentEstimate.LineItems
+                .Where(i => i.Mode == EstimateLineItem.EntryMode.Assembly)
+                .Sum(i => {
+                    switch (stage)
+                    {
+                        case "Rough": return (i.RoughLaborMinutes ?? 0) * i.Quantity;
+                        case "Finish": return (i.FinishLaborMinutes ?? 0) * i.Quantity;
+                        case "Service": return (i.ServiceLaborMinutes ?? 0) * i.Quantity;
+                        case "Extra": return (i.ExtraLaborMinutes ?? 0) * i.Quantity;
+                        default: return 0;
+                    }
+                });
+            
+            return minutes / 60m;
         }
         
         private void OnRoomPropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -435,7 +728,8 @@ namespace ElectricalContractorSystem.ViewModels
                 Zip = customer.Zip,
                 Status = EstimateStatus.Draft,
                 CreatedDate = DateTime.Now,
-                CreatedBy = Environment.UserName
+                CreatedBy = Environment.UserName,
+                LaborRate = 85m // Default labor rate
             };
             
             IsNewEstimate = true;
