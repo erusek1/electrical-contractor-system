@@ -6,6 +6,7 @@
     <Application.Resources>
         <!-- Converters -->
         <helpers:BoolToOpacityConverter x:Key="BoolToOpacityConverter"/>
+        <helpers:IntToVisibilityConverter x:Key="IntToVisibilityConverter"/>
         
         <!-- Primary Colors -->
         <Color x:Key="PrimaryColor">#1E88E5</Color>
