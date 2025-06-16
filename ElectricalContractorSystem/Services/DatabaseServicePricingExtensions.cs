@@ -686,7 +686,7 @@ namespace ElectricalContractorSystem.Services
             return new Material
             {
                 MaterialId = reader.GetInt32("material_id"),
-                ItemCode = reader.GetString("material_code"),
+                MaterialCode = reader.GetString("material_code"),
                 Name = reader.GetString("name"),
                 Description = reader.IsDBNull(reader.GetOrdinal("description")) ? null : reader.GetString("description"),
                 Category = reader.GetString("category"),
