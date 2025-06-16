@@ -378,7 +378,7 @@ namespace ElectricalContractorSystem.ViewModels
                 var searchLower = MaterialSearchText.ToLower();
                 filtered = filtered.Where(m => 
                     m.Name.ToLower().Contains(searchLower) ||
-                    m.ItemCode.ToLower().Contains(searchLower) ||
+                    m.MaterialCode.ToLower().Contains(searchLower) ||
                     (m.Description?.ToLower().Contains(searchLower) ?? false));
             }
             
@@ -447,12 +447,14 @@ namespace ElectricalContractorSystem.ViewModels
                     AssemblyCode = Code.Trim(),
                     Name = Name.Trim(),
                     Description = Description?.Trim(),
+                    Category = "General", // Default category
                     RoughMinutes = RoughMinutes,
                     FinishMinutes = FinishMinutes,
                     ServiceMinutes = ServiceMinutes,
                     ExtraMinutes = ExtraMinutes,
                     IsDefault = IsDefault,
-                    IsActive = true
+                    IsActive = true,
+                    CreatedBy = "System" // TODO: Get current user
                 };
                 
                 // Convert component view models to models
