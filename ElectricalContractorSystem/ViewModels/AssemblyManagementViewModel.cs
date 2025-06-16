@@ -3,146 +3,106 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
-using System.Runtime.CompilerServices;
+using System.Windows.Data;
 using System.Windows.Input;
-using ElectricalContractorSystem.Helpers;
 using ElectricalContractorSystem.Models;
 using ElectricalContractorSystem.Services;
 using ElectricalContractorSystem.Views;
 
 namespace ElectricalContractorSystem.ViewModels
 {
-    public class AssemblyManagementViewModel : INotifyPropertyChanged
+    public class AssemblyManagementViewModel : ViewModelBase
     {
         private readonly DatabaseService _databaseService;
         private readonly AssemblyService _assemblyService;
         private readonly PricingService _pricingService;
         
-        private ObservableCollection<AssemblyTemplate> _assemblies;
-        private AssemblyTemplate _selectedAssembly;
-        private ObservableCollection<AssemblyComponent> _components;
-        private AssemblyComponent _selectedComponent;
-        private ObservableCollection<AssemblyVariant> _variants;
-        private AssemblyVariant _selectedVariant;
-        private string _searchText;
+        #region Properties
         
-        public ObservableCollection<AssemblyTemplate> Assemblies
-        {
-            get => _assemblies;
-            set
-            {
-                _assemblies = value;
-                OnPropertyChanged();
-            }
-        }
-        
-        public AssemblyTemplate SelectedAssembly
-        {
-            get => _selectedAssembly;
-            set
-            {
-                _selectedAssembly = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(IsAssemblySelected));
-                OnPropertyChanged(nameof(CanEditAssembly));
-                OnPropertyChanged(nameof(CanDeleteAssembly));
-                LoadAssemblyDetails();
-            }
-        }
-        
-        public ObservableCollection<AssemblyComponent> Components
-        {
-            get => _components;
-            set
-            {
-                _components = value;
-                OnPropertyChanged();
-            }
-        }
-        
-        public AssemblyComponent SelectedComponent
-        {
-            get => _selectedComponent;
-            set
-            {
-                _selectedComponent = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(CanDeleteComponent));
-            }
-        }
-        
-        public ObservableCollection<AssemblyVariant> Variants
-        {
-            get => _variants;
-            set
-            {
-                _variants = value;
-                OnPropertyChanged();
-            }
-        }
-        
-        public AssemblyVariant SelectedVariant
-        {
-            get => _selectedVariant;
-            set
-            {
-                _selectedVariant = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(CanSetAsDefault));
-                OnPropertyChanged(nameof(CanDeleteVariant));
-            }
-        }
-        
+        private string _searchText = "";
         public string SearchText
         {
             get => _searchText;
             set
             {
-                _searchText = value;
-                OnPropertyChanged();
-                FilterAssemblies();
+                SetProperty(ref _searchText, value);
+                ApplyFilter();
             }
         }
         
-        // Calculated properties
-        public bool IsAssemblySelected => SelectedAssembly != null;
-        public bool CanEditAssembly => SelectedAssembly != null;
-        public bool CanDeleteAssembly => SelectedAssembly != null && !SelectedAssembly.IsDefault;
-        public bool CanDeleteComponent => SelectedComponent != null;
-        public bool CanSetAsDefault => SelectedVariant != null && !IsVariantDefault(SelectedVariant);
-        public bool CanDeleteVariant => SelectedVariant != null && !IsVariantDefault(SelectedVariant);
-        
-        public decimal TotalMaterialCost
+        private string _selectedCategory = "All";
+        public string SelectedCategory
         {
-            get
+            get => _selectedCategory;
+            set
             {
-                if (Components == null) return 0;
-                return Components.Sum(c => (c.Material?.CurrentPrice ?? 0) * c.Quantity);
+                SetProperty(ref _selectedCategory, value);
+                ApplyFilter();
             }
         }
         
-        public int TotalLaborMinutes
+        private AssemblyTemplate _selectedAssembly;
+        public AssemblyTemplate SelectedAssembly
         {
-            get
+            get => _selectedAssembly;
+            set
             {
-                if (SelectedAssembly == null) return 0;
-                return SelectedAssembly.RoughMinutes + SelectedAssembly.FinishMinutes + 
-                       SelectedAssembly.ServiceMinutes + SelectedAssembly.ExtraMinutes;
+                SetProperty(ref _selectedAssembly, value);
+                LoadAssemblyDetails();
+                UpdateCommands();
             }
         }
         
-        public decimal TotalLaborHours => Math.Round(TotalLaborMinutes / 60m, 2);
+        private AssemblyComponent _selectedComponent;
+        public AssemblyComponent SelectedComponent
+        {
+            get => _selectedComponent;
+            set
+            {
+                SetProperty(ref _selectedComponent, value);
+                UpdateCommands();
+            }
+        }
         
-        // Commands
+        public ObservableCollection<AssemblyTemplate> Assemblies { get; }
+        public ICollectionView AssembliesView { get; }
+        
+        public ObservableCollection<AssemblyComponent> Components { get; }
+        
+        public ObservableCollection<string> Categories { get; }
+        
+        public ObservableCollection<AssemblyTemplate> Variants { get; }
+        
+        #endregion
+        
+        #region Calculated Properties
+        
+        public decimal TotalMaterialCost => Components?.Sum(c => c.TotalCost) ?? 0;
+        
+        public decimal TotalLaborHours => SelectedAssembly != null ? 
+            (SelectedAssembly.RoughMinutes + SelectedAssembly.FinishMinutes + 
+             SelectedAssembly.ServiceMinutes + SelectedAssembly.ExtraMinutes) / 60m : 0;
+        
+        public decimal EstimatedTotalCost => TotalMaterialCost + (TotalLaborHours * 85); // $85/hr default
+        
+        #endregion
+        
+        #region Commands
+        
         public ICommand CreateAssemblyCommand { get; }
         public ICommand EditAssemblyCommand { get; }
         public ICommand DeleteAssemblyCommand { get; }
-        public ICommand DuplicateAssemblyCommand { get; }
-        public ICommand DeleteComponentCommand { get; }
         public ICommand CreateVariantCommand { get; }
-        public ICommand SetDefaultVariantCommand { get; }
-        public ICommand DeleteVariantCommand { get; }
+        public ICommand AddComponentCommand { get; }
+        public ICommand EditComponentCommand { get; }
+        public ICommand RemoveComponentCommand { get; }
         public ICommand RefreshCommand { get; }
+        public ICommand ExportCommand { get; }
+        public ICommand ImportCommand { get; }
+        
+        #endregion
+        
+        #region Constructor
         
         public AssemblyManagementViewModel(DatabaseService databaseService)
         {
@@ -150,124 +110,134 @@ namespace ElectricalContractorSystem.ViewModels
             _assemblyService = new AssemblyService(databaseService);
             _pricingService = new PricingService(databaseService);
             
-            // Initialize collections
             Assemblies = new ObservableCollection<AssemblyTemplate>();
             Components = new ObservableCollection<AssemblyComponent>();
-            Variants = new ObservableCollection<AssemblyVariant>();
+            Variants = new ObservableCollection<AssemblyTemplate>();
+            
+            AssembliesView = CollectionViewSource.GetDefaultView(Assemblies);
+            AssembliesView.Filter = FilterAssembly;
+            AssembliesView.SortDescriptions.Add(new SortDescription("Category", ListSortDirection.Ascending));
+            AssembliesView.SortDescriptions.Add(new SortDescription("AssemblyCode", ListSortDirection.Ascending));
+            AssembliesView.SortDescriptions.Add(new SortDescription("Name", ListSortDirection.Ascending));
+            
+            Categories = new ObservableCollection<string>
+            {
+                "All",
+                "Devices",
+                "Lighting", 
+                "Rough-In",
+                "Service",
+                "Special",
+                "Other"
+            };
             
             // Initialize commands
             CreateAssemblyCommand = new RelayCommand(CreateAssembly);
-            EditAssemblyCommand = new RelayCommand(EditAssembly, () => CanEditAssembly);
-            DeleteAssemblyCommand = new RelayCommand(DeleteAssembly, () => CanDeleteAssembly);
-            DuplicateAssemblyCommand = new RelayCommand(DuplicateAssembly, () => SelectedAssembly != null);
-            DeleteComponentCommand = new RelayCommand(DeleteComponent, () => CanDeleteComponent);
+            EditAssemblyCommand = new RelayCommand(EditAssembly, () => SelectedAssembly != null);
+            DeleteAssemblyCommand = new RelayCommand(DeleteAssembly, () => SelectedAssembly != null);
             CreateVariantCommand = new RelayCommand(CreateVariant, () => SelectedAssembly != null);
-            SetDefaultVariantCommand = new RelayCommand(SetDefaultVariant, () => CanSetAsDefault);
-            DeleteVariantCommand = new RelayCommand(DeleteVariant, () => CanDeleteVariant);
+            AddComponentCommand = new RelayCommand(AddComponent, () => SelectedAssembly != null);
+            EditComponentCommand = new RelayCommand(EditComponent, () => SelectedComponent != null);
+            RemoveComponentCommand = new RelayCommand(RemoveComponent, () => SelectedComponent != null);
             RefreshCommand = new RelayCommand(LoadData);
+            ExportCommand = new RelayCommand(ExportAssemblies);
+            ImportCommand = new RelayCommand(ImportAssemblies);
             
-            // Load initial data
             LoadData();
         }
+        
+        #endregion
+        
+        #region Methods
         
         private void LoadData()
         {
             try
             {
-                // Load assemblies using DatabaseService extension method
-                var assemblies = _databaseService.GetAllAssemblies();
                 Assemblies.Clear();
-                foreach (var assembly in assemblies)
+                var assemblies = _assemblyService.SearchAssemblies("");
+                
+                foreach (var assembly in assemblies.Where(a => a.IsDefault))
                 {
                     Assemblies.Add(assembly);
                 }
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"Error loading assemblies: {ex.Message}", "Error", 
-                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                System.Windows.MessageBox.Show($"Error loading assemblies: {ex.Message}", 
+                    "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
         
         private void LoadAssemblyDetails()
         {
-            if (SelectedAssembly == null)
+            Components.Clear();
+            Variants.Clear();
+            
+            if (SelectedAssembly == null) return;
+            
+            // Load components
+            foreach (var component in SelectedAssembly.Components ?? new List<AssemblyComponent>())
             {
-                Components.Clear();
-                Variants.Clear();
-                return;
+                Components.Add(component);
             }
             
-            try
+            // Load variants
+            var variants = _assemblyService.GetAssembliesByCode(SelectedAssembly.AssemblyCode);
+            foreach (var variant in variants.Where(v => v.AssemblyId != SelectedAssembly.AssemblyId))
             {
-                // Load components using DatabaseService extension method
-                var components = _databaseService.GetAssemblyComponents(SelectedAssembly.AssemblyId);
-                Components.Clear();
-                foreach (var component in components)
-                {
-                    // Load the material details
-                    component.Material = _databaseService.GetMaterial(component.MaterialId);
-                    Components.Add(component);
-                }
-                
-                // Load variants using DatabaseService extension method
-                var variantAssemblies = _databaseService.GetAssemblyVariants(SelectedAssembly.AssemblyCode);
-                Variants.Clear();
-                int sortOrder = 0;
-                foreach (var variantAssembly in variantAssemblies)
-                {
-                    if (variantAssembly.AssemblyId != SelectedAssembly.AssemblyId)
-                    {
-                        var variant = new AssemblyVariant
-                        {
-                            ParentAssemblyId = SelectedAssembly.AssemblyId,
-                            VariantAssemblyId = variantAssembly.AssemblyId,
-                            SortOrder = sortOrder++,
-                            VariantAssembly = variantAssembly
-                        };
-                        Variants.Add(variant);
-                    }
-                }
-                
-                // Notify property changes
-                OnPropertyChanged(nameof(TotalMaterialCost));
-                OnPropertyChanged(nameof(TotalLaborMinutes));
-                OnPropertyChanged(nameof(TotalLaborHours));
+                Variants.Add(variant);
             }
-            catch (Exception ex)
-            {
-                System.Windows.MessageBox.Show($"Error loading assembly details: {ex.Message}", "Error", 
-                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
-            }
+            
+            OnPropertyChanged(nameof(TotalMaterialCost));
+            OnPropertyChanged(nameof(TotalLaborHours));
+            OnPropertyChanged(nameof(EstimatedTotalCost));
         }
         
-        private void FilterAssemblies()
+        private bool FilterAssembly(object obj)
         {
-            if (string.IsNullOrWhiteSpace(SearchText))
+            if (!(obj is AssemblyTemplate assembly)) return false;
+            
+            // Category filter
+            if (SelectedCategory != "All" && assembly.Category != SelectedCategory)
+                return false;
+            
+            // Search filter
+            if (!string.IsNullOrWhiteSpace(SearchText))
             {
-                LoadData();
-                return;
+                var searchLower = SearchText.ToLower();
+                return assembly.AssemblyCode.ToLower().Contains(searchLower) ||
+                       assembly.Name.ToLower().Contains(searchLower) ||
+                       (assembly.Description?.ToLower().Contains(searchLower) ?? false);
             }
             
-            var filtered = _databaseService.GetAllAssemblies()
-                .Where(a => a.AssemblyCode.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0 ||
-                           a.Name.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0 ||
-                           (a.Description?.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) ?? -1) >= 0)
-                .ToList();
-            
-            Assemblies.Clear();
-            foreach (var assembly in filtered)
-            {
-                Assemblies.Add(assembly);
-            }
+            return true;
         }
+        
+        private void ApplyFilter()
+        {
+            AssembliesView?.Refresh();
+        }
+        
+        private void UpdateCommands()
+        {
+            (EditAssemblyCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (DeleteAssemblyCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (CreateVariantCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (AddComponentCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (EditComponentCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (RemoveComponentCommand as RelayCommand)?.RaiseCanExecuteChanged();
+        }
+        
+        #endregion
+        
+        #region Command Implementations
         
         private void CreateAssembly()
         {
             var dialog = new AssemblyEditDialog();
             var viewModel = new AssemblyEditViewModel(_databaseService);
             dialog.DataContext = viewModel;
-            dialog.Owner = System.Windows.Application.Current.MainWindow;
             
             if (dialog.ShowDialog() == true)
             {
@@ -282,7 +252,6 @@ namespace ElectricalContractorSystem.ViewModels
             var dialog = new AssemblyEditDialog();
             var viewModel = new AssemblyEditViewModel(_databaseService, SelectedAssembly);
             dialog.DataContext = viewModel;
-            dialog.Owner = System.Windows.Application.Current.MainWindow;
             
             if (dialog.ShowDialog() == true)
             {
@@ -294,11 +263,11 @@ namespace ElectricalContractorSystem.ViewModels
         
         private void DeleteAssembly()
         {
-            if (SelectedAssembly == null || SelectedAssembly.IsDefault) return;
+            if (SelectedAssembly == null) return;
             
             var result = System.Windows.MessageBox.Show(
-                $"Are you sure you want to delete the assembly '{SelectedAssembly.AssemblyCode} - {SelectedAssembly.Name}'?\n\n" +
-                "This will also delete all components and cannot be undone.",
+                $"Are you sure you want to delete the assembly '{SelectedAssembly.Name}'?\n\n" +
+                "This action cannot be undone.",
                 "Confirm Delete",
                 System.Windows.MessageBoxButton.YesNo,
                 System.Windows.MessageBoxImage.Warning);
@@ -307,92 +276,19 @@ namespace ElectricalContractorSystem.ViewModels
             {
                 try
                 {
-                    _databaseService.DeleteAssembly(SelectedAssembly.AssemblyId);
-                    LoadData();
+                    SelectedAssembly.IsActive = false;
+                    SelectedAssembly.UpdatedBy = "System";
+                    SelectedAssembly.UpdatedDate = DateTime.Now;
+                    _databaseService.SaveAssembly(SelectedAssembly);
+                    
+                    Assemblies.Remove(SelectedAssembly);
                     SelectedAssembly = null;
                 }
                 catch (Exception ex)
                 {
-                    System.Windows.MessageBox.Show($"Error deleting assembly: {ex.Message}", "Error", 
-                        System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                    System.Windows.MessageBox.Show($"Error deleting assembly: {ex.Message}", 
+                        "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
                 }
-            }
-        }
-        
-        private void DuplicateAssembly()
-        {
-            if (SelectedAssembly == null) return;
-            
-            try
-            {
-                // Create a copy of the assembly with a new code
-                var newAssembly = new AssemblyTemplate
-                {
-                    AssemblyCode = GetNextAssemblyCode(SelectedAssembly.AssemblyCode),
-                    Name = $"{SelectedAssembly.Name} (Copy)",
-                    Description = SelectedAssembly.Description,
-                    Category = SelectedAssembly.Category ?? "General",
-                    RoughMinutes = SelectedAssembly.RoughMinutes,
-                    FinishMinutes = SelectedAssembly.FinishMinutes,
-                    ServiceMinutes = SelectedAssembly.ServiceMinutes,
-                    ExtraMinutes = SelectedAssembly.ExtraMinutes,
-                    IsDefault = false,
-                    IsActive = true,
-                    CreatedBy = "System" // TODO: Get current user
-                };
-                
-                // Get the components
-                var components = _databaseService.GetAssemblyComponents(SelectedAssembly.AssemblyId)
-                    .Select(c => new AssemblyComponent
-                    {
-                        MaterialId = c.MaterialId,
-                        Quantity = c.Quantity,
-                        IsOptional = c.IsOptional
-                    }).ToList();
-                
-                // Create the new assembly with components
-                _assemblyService.CreateAssembly(newAssembly, components);
-                
-                // Reload and select the new assembly
-                LoadData();
-                SelectedAssembly = Assemblies.FirstOrDefault(a => a.AssemblyCode == newAssembly.AssemblyCode);
-            }
-            catch (Exception ex)
-            {
-                System.Windows.MessageBox.Show($"Error duplicating assembly: {ex.Message}", "Error", 
-                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
-            }
-        }
-        
-        private string GetNextAssemblyCode(string baseCode)
-        {
-            // Find the next available code by appending numbers
-            int suffix = 2;
-            string newCode;
-            do
-            {
-                newCode = $"{baseCode}-{suffix}";
-                suffix++;
-            } while (Assemblies.Any(a => a.AssemblyCode == newCode));
-            
-            return newCode;
-        }
-        
-        private void DeleteComponent()
-        {
-            if (SelectedComponent == null || SelectedAssembly == null) return;
-            
-            try
-            {
-                _databaseService.DeleteAssemblyComponent(SelectedComponent.ComponentId);
-                Components.Remove(SelectedComponent);
-                SelectedComponent = null;
-                OnPropertyChanged(nameof(TotalMaterialCost));
-            }
-            catch (Exception ex)
-            {
-                System.Windows.MessageBox.Show($"Error deleting component: {ex.Message}", "Error", 
-                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
         
@@ -400,95 +296,160 @@ namespace ElectricalContractorSystem.ViewModels
         {
             if (SelectedAssembly == null) return;
             
-            // Create a new assembly as a variant with the same code
-            var dialog = new AssemblyEditDialog();
-            
-            // Create a copy of the current assembly to use as template
-            var variantTemplate = new AssemblyTemplate
-            {
-                AssemblyCode = SelectedAssembly.AssemblyCode, // Keep the same code for variants
-                Name = $"{SelectedAssembly.Name} - Variant",
-                Description = SelectedAssembly.Description,
-                Category = SelectedAssembly.Category ?? "General",
-                RoughMinutes = SelectedAssembly.RoughMinutes,
-                FinishMinutes = SelectedAssembly.FinishMinutes,
-                ServiceMinutes = SelectedAssembly.ServiceMinutes,
-                ExtraMinutes = SelectedAssembly.ExtraMinutes,
-                IsDefault = false,
-                IsActive = true,
-                CreatedBy = "System" // TODO: Get current user
-            };
-            
-            var viewModel = new AssemblyEditViewModel(_databaseService, variantTemplate);
-            dialog.DataContext = viewModel;
-            dialog.Owner = System.Windows.Application.Current.MainWindow;
+            var dialog = new CreateVariantDialog();
+            dialog.ParentAssemblyName = SelectedAssembly.Name;
             
             if (dialog.ShowDialog() == true)
             {
-                LoadData();
-                LoadAssemblyDetails();
-            }
-        }
-        
-        private void SetDefaultVariant()
-        {
-            if (SelectedVariant == null || IsVariantDefault(SelectedVariant)) return;
-            
-            try
-            {
-                // Update all assemblies with this code to set the selected one as default
-                var allVariants = _databaseService.GetAssemblyVariants(SelectedAssembly.AssemblyCode);
-                foreach (var variant in allVariants)
+                try
                 {
-                    variant.IsDefault = (variant.AssemblyId == SelectedVariant.VariantAssemblyId);
-                    _databaseService.UpdateAssembly(variant);
+                    // Create the variant with a default category
+                    var variant = _assemblyService.CreateAssembly(
+                        SelectedAssembly.AssemblyCode,
+                        dialog.VariantName,
+                        SelectedAssembly.Category,  // Use the parent's category
+                        "System"
+                    );
+                    
+                    // Copy properties from parent
+                    variant.Description = dialog.VariantDescription;
+                    variant.RoughMinutes = SelectedAssembly.RoughMinutes;
+                    variant.FinishMinutes = SelectedAssembly.FinishMinutes;
+                    variant.ServiceMinutes = SelectedAssembly.ServiceMinutes;
+                    variant.ExtraMinutes = SelectedAssembly.ExtraMinutes;
+                    variant.IsDefault = false;
+                    
+                    _databaseService.SaveAssembly(variant);
+                    
+                    // Copy components
+                    foreach (var component in SelectedAssembly.Components)
+                    {
+                        var newComponent = new AssemblyComponent
+                        {
+                            AssemblyId = variant.AssemblyId,
+                            PriceListItemId = component.PriceListItemId,
+                            Quantity = component.Quantity,
+                            Notes = component.Notes
+                        };
+                        _databaseService.SaveAssemblyComponent(newComponent);
+                    }
+                    
+                    // Create variant relationship
+                    _databaseService.CreateAssemblyVariantRelationship(
+                        SelectedAssembly.AssemblyId, 
+                        variant.AssemblyId
+                    );
+                    
+                    // Reload to show the new variant
+                    LoadAssemblyDetails();
                 }
-                
-                // Refresh display
-                LoadAssemblyDetails();
-            }
-            catch (Exception ex)
-            {
-                System.Windows.MessageBox.Show($"Error setting default variant: {ex.Message}", "Error", 
-                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                catch (Exception ex)
+                {
+                    System.Windows.MessageBox.Show($"Error creating variant: {ex.Message}", 
+                        "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                }
             }
         }
         
-        private void DeleteVariant()
+        private void AddComponent()
         {
-            if (SelectedVariant == null || IsVariantDefault(SelectedVariant)) return;
+            if (SelectedAssembly == null) return;
+            
+            var dialog = new AddComponentDialog();
+            var items = _databaseService.GetAllPriceListItems()
+                .Where(i => i.IsActive)
+                .OrderBy(i => i.Category)
+                .ThenBy(i => i.Name)
+                .ToList();
+            
+            dialog.AvailableItems = items;
+            
+            if (dialog.ShowDialog() == true && dialog.SelectedItem != null)
+            {
+                try
+                {
+                    _assemblyService.AddComponentToAssembly(
+                        SelectedAssembly.AssemblyId,
+                        dialog.SelectedItem.ItemId,
+                        dialog.Quantity
+                    );
+                    
+                    LoadAssemblyDetails();
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.MessageBox.Show($"Error adding component: {ex.Message}", 
+                        "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                }
+            }
+        }
+        
+        private void EditComponent()
+        {
+            if (SelectedComponent == null) return;
+            
+            var dialog = new EditComponentDialog();
+            dialog.ComponentName = SelectedComponent.ItemName;
+            dialog.CurrentQuantity = SelectedComponent.Quantity;
+            
+            if (dialog.ShowDialog() == true)
+            {
+                try
+                {
+                    _assemblyService.UpdateAssemblyComponent(
+                        SelectedComponent.ComponentId,
+                        dialog.NewQuantity
+                    );
+                    
+                    LoadAssemblyDetails();
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.MessageBox.Show($"Error updating component: {ex.Message}", 
+                        "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                }
+            }
+        }
+        
+        private void RemoveComponent()
+        {
+            if (SelectedComponent == null) return;
             
             var result = System.Windows.MessageBox.Show(
-                $"Are you sure you want to delete this variant?\n\nThis cannot be undone.",
-                "Confirm Delete",
+                $"Are you sure you want to remove '{SelectedComponent.ItemName}' from this assembly?",
+                "Confirm Remove",
                 System.Windows.MessageBoxButton.YesNo,
-                System.Windows.MessageBoxImage.Warning);
+                System.Windows.MessageBoxImage.Question);
             
             if (result == System.Windows.MessageBoxResult.Yes)
             {
                 try
                 {
-                    _databaseService.DeleteAssembly(SelectedVariant.VariantAssemblyId);
+                    _assemblyService.RemoveComponentFromAssembly(SelectedComponent.ComponentId);
                     LoadAssemblyDetails();
                 }
                 catch (Exception ex)
                 {
-                    System.Windows.MessageBox.Show($"Error deleting variant: {ex.Message}", "Error", 
-                        System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                    System.Windows.MessageBox.Show($"Error removing component: {ex.Message}", 
+                        "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
                 }
             }
         }
         
-        private bool IsVariantDefault(AssemblyVariant variant)
+        private void ExportAssemblies()
         {
-            return variant?.VariantAssembly?.IsDefault ?? false;
+            // TODO: Implement export to Excel
+            System.Windows.MessageBox.Show("Export functionality will be implemented soon.", 
+                "Export", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
         }
         
-        public event PropertyChangedEventHandler PropertyChanged;
-        
-        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        private void ImportAssemblies()
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            // TODO: Implement import from Excel
+            System.Windows.MessageBox.Show("Import functionality will be implemented soon.", 
+                "Import", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
         }
+        
+        #endregion
     }
 }
