@@ -32,7 +32,7 @@ namespace ElectricalContractorSystem.Models
         public DateTime CreateDate { get; set; }
         public DateTime CreatedDate { get => CreateDate; set => CreateDate = value; }
         public DateTime ValidUntilDate { get; set; }
-        public DateTime? ExpirationDate { get => ValidUntilDate; set => ValidUntilDate = value; }
+        public DateTime? ExpirationDate { get => ValidUntilDate; set => ValidUntilDate = value ?? DateTime.Now.AddDays(30); }
         public string Notes { get; set; }
         public decimal TaxRate { get; set; }
         public decimal MaterialMarkup { get; set; }
@@ -60,9 +60,20 @@ namespace ElectricalContractorSystem.Models
         public List<EstimateStageSummary> StageSummaries { get; set; }
         public List<EstimatePermitItem> PermitItems { get; set; }
 
-        // Calculated properties
-        public decimal TotalCost => TotalPrice;
-        public decimal TotalLaborHours => TotalLaborMinutes / 60m;
+        // Calculated properties - make setters private
+        private decimal _totalCost;
+        public decimal TotalCost 
+        { 
+            get => TotalPrice; 
+            set => _totalCost = value; 
+        }
+        
+        private decimal _totalLaborHours;
+        public decimal TotalLaborHours 
+        { 
+            get => TotalLaborMinutes / 60m; 
+            set => _totalLaborHours = value;
+        }
 
         public Estimate()
         {
