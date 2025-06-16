@@ -5,12 +5,12 @@ namespace ElectricalContractorSystem.Views
     public partial class CreateVariantDialog : Window
     {
         public string VariantName { get; set; }
+        public string VariantDescription { get; set; }
         public string ParentAssemblyName { get; set; }
 
-        public CreateVariantDialog(string parentAssemblyName)
+        public CreateVariantDialog()
         {
             InitializeComponent();
-            ParentAssemblyName = parentAssemblyName;
             DataContext = this;
             
             // Focus on the variant name textbox
