@@ -111,6 +111,12 @@ namespace ElectricalContractorSystem.Services
             }
         }
 
+        // Add the UpdateMaterial method
+        public static void UpdateMaterial(this DatabaseService db, Material material)
+        {
+            db.SaveMaterial(material);
+        }
+
         #endregion
 
         #region Material Price History
@@ -667,10 +673,12 @@ namespace ElectricalContractorSystem.Services
                 }
             }
 
-            // Load line items for each estimate
+            // Load line items for each estimate  
             foreach (var estimate in estimates)
             {
-                estimate.LineItems = db.GetEstimateLineItems(estimate.EstimateId);
+                // Use the existing method from DatabaseService.Estimating.cs
+                estimate.Rooms = db.GetEstimateRooms(estimate.EstimateId);
+                estimate.StageSummaries = db.GetEstimateStageSummaries(estimate.EstimateId);
             }
 
             return estimates;
@@ -861,14 +869,14 @@ namespace ElectricalContractorSystem.Services
                 CustomerId = reader.GetInt32("CustomerId"),
                 PropertyId = reader.IsDBNull(reader.GetOrdinal("PropertyId")) ? null : (int?)reader.GetInt32("PropertyId"),
                 ProjectName = reader.GetString("ProjectName"),
-                Status = reader.GetString("Status"),
-                CreatedDate = reader.GetDateTime("CreatedDate"),
+                Status = (EstimateStatus)Enum.Parse(typeof(EstimateStatus), reader.GetString("Status")),
+                CreateDate = reader.GetDateTime("CreatedDate"),
                 ValidUntilDate = reader.GetDateTime("ValidUntilDate"),
                 ServiceTypeId = reader.IsDBNull(reader.GetOrdinal("ServiceTypeId")) ? null : (int?)reader.GetInt32("ServiceTypeId"),
                 TotalMaterialCost = reader.GetDecimal("TotalMaterialCost"),
-                TotalLaborHours = reader.GetDecimal("TotalLaborHours"),
+                TotalLaborMinutes = reader.GetInt32("TotalLaborMinutes"),
                 TotalLaborCost = reader.GetDecimal("TotalLaborCost"),
-                TotalCost = reader.GetDecimal("TotalCost"),
+                TotalPrice = reader.GetDecimal("TotalPrice"),
                 ApprovedDate = reader.IsDBNull(reader.GetOrdinal("ApprovedDate")) ? null : (DateTime?)reader.GetDateTime("ApprovedDate"),
                 ApprovedBy = reader.IsDBNull(reader.GetOrdinal("ApprovedBy")) ? null : reader.GetString("ApprovedBy"),
                 ConvertedToJobId = reader.IsDBNull(reader.GetOrdinal("ConvertedToJobId")) ? null : (int?)reader.GetInt32("ConvertedToJobId"),
