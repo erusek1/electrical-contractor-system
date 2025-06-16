@@ -34,6 +34,11 @@ namespace ElectricalContractorSystem.Services
             return materials;
         }
         
+        public static Material GetMaterial(this DatabaseService service, int materialId)
+        {
+            return service.GetMaterialById(materialId);
+        }
+        
         public static Material GetMaterialById(this DatabaseService service, int materialId)
         {
             using (var connection = service.GetConnection())
@@ -303,6 +308,30 @@ namespace ElectricalContractorSystem.Services
         public static void UpdateAssembly(this DatabaseService service, AssemblyTemplate assembly)
         {
             service.SaveAssembly(assembly);
+        }
+        
+        public static void DeleteAssembly(this DatabaseService service, int assemblyId)
+        {
+            using (var connection = service.GetConnection())
+            {
+                connection.Open();
+                
+                // Delete components first (if not cascade delete)
+                var deleteComponentsQuery = @"DELETE FROM AssemblyComponents WHERE assembly_id = @assemblyId";
+                using (var command = new MySqlCommand(deleteComponentsQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@assemblyId", assemblyId);
+                    command.ExecuteNonQuery();
+                }
+                
+                // Delete assembly
+                var deleteAssemblyQuery = @"DELETE FROM AssemblyTemplates WHERE assembly_id = @assemblyId";
+                using (var command = new MySqlCommand(deleteAssemblyQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@assemblyId", assemblyId);
+                    command.ExecuteNonQuery();
+                }
+            }
         }
         
         public static List<AssemblyTemplate> GetAssemblyVariants(this DatabaseService service, string assemblyCode)
@@ -657,7 +686,7 @@ namespace ElectricalContractorSystem.Services
             return new Material
             {
                 MaterialId = reader.GetInt32("material_id"),
-                MaterialCode = reader.GetString("material_code"),
+                ItemCode = reader.GetString("material_code"),
                 Name = reader.GetString("name"),
                 Description = reader.IsDBNull(reader.GetOrdinal("description")) ? null : reader.GetString("description"),
                 Category = reader.GetString("category"),
