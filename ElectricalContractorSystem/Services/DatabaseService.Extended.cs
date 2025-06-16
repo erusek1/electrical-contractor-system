@@ -312,5 +312,41 @@ namespace ElectricalContractorSystem.Services
         }
         
         #endregion
+        
+        #region Vendor Methods
+        
+        public List<Vendor> GetAllVendors()
+        {
+            var vendors = new List<Vendor>();
+            const string query = "SELECT * FROM Vendors ORDER BY name";
+            
+            using (var connection = GetConnection())
+            {
+                connection.Open();
+                using (var command = new MySqlCommand(query, connection))
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        vendors.Add(new Vendor
+                        {
+                            VendorId = reader.GetInt32("vendor_id"),
+                            Name = reader.GetString("name"),
+                            Address = reader.IsDBNull(reader.GetOrdinal("address")) ? null : reader.GetString("address"),
+                            City = reader.IsDBNull(reader.GetOrdinal("city")) ? null : reader.GetString("city"),
+                            State = reader.IsDBNull(reader.GetOrdinal("state")) ? null : reader.GetString("state"),
+                            Zip = reader.IsDBNull(reader.GetOrdinal("zip")) ? null : reader.GetString("zip"),
+                            Phone = reader.IsDBNull(reader.GetOrdinal("phone")) ? null : reader.GetString("phone"),
+                            Email = reader.IsDBNull(reader.GetOrdinal("email")) ? null : reader.GetString("email"),
+                            Notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString("notes")
+                        });
+                    }
+                }
+            }
+            
+            return vendors;
+        }
+        
+        #endregion
     }
 }

@@ -155,7 +155,18 @@ namespace ElectricalContractorSystem.ViewModels
 
         public ObservableCollection<AssemblyComponent> Components
         {
-            get => _assembly.Components;
+            get
+            {
+                if (_assembly.Components == null)
+                {
+                    _assembly.Components = new ObservableCollection<AssemblyComponent>();
+                }
+                else if (!(_assembly.Components is ObservableCollection<AssemblyComponent>))
+                {
+                    _assembly.Components = new ObservableCollection<AssemblyComponent>(_assembly.Components);
+                }
+                return (ObservableCollection<AssemblyComponent>)_assembly.Components;
+            }
             set
             {
                 _assembly.Components = value;

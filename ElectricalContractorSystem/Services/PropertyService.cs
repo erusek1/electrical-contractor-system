@@ -287,20 +287,20 @@ namespace ElectricalContractorSystem.Services
         {
             return new Property
             {
-                PropertyId = reader.GetInt32("property_id"),
-                CustomerId = reader.GetInt32("customer_id"),
-                Address = reader.GetString("address"),
-                City = reader.IsDBNull(reader.GetOrdinal("city")) ? null : reader.GetString("city"),
-                State = reader.IsDBNull(reader.GetOrdinal("state")) ? null : reader.GetString("state"),
-                Zip = reader.IsDBNull(reader.GetOrdinal("zip")) ? null : reader.GetString("zip"),
-                PropertyType = reader.GetString("property_type"),
-                SquareFootage = reader.IsDBNull(reader.GetOrdinal("square_footage")) ? (int?)null : reader.GetInt32("square_footage"),
-                NumFloors = reader.IsDBNull(reader.GetOrdinal("num_floors")) ? (int?)null : reader.GetInt32("num_floors"),
-                YearBuilt = reader.IsDBNull(reader.GetOrdinal("year_built")) ? (int?)null : reader.GetInt32("year_built"),
-                ElectricalPanelInfo = reader.IsDBNull(reader.GetOrdinal("electrical_panel_info")) ? null : reader.GetString("electrical_panel_info"),
-                Notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString("notes"),
-                CreatedDate = reader.GetDateTime("created_date"),
-                Customer = new Customer { Name = reader.GetString("customer_name") }
+                PropertyId = reader.GetInt32(reader.GetOrdinal("property_id")),
+                CustomerId = reader.GetInt32(reader.GetOrdinal("customer_id")),
+                Address = reader.GetString(reader.GetOrdinal("address")),
+                City = reader.IsDBNull(reader.GetOrdinal("city")) ? null : reader.GetString(reader.GetOrdinal("city")),
+                State = reader.IsDBNull(reader.GetOrdinal("state")) ? null : reader.GetString(reader.GetOrdinal("state")),
+                Zip = reader.IsDBNull(reader.GetOrdinal("zip")) ? null : reader.GetString(reader.GetOrdinal("zip")),
+                PropertyType = reader.GetString(reader.GetOrdinal("property_type")),
+                SquareFootage = reader.IsDBNull(reader.GetOrdinal("square_footage")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("square_footage")),
+                NumFloors = reader.IsDBNull(reader.GetOrdinal("num_floors")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("num_floors")),
+                YearBuilt = reader.IsDBNull(reader.GetOrdinal("year_built")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("year_built")),
+                ElectricalPanelInfo = reader.IsDBNull(reader.GetOrdinal("electrical_panel_info")) ? null : reader.GetString(reader.GetOrdinal("electrical_panel_info")),
+                Notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString(reader.GetOrdinal("notes")),
+                CreatedDate = reader.GetDateTime(reader.GetOrdinal("created_date")),
+                Customer = new Customer { Name = reader.GetString(reader.GetOrdinal("customer_name")) }
             };
         }
     }

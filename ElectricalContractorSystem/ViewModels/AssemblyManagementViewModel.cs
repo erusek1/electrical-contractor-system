@@ -356,13 +356,26 @@ namespace ElectricalContractorSystem.ViewModels
             if (SelectedAssembly == null) return;
             
             var dialog = new AddComponentDialog();
-            var items = _databaseService.GetAllPriceListItems()
+            var priceListItems = _databaseService.GetAllPriceListItems()
                 .Where(i => i.IsActive)
+                .Select(p => new PriceListItem
+                {
+                    ItemId = p.ItemId,
+                    ItemCode = p.ItemCode,
+                    Name = p.Name,
+                    Description = p.Description,
+                    Category = p.Category,
+                    BaseCost = p.BaseCost,
+                    TaxRate = p.TaxRate ?? 0.064m,
+                    LaborMinutes = p.LaborMinutes ?? 0,
+                    MarkupPercentage = p.MarkupPercentage ?? 0,
+                    IsActive = p.IsActive
+                })
                 .OrderBy(i => i.Category)
                 .ThenBy(i => i.Name)
                 .ToList();
             
-            dialog.AvailableItems = items;
+            dialog.AvailableItems = priceListItems;
             
             if (dialog.ShowDialog() == true && dialog.SelectedItem != null)
             {

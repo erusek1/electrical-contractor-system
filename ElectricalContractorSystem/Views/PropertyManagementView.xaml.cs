@@ -224,7 +224,7 @@ namespace ElectricalContractorSystem.Views
                         {
                             CustomerId = customer.CustomerId,
                             Name = customer.Name,
-                            Properties = new ObservableCollection<Property>(matchingProperties.Any() ? matchingProperties : customer.Properties)
+                            Properties = matchingProperties.Any() ? new ObservableCollection<Property>(matchingProperties) : customer.Properties
                         };
                         filtered.Add(filteredCustomer);
                     }

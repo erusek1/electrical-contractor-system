@@ -16,6 +16,7 @@ namespace ElectricalContractorSystem.Services
             var materials = new List<Material>();
             using (var connection = db.GetConnection())
             {
+                connection.Open();
                 var cmd = new MySqlCommand(@"
                     SELECT m.*, v.name AS VendorName 
                     FROM Materials m
@@ -37,6 +38,7 @@ namespace ElectricalContractorSystem.Services
         {
             using (var connection = db.GetConnection())
             {
+                connection.Open();
                 var cmd = new MySqlCommand(@"
                     SELECT m.*, v.name AS VendorName 
                     FROM Materials m
@@ -60,6 +62,7 @@ namespace ElectricalContractorSystem.Services
         {
             using (var connection = db.GetConnection())
             {
+                connection.Open();
                 MySqlCommand cmd;
                 
                 if (material.MaterialId == 0)
@@ -125,6 +128,7 @@ namespace ElectricalContractorSystem.Services
         {
             using (var connection = db.GetConnection())
             {
+                connection.Open();
                 var cmd = new MySqlCommand(@"
                     INSERT INTO MaterialPriceHistory (MaterialId, OldPrice, NewPrice, 
                         PercentageChange, ChangedBy, ChangeDate, VendorId, InvoiceNumber,
@@ -153,6 +157,7 @@ namespace ElectricalContractorSystem.Services
             var history = new List<MaterialPriceHistory>();
             using (var connection = db.GetConnection())
             {
+                connection.Open();
                 var query = @"
                     SELECT mph.*, v.name AS VendorName, m.Name AS MaterialName
                     FROM MaterialPriceHistory mph
@@ -194,6 +199,7 @@ namespace ElectricalContractorSystem.Services
             var assemblies = new List<AssemblyTemplate>();
             using (var connection = db.GetConnection())
             {
+                connection.Open();
                 var cmd = new MySqlCommand(@"
                     SELECT * FROM AssemblyTemplates 
                     WHERE IsActive = 1
@@ -221,6 +227,7 @@ namespace ElectricalContractorSystem.Services
         {
             using (var connection = db.GetConnection())
             {
+                connection.Open();
                 var cmd = new MySqlCommand(@"
                     SELECT * FROM AssemblyTemplates 
                     WHERE AssemblyId = @assemblyId", connection);
@@ -245,6 +252,7 @@ namespace ElectricalContractorSystem.Services
             var variants = new List<AssemblyTemplate>();
             using (var connection = db.GetConnection())
             {
+                connection.Open();
                 // First get the main assembly
                 var cmd = new MySqlCommand(@"
                     SELECT * FROM AssemblyTemplates 
@@ -293,6 +301,7 @@ namespace ElectricalContractorSystem.Services
         {
             using (var connection = db.GetConnection())
             {
+                connection.Open();
                 MySqlCommand cmd;
                 
                 if (assembly.AssemblyId == 0)
@@ -351,6 +360,7 @@ namespace ElectricalContractorSystem.Services
         {
             using (var connection = db.GetConnection())
             {
+                connection.Open();
                 var cmd = new MySqlCommand(@"
                     INSERT INTO AssemblyVariants (ParentAssemblyId, VariantAssemblyId, SortOrder)
                     VALUES (@parentId, @variantId, @sortOrder)", connection);
@@ -372,6 +382,7 @@ namespace ElectricalContractorSystem.Services
             var components = new List<AssemblyComponent>();
             using (var connection = db.GetConnection())
             {
+                connection.Open();
                 var cmd = new MySqlCommand(@"
                     SELECT ac.*, p.name AS ItemName, p.item_code AS ItemCode,
                            p.base_cost AS UnitPrice
@@ -397,6 +408,7 @@ namespace ElectricalContractorSystem.Services
         {
             using (var connection = db.GetConnection())
             {
+                connection.Open();
                 var cmd = new MySqlCommand(@"
                     SELECT ac.*, p.name AS ItemName, p.item_code AS ItemCode,
                            p.base_cost AS UnitPrice
@@ -421,6 +433,7 @@ namespace ElectricalContractorSystem.Services
         {
             using (var connection = db.GetConnection())
             {
+                connection.Open();
                 var cmd = new MySqlCommand(@"
                     INSERT INTO AssemblyComponents (AssemblyId, PriceListItemId, Quantity, Notes)
                     VALUES (@assemblyId, @itemId, @quantity, @notes);
@@ -439,6 +452,7 @@ namespace ElectricalContractorSystem.Services
         {
             using (var connection = db.GetConnection())
             {
+                connection.Open();
                 var cmd = new MySqlCommand(@"
                     UPDATE AssemblyComponents 
                     SET Quantity = @quantity, Notes = @notes
@@ -456,6 +470,7 @@ namespace ElectricalContractorSystem.Services
         {
             using (var connection = db.GetConnection())
             {
+                connection.Open();
                 var cmd = new MySqlCommand(
                     "DELETE FROM AssemblyComponents WHERE ComponentId = @componentId", connection);
                 
@@ -473,6 +488,7 @@ namespace ElectricalContractorSystem.Services
             var presets = new List<DifficultyPreset>();
             using (var connection = db.GetConnection())
             {
+                connection.Open();
                 var cmd = new MySqlCommand(@"
                     SELECT * FROM DifficultyPresets 
                     WHERE IsActive = 1
@@ -493,6 +509,7 @@ namespace ElectricalContractorSystem.Services
         {
             using (var connection = db.GetConnection())
             {
+                connection.Open();
                 MySqlCommand cmd;
                 
                 if (preset.PresetId == 0)
@@ -548,6 +565,7 @@ namespace ElectricalContractorSystem.Services
             var adjustments = new List<LaborAdjustment>();
             using (var connection = db.GetConnection())
             {
+                connection.Open();
                 var cmd = new MySqlCommand(@"
                     SELECT la.*, dp.Name AS PresetName
                     FROM LaborAdjustments la
@@ -572,6 +590,7 @@ namespace ElectricalContractorSystem.Services
         {
             using (var connection = db.GetConnection())
             {
+                connection.Open();
                 var cmd = new MySqlCommand(@"
                     INSERT INTO LaborAdjustments (JobId, EstimateId, AssemblyId, PresetId,
                         RoughMultiplier, FinishMultiplier, ServiceMultiplier, ExtraMultiplier,
@@ -606,6 +625,7 @@ namespace ElectricalContractorSystem.Services
             var serviceTypes = new List<ServiceType>();
             using (var connection = db.GetConnection())
             {
+                connection.Open();
                 var cmd = new MySqlCommand(@"
                     SELECT * FROM ServiceTypes 
                     WHERE IsActive = 1
@@ -630,6 +650,7 @@ namespace ElectricalContractorSystem.Services
         {
             using (var connection = db.GetConnection())
             {
+                connection.Open();
                 var cmd = new MySqlCommand(@"
                     SELECT AVG(NewPrice) 
                     FROM MaterialPriceHistory 
@@ -650,6 +671,7 @@ namespace ElectricalContractorSystem.Services
             var estimates = new List<Estimate>();
             using (var connection = db.GetConnection())
             {
+                connection.Open();
                 var query = "SELECT * FROM Estimates WHERE 1=1";
                 
                 if (startDate.HasValue)
@@ -688,6 +710,7 @@ namespace ElectricalContractorSystem.Services
         {
             using (var connection = db.GetConnection())
             {
+                connection.Open();
                 var cmd = new MySqlCommand(@"
                     SELECT COUNT(*) 
                     FROM EstimateLineItems 
@@ -703,6 +726,7 @@ namespace ElectricalContractorSystem.Services
         {
             using (var connection = db.GetConnection())
             {
+                connection.Open();
                 var cmd = new MySqlCommand(@"
                     SELECT MAX(e.CreatedDate)
                     FROM EstimateLineItems eli
