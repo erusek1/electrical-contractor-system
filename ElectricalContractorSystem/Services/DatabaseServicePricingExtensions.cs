@@ -2,821 +2,883 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using ElectricalContractorSystem.Models;
 using MySql.Data.MySqlClient;
+using ElectricalContractorSystem.Models;
 
 namespace ElectricalContractorSystem.Services
 {
-    // Extension methods for DatabaseService to support pricing and assembly features
     public static class DatabaseServicePricingExtensions
     {
-        #region Material Methods
-        
-        public static List<Material> GetAllMaterials(this DatabaseService service)
+        #region Material Management
+
+        public static List<Material> GetAllMaterials(this DatabaseService db)
         {
             var materials = new List<Material>();
-            
-            using (var connection = service.GetConnection())
+            using (var connection = db.GetConnection())
             {
-                connection.Open();
-                var query = @"SELECT * FROM Materials WHERE is_active = TRUE ORDER BY category, name";
-                
-                using (var command = new MySqlCommand(query, connection))
-                using (var reader = command.ExecuteReader())
+                var cmd = new MySqlCommand(@"
+                    SELECT m.*, v.name AS VendorName 
+                    FROM Materials m
+                    LEFT JOIN Vendors v ON m.PreferredVendorId = v.vendor_id
+                    ORDER BY m.Category, m.Name", connection);
+
+                using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
                     {
-                        materials.Add(ReadMaterial(reader));
+                        materials.Add(MapMaterial(reader));
                     }
                 }
             }
-            
             return materials;
         }
-        
-        public static Material GetMaterial(this DatabaseService service, int materialId)
+
+        public static Material GetMaterialById(this DatabaseService db, int materialId)
         {
-            return service.GetMaterialById(materialId);
-        }
-        
-        public static Material GetMaterialById(this DatabaseService service, int materialId)
-        {
-            using (var connection = service.GetConnection())
+            using (var connection = db.GetConnection())
             {
-                connection.Open();
-                var query = @"SELECT * FROM Materials WHERE material_id = @materialId";
+                var cmd = new MySqlCommand(@"
+                    SELECT m.*, v.name AS VendorName 
+                    FROM Materials m
+                    LEFT JOIN Vendors v ON m.PreferredVendorId = v.vendor_id
+                    WHERE m.MaterialId = @materialId", connection);
                 
-                using (var command = new MySqlCommand(query, connection))
+                cmd.Parameters.AddWithValue("@materialId", materialId);
+
+                using (var reader = cmd.ExecuteReader())
                 {
-                    command.Parameters.AddWithValue("@materialId", materialId);
-                    
-                    using (var reader = command.ExecuteReader())
+                    if (reader.Read())
                     {
-                        if (reader.Read())
-                        {
-                            return ReadMaterial(reader);
-                        }
+                        return MapMaterial(reader);
                     }
                 }
             }
-            
             return null;
         }
-        
-        public static void UpdateMaterial(this DatabaseService service, Material material)
+
+        public static void SaveMaterial(this DatabaseService db, Material material)
         {
-            using (var connection = service.GetConnection())
+            using (var connection = db.GetConnection())
             {
-                connection.Open();
-                var query = @"UPDATE Materials SET 
-                    current_price = @price,
-                    updated_date = @updated
-                    WHERE material_id = @materialId";
+                MySqlCommand cmd;
                 
-                using (var command = new MySqlCommand(query, connection))
+                if (material.MaterialId == 0)
                 {
-                    command.Parameters.AddWithValue("@materialId", material.MaterialId);
-                    command.Parameters.AddWithValue("@price", material.CurrentPrice);
-                    command.Parameters.AddWithValue("@updated", DateTime.Now);
+                    cmd = new MySqlCommand(@"
+                        INSERT INTO Materials (MaterialCode, Name, Description, Category, 
+                            UnitOfMeasure, CurrentPrice, TaxRate, MinStockLevel, MaxStockLevel,
+                            PreferredVendorId, IsActive, CreatedDate)
+                        VALUES (@code, @name, @desc, @category, @unit, @price, @tax, 
+                            @minStock, @maxStock, @vendorId, @active, @created);
+                        SELECT LAST_INSERT_ID();", connection);
                     
-                    command.ExecuteNonQuery();
-                }
-            }
-        }
-        
-        #endregion
-        
-        #region Material Price History Methods
-        
-        public static void SaveMaterialPriceHistory(this DatabaseService service, MaterialPriceHistory history)
-        {
-            using (var connection = service.GetConnection())
-            {
-                connection.Open();
-                var query = @"INSERT INTO MaterialPriceHistory 
-                    (material_id, price, effective_date, vendor_id, purchase_order_number, 
-                     quantity_purchased, notes, created_by)
-                    VALUES (@materialId, @price, @effectiveDate, @vendorId, @poNumber, 
-                            @quantity, @notes, @createdBy)";
-                
-                using (var command = new MySqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@materialId", history.MaterialId);
-                    command.Parameters.AddWithValue("@price", history.Price);
-                    command.Parameters.AddWithValue("@effectiveDate", history.EffectiveDate);
-                    command.Parameters.AddWithValue("@vendorId", history.VendorId.HasValue ? (object)history.VendorId : DBNull.Value);
-                    command.Parameters.AddWithValue("@poNumber", history.PurchaseOrderNumber ?? (object)DBNull.Value);
-                    command.Parameters.AddWithValue("@quantity", history.QuantityPurchased.HasValue ? (object)history.QuantityPurchased : DBNull.Value);
-                    command.Parameters.AddWithValue("@notes", history.Notes ?? (object)DBNull.Value);
-                    command.Parameters.AddWithValue("@createdBy", history.CreatedBy);
-                    
-                    command.ExecuteNonQuery();
-                }
-            }
-        }
-        
-        public static List<MaterialPriceHistory> GetMaterialPriceHistory(this DatabaseService service, 
-            int materialId, DateTime? startDate = null, DateTime? endDate = null)
-        {
-            var history = new List<MaterialPriceHistory>();
-            
-            using (var connection = service.GetConnection())
-            {
-                connection.Open();
-                var query = @"SELECT mph.*, m.name as material_name, v.name as vendor_name,
-                    LAG(mph.price) OVER (PARTITION BY mph.material_id ORDER BY mph.effective_date) as prev_price
-                    FROM MaterialPriceHistory mph
-                    LEFT JOIN Materials m ON mph.material_id = m.material_id
-                    LEFT JOIN Vendors v ON mph.vendor_id = v.vendor_id
-                    WHERE mph.material_id = @materialId";
-                
-                if (startDate.HasValue)
-                    query += " AND mph.effective_date >= @startDate";
-                if (endDate.HasValue)
-                    query += " AND mph.effective_date <= @endDate";
-                    
-                query += " ORDER BY mph.effective_date DESC";
-                
-                using (var command = new MySqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@materialId", materialId);
-                    if (startDate.HasValue)
-                        command.Parameters.AddWithValue("@startDate", startDate.Value);
-                    if (endDate.HasValue)
-                        command.Parameters.AddWithValue("@endDate", endDate.Value);
-                    
-                    using (var reader = command.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            var item = ReadMaterialPriceHistory(reader);
-                            
-                            // Calculate percentage change
-                            if (!reader.IsDBNull(reader.GetOrdinal("prev_price")))
-                            {
-                                decimal prevPrice = reader.GetDecimal("prev_price");
-                                if (prevPrice != 0)
-                                {
-                                    item.PercentageChangeFromPrevious = ((item.Price - prevPrice) / prevPrice) * 100;
-                                }
-                            }
-                            
-                            history.Add(item);
-                        }
-                    }
-                }
-            }
-            
-            return history;
-        }
-        
-        #endregion
-        
-        #region Assembly Methods
-        
-        public static List<AssemblyTemplate> GetAllAssemblies(this DatabaseService service)
-        {
-            var assemblies = new List<AssemblyTemplate>();
-            
-            using (var connection = service.GetConnection())
-            {
-                connection.Open();
-                var query = @"SELECT * FROM AssemblyTemplates ORDER BY category, assembly_code";
-                
-                using (var command = new MySqlCommand(query, connection))
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        assemblies.Add(ReadAssemblyTemplate(reader));
-                    }
-                }
-                
-                // Load components for each assembly
-                foreach (var assembly in assemblies)
-                {
-                    assembly.Components = service.GetAssemblyComponents(assembly.AssemblyId);
-                }
-            }
-            
-            return assemblies;
-        }
-        
-        public static AssemblyTemplate GetAssemblyById(this DatabaseService service, int assemblyId)
-        {
-            using (var connection = service.GetConnection())
-            {
-                connection.Open();
-                var query = @"SELECT * FROM AssemblyTemplates WHERE assembly_id = @assemblyId";
-                
-                using (var command = new MySqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@assemblyId", assemblyId);
-                    
-                    using (var reader = command.ExecuteReader())
-                    {
-                        if (reader.Read())
-                        {
-                            var assembly = ReadAssemblyTemplate(reader);
-                            reader.Close();
-                            
-                            // Load components
-                            assembly.Components = service.GetAssemblyComponents(assemblyId);
-                            
-                            return assembly;
-                        }
-                    }
-                }
-            }
-            
-            return null;
-        }
-        
-        public static void SaveAssembly(this DatabaseService service, AssemblyTemplate assembly)
-        {
-            using (var connection = service.GetConnection())
-            {
-                connection.Open();
-                
-                if (assembly.AssemblyId == 0)
-                {
-                    // Insert new assembly
-                    var query = @"INSERT INTO AssemblyTemplates 
-                        (assembly_code, name, description, category, rough_minutes, finish_minutes, 
-                         service_minutes, extra_minutes, is_default, is_active, sort_order, created_by)
-                        VALUES (@code, @name, @desc, @category, @rough, @finish, @service, @extra, 
-                                @isDefault, @isActive, @sortOrder, @createdBy);
-                        SELECT LAST_INSERT_ID();";
-                    
-                    using (var command = new MySqlCommand(query, connection))
-                    {
-                        command.Parameters.AddWithValue("@code", assembly.AssemblyCode);
-                        command.Parameters.AddWithValue("@name", assembly.Name);
-                        command.Parameters.AddWithValue("@desc", assembly.Description ?? (object)DBNull.Value);
-                        command.Parameters.AddWithValue("@category", assembly.Category);
-                        command.Parameters.AddWithValue("@rough", assembly.RoughMinutes);
-                        command.Parameters.AddWithValue("@finish", assembly.FinishMinutes);
-                        command.Parameters.AddWithValue("@service", assembly.ServiceMinutes);
-                        command.Parameters.AddWithValue("@extra", assembly.ExtraMinutes);
-                        command.Parameters.AddWithValue("@isDefault", assembly.IsDefault);
-                        command.Parameters.AddWithValue("@isActive", assembly.IsActive);
-                        command.Parameters.AddWithValue("@sortOrder", assembly.SortOrder);
-                        command.Parameters.AddWithValue("@createdBy", assembly.CreatedBy);
-                        
-                        assembly.AssemblyId = Convert.ToInt32(command.ExecuteScalar());
-                    }
+                    cmd.Parameters.AddWithValue("@created", material.CreatedDate);
                 }
                 else
                 {
-                    // Update existing assembly
-                    var query = @"UPDATE AssemblyTemplates SET 
-                        assembly_code = @code,
-                        name = @name,
-                        description = @desc,
-                        category = @category,
-                        rough_minutes = @rough,
-                        finish_minutes = @finish,
-                        service_minutes = @service,
-                        extra_minutes = @extra,
-                        is_default = @isDefault,
-                        is_active = @isActive,
-                        sort_order = @sortOrder,
-                        updated_date = NOW()
-                        WHERE assembly_id = @assemblyId";
+                    cmd = new MySqlCommand(@"
+                        UPDATE Materials SET 
+                            MaterialCode = @code, Name = @name, Description = @desc,
+                            Category = @category, UnitOfMeasure = @unit, CurrentPrice = @price,
+                            TaxRate = @tax, MinStockLevel = @minStock, MaxStockLevel = @maxStock,
+                            PreferredVendorId = @vendorId, IsActive = @active, UpdatedDate = @updated
+                        WHERE MaterialId = @id", connection);
                     
-                    using (var command = new MySqlCommand(query, connection))
-                    {
-                        command.Parameters.AddWithValue("@assemblyId", assembly.AssemblyId);
-                        command.Parameters.AddWithValue("@code", assembly.AssemblyCode);
-                        command.Parameters.AddWithValue("@name", assembly.Name);
-                        command.Parameters.AddWithValue("@desc", assembly.Description ?? (object)DBNull.Value);
-                        command.Parameters.AddWithValue("@category", assembly.Category);
-                        command.Parameters.AddWithValue("@rough", assembly.RoughMinutes);
-                        command.Parameters.AddWithValue("@finish", assembly.FinishMinutes);
-                        command.Parameters.AddWithValue("@service", assembly.ServiceMinutes);
-                        command.Parameters.AddWithValue("@extra", assembly.ExtraMinutes);
-                        command.Parameters.AddWithValue("@isDefault", assembly.IsDefault);
-                        command.Parameters.AddWithValue("@isActive", assembly.IsActive);
-                        command.Parameters.AddWithValue("@sortOrder", assembly.SortOrder);
-                        
-                        command.ExecuteNonQuery();
-                    }
+                    cmd.Parameters.AddWithValue("@id", material.MaterialId);
+                    cmd.Parameters.AddWithValue("@updated", DateTime.Now);
+                }
+
+                cmd.Parameters.AddWithValue("@code", material.MaterialCode);
+                cmd.Parameters.AddWithValue("@name", material.Name);
+                cmd.Parameters.AddWithValue("@desc", material.Description ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@category", material.Category);
+                cmd.Parameters.AddWithValue("@unit", material.UnitOfMeasure);
+                cmd.Parameters.AddWithValue("@price", material.CurrentPrice);
+                cmd.Parameters.AddWithValue("@tax", material.TaxRate);
+                cmd.Parameters.AddWithValue("@minStock", material.MinStockLevel);
+                cmd.Parameters.AddWithValue("@maxStock", material.MaxStockLevel);
+                cmd.Parameters.AddWithValue("@vendorId", material.PreferredVendorId ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@active", material.IsActive);
+
+                if (material.MaterialId == 0)
+                {
+                    material.MaterialId = Convert.ToInt32(cmd.ExecuteScalar());
+                }
+                else
+                {
+                    cmd.ExecuteNonQuery();
                 }
             }
         }
-        
-        public static void UpdateAssembly(this DatabaseService service, AssemblyTemplate assembly)
-        {
-            service.SaveAssembly(assembly);
-        }
-        
-        public static void DeleteAssembly(this DatabaseService service, int assemblyId)
-        {
-            using (var connection = service.GetConnection())
-            {
-                connection.Open();
-                
-                // Delete components first (if not cascade delete)
-                var deleteComponentsQuery = @"DELETE FROM AssemblyComponents WHERE assembly_id = @assemblyId";
-                using (var command = new MySqlCommand(deleteComponentsQuery, connection))
-                {
-                    command.Parameters.AddWithValue("@assemblyId", assemblyId);
-                    command.ExecuteNonQuery();
-                }
-                
-                // Delete assembly
-                var deleteAssemblyQuery = @"DELETE FROM AssemblyTemplates WHERE assembly_id = @assemblyId";
-                using (var command = new MySqlCommand(deleteAssemblyQuery, connection))
-                {
-                    command.Parameters.AddWithValue("@assemblyId", assemblyId);
-                    command.ExecuteNonQuery();
-                }
-            }
-        }
-        
-        public static List<AssemblyTemplate> GetAssemblyVariants(this DatabaseService service, string assemblyCode)
-        {
-            var assemblies = new List<AssemblyTemplate>();
-            
-            using (var connection = service.GetConnection())
-            {
-                connection.Open();
-                var query = @"SELECT * FROM AssemblyTemplates 
-                    WHERE assembly_code = @code AND is_active = TRUE 
-                    ORDER BY is_default DESC, sort_order";
-                
-                using (var command = new MySqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@code", assemblyCode);
-                    
-                    using (var reader = command.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            assemblies.Add(ReadAssemblyTemplate(reader));
-                        }
-                    }
-                }
-                
-                // Load components for each assembly
-                foreach (var assembly in assemblies)
-                {
-                    assembly.Components = service.GetAssemblyComponents(assembly.AssemblyId);
-                }
-            }
-            
-            return assemblies;
-        }
-        
-        public static void CreateAssemblyVariantRelationship(this DatabaseService service, 
-            int parentAssemblyId, int variantAssemblyId)
-        {
-            using (var connection = service.GetConnection())
-            {
-                connection.Open();
-                var query = @"INSERT INTO AssemblyVariants (parent_assembly_id, variant_assembly_id, sort_order)
-                    SELECT @parentId, @variantId, COALESCE(MAX(sort_order), 0) + 1
-                    FROM AssemblyVariants WHERE parent_assembly_id = @parentId";
-                
-                using (var command = new MySqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@parentId", parentAssemblyId);
-                    command.Parameters.AddWithValue("@variantId", variantAssemblyId);
-                    
-                    command.ExecuteNonQuery();
-                }
-            }
-        }
-        
+
         #endregion
-        
-        #region Assembly Component Methods
-        
-        public static List<AssemblyComponent> GetAssemblyComponents(this DatabaseService service, int assemblyId)
+
+        #region Material Price History
+
+        public static void SaveMaterialPriceHistory(this DatabaseService db, MaterialPriceHistory history)
         {
-            var components = new List<AssemblyComponent>();
-            
-            using (var connection = service.GetConnection())
+            using (var connection = db.GetConnection())
             {
-                connection.Open();
-                var query = @"SELECT ac.*, m.* FROM AssemblyComponents ac
-                    JOIN Materials m ON ac.material_id = m.material_id
-                    WHERE ac.assembly_id = @assemblyId";
-                
-                using (var command = new MySqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@assemblyId", assemblyId);
-                    
-                    using (var reader = command.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            components.Add(ReadAssemblyComponent(reader));
-                        }
-                    }
-                }
-            }
-            
-            return components;
-        }
-        
-        public static void SaveAssemblyComponent(this DatabaseService service, AssemblyComponent component)
-        {
-            using (var connection = service.GetConnection())
-            {
-                connection.Open();
-                var query = @"INSERT INTO AssemblyComponents (assembly_id, material_id, quantity, is_optional, notes)
-                    VALUES (@assemblyId, @materialId, @quantity, @isOptional, @notes)";
-                
-                using (var command = new MySqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@assemblyId", component.AssemblyId);
-                    command.Parameters.AddWithValue("@materialId", component.MaterialId);
-                    command.Parameters.AddWithValue("@quantity", component.Quantity);
-                    command.Parameters.AddWithValue("@isOptional", component.IsOptional);
-                    command.Parameters.AddWithValue("@notes", component.Notes ?? (object)DBNull.Value);
-                    
-                    command.ExecuteNonQuery();
-                }
+                var cmd = new MySqlCommand(@"
+                    INSERT INTO MaterialPriceHistory (MaterialId, OldPrice, NewPrice, 
+                        PercentageChange, ChangedBy, ChangeDate, VendorId, InvoiceNumber,
+                        QuantityPurchased, Notes)
+                    VALUES (@materialId, @oldPrice, @newPrice, @percentChange, @changedBy,
+                        @changeDate, @vendorId, @invoice, @quantity, @notes)", connection);
+
+                cmd.Parameters.AddWithValue("@materialId", history.MaterialId);
+                cmd.Parameters.AddWithValue("@oldPrice", history.OldPrice);
+                cmd.Parameters.AddWithValue("@newPrice", history.NewPrice);
+                cmd.Parameters.AddWithValue("@percentChange", history.PercentageChange);
+                cmd.Parameters.AddWithValue("@changedBy", history.ChangedBy);
+                cmd.Parameters.AddWithValue("@changeDate", history.ChangeDate);
+                cmd.Parameters.AddWithValue("@vendorId", history.VendorId ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@invoice", history.InvoiceNumber ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@quantity", history.QuantityPurchased ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@notes", history.Notes ?? (object)DBNull.Value);
+
+                cmd.ExecuteNonQuery();
             }
         }
-        
-        public static AssemblyComponent GetAssemblyComponentById(this DatabaseService service, int componentId)
+
+        public static List<MaterialPriceHistory> GetMaterialPriceHistory(this DatabaseService db, 
+            int materialId, DateTime? startDate = null, DateTime? endDate = null)
         {
-            using (var connection = service.GetConnection())
+            var history = new List<MaterialPriceHistory>();
+            using (var connection = db.GetConnection())
             {
-                connection.Open();
-                var query = @"SELECT ac.*, m.* FROM AssemblyComponents ac
-                    JOIN Materials m ON ac.material_id = m.material_id
-                    WHERE ac.component_id = @componentId";
-                
-                using (var command = new MySqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@componentId", componentId);
-                    
-                    using (var reader = command.ExecuteReader())
-                    {
-                        if (reader.Read())
-                        {
-                            return ReadAssemblyComponent(reader);
-                        }
-                    }
-                }
-            }
-            
-            return null;
-        }
-        
-        public static void UpdateAssemblyComponent(this DatabaseService service, AssemblyComponent component)
-        {
-            using (var connection = service.GetConnection())
-            {
-                connection.Open();
-                var query = @"UPDATE AssemblyComponents SET 
-                    quantity = @quantity,
-                    is_optional = @isOptional,
-                    notes = @notes
-                    WHERE component_id = @componentId";
-                
-                using (var command = new MySqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@componentId", component.ComponentId);
-                    command.Parameters.AddWithValue("@quantity", component.Quantity);
-                    command.Parameters.AddWithValue("@isOptional", component.IsOptional);
-                    command.Parameters.AddWithValue("@notes", component.Notes ?? (object)DBNull.Value);
-                    
-                    command.ExecuteNonQuery();
-                }
-            }
-        }
-        
-        public static void DeleteAssemblyComponent(this DatabaseService service, int componentId)
-        {
-            using (var connection = service.GetConnection())
-            {
-                connection.Open();
-                var query = @"DELETE FROM AssemblyComponents WHERE component_id = @componentId";
-                
-                using (var command = new MySqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@componentId", componentId);
-                    command.ExecuteNonQuery();
-                }
-            }
-        }
-        
-        #endregion
-        
-        #region Difficulty Preset Methods
-        
-        public static List<DifficultyPreset> GetAllDifficultyPresets(this DatabaseService service)
-        {
-            var presets = new List<DifficultyPreset>();
-            
-            using (var connection = service.GetConnection())
-            {
-                connection.Open();
-                var query = @"SELECT * FROM DifficultyPresets WHERE is_active = TRUE ORDER BY category, sort_order";
-                
-                using (var command = new MySqlCommand(query, connection))
-                using (var reader = command.ExecuteReader())
+                var query = @"
+                    SELECT mph.*, v.name AS VendorName, m.Name AS MaterialName
+                    FROM MaterialPriceHistory mph
+                    LEFT JOIN Vendors v ON mph.VendorId = v.vendor_id
+                    LEFT JOIN Materials m ON mph.MaterialId = m.MaterialId
+                    WHERE mph.MaterialId = @materialId";
+
+                if (startDate.HasValue)
+                    query += " AND mph.ChangeDate >= @startDate";
+                if (endDate.HasValue)
+                    query += " AND mph.ChangeDate <= @endDate";
+
+                query += " ORDER BY mph.ChangeDate DESC";
+
+                var cmd = new MySqlCommand(query, connection);
+                cmd.Parameters.AddWithValue("@materialId", materialId);
+                if (startDate.HasValue)
+                    cmd.Parameters.AddWithValue("@startDate", startDate.Value);
+                if (endDate.HasValue)
+                    cmd.Parameters.AddWithValue("@endDate", endDate.Value);
+
+                using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
                     {
-                        presets.Add(ReadDifficultyPreset(reader));
+                        history.Add(MapMaterialPriceHistory(reader));
                     }
                 }
             }
-            
-            return presets;
+            return history;
         }
-        
+
         #endregion
-        
-        #region Labor Adjustment Methods
-        
-        public static List<LaborAdjustment> GetLaborAdjustmentsByJob(this DatabaseService service, int jobId)
+
+        #region Assembly Management
+
+        public static List<AssemblyTemplate> GetAllAssemblies(this DatabaseService db)
         {
-            var adjustments = new List<LaborAdjustment>();
-            
-            using (var connection = service.GetConnection())
+            var assemblies = new List<AssemblyTemplate>();
+            using (var connection = db.GetConnection())
             {
-                connection.Open();
-                var query = @"SELECT la.*, dp.* FROM LaborAdjustments la
-                    LEFT JOIN DifficultyPresets dp ON la.preset_id = dp.preset_id
-                    WHERE la.job_id = @jobId
-                    ORDER BY la.created_date DESC";
-                
-                using (var command = new MySqlCommand(query, connection))
+                var cmd = new MySqlCommand(@"
+                    SELECT * FROM AssemblyTemplates 
+                    WHERE IsActive = 1
+                    ORDER BY Category, AssemblyCode, Name", connection);
+
+                using (var reader = cmd.ExecuteReader())
                 {
-                    command.Parameters.AddWithValue("@jobId", jobId);
-                    
-                    using (var reader = command.ExecuteReader())
+                    while (reader.Read())
                     {
-                        while (reader.Read())
-                        {
-                            adjustments.Add(ReadLaborAdjustment(reader));
-                        }
+                        assemblies.Add(MapAssemblyTemplate(reader));
                     }
                 }
             }
-            
-            return adjustments;
-        }
-        
-        #endregion
-        
-        #region Assembly Usage Methods
-        
-        public static int GetAssemblyUsageCount(this DatabaseService service, int assemblyId)
-        {
-            using (var connection = service.GetConnection())
+
+            // Load components for each assembly
+            foreach (var assembly in assemblies)
             {
-                connection.Open();
-                var query = @"SELECT COUNT(*) FROM EstimateLineItems 
-                    WHERE assembly_id = @assemblyId";
-                
-                using (var command = new MySqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@assemblyId", assemblyId);
-                    return Convert.ToInt32(command.ExecuteScalar());
-                }
+                assembly.Components = db.GetAssemblyComponents(assembly.AssemblyId);
             }
+
+            return assemblies;
         }
-        
-        public static DateTime? GetAssemblyLastUsedDate(this DatabaseService service, int assemblyId)
+
+        public static AssemblyTemplate GetAssemblyById(this DatabaseService db, int assemblyId)
         {
-            using (var connection = service.GetConnection())
+            using (var connection = db.GetConnection())
             {
-                connection.Open();
-                var query = @"SELECT MAX(e.created_date) 
-                    FROM EstimateLineItems eli
-                    JOIN Estimates e ON eli.estimate_id = e.estimate_id
-                    WHERE eli.assembly_id = @assemblyId";
+                var cmd = new MySqlCommand(@"
+                    SELECT * FROM AssemblyTemplates 
+                    WHERE AssemblyId = @assemblyId", connection);
                 
-                using (var command = new MySqlCommand(query, connection))
+                cmd.Parameters.AddWithValue("@assemblyId", assemblyId);
+
+                using (var reader = cmd.ExecuteReader())
                 {
-                    command.Parameters.AddWithValue("@assemblyId", assemblyId);
-                    var result = command.ExecuteScalar();
-                    
-                    if (result != null && result != DBNull.Value)
+                    if (reader.Read())
                     {
-                        return Convert.ToDateTime(result);
+                        var assembly = MapAssemblyTemplate(reader);
+                        assembly.Components = db.GetAssemblyComponents(assemblyId);
+                        return assembly;
                     }
                 }
             }
-            
             return null;
         }
-        
-        public static List<Estimate> GetEstimatesInDateRange(this DatabaseService service, 
+
+        public static List<AssemblyTemplate> GetAssemblyVariants(this DatabaseService db, string assemblyCode)
+        {
+            var variants = new List<AssemblyTemplate>();
+            using (var connection = db.GetConnection())
+            {
+                // First get the main assembly
+                var cmd = new MySqlCommand(@"
+                    SELECT * FROM AssemblyTemplates 
+                    WHERE AssemblyCode = @code AND IsActive = 1
+                    ORDER BY IsDefault DESC, Name", connection);
+                
+                cmd.Parameters.AddWithValue("@code", assemblyCode);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        variants.Add(MapAssemblyTemplate(reader));
+                    }
+                }
+
+                // Then get variants
+                cmd = new MySqlCommand(@"
+                    SELECT at.* FROM AssemblyTemplates at
+                    INNER JOIN AssemblyVariants av ON at.AssemblyId = av.VariantAssemblyId
+                    INNER JOIN AssemblyTemplates parent ON av.ParentAssemblyId = parent.AssemblyId
+                    WHERE parent.AssemblyCode = @code AND at.IsActive = 1
+                    ORDER BY av.SortOrder, at.Name", connection);
+                
+                cmd.Parameters.AddWithValue("@code", assemblyCode);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        variants.Add(MapAssemblyTemplate(reader));
+                    }
+                }
+            }
+
+            // Load components
+            foreach (var variant in variants)
+            {
+                variant.Components = db.GetAssemblyComponents(variant.AssemblyId);
+            }
+
+            return variants;
+        }
+
+        public static void SaveAssembly(this DatabaseService db, AssemblyTemplate assembly)
+        {
+            using (var connection = db.GetConnection())
+            {
+                MySqlCommand cmd;
+                
+                if (assembly.AssemblyId == 0)
+                {
+                    cmd = new MySqlCommand(@"
+                        INSERT INTO AssemblyTemplates (AssemblyCode, Name, Description, Category,
+                            RoughMinutes, FinishMinutes, ServiceMinutes, ExtraMinutes,
+                            IsDefault, IsActive, CreatedBy, CreatedDate)
+                        VALUES (@code, @name, @desc, @category, @rough, @finish, @service, @extra,
+                            @isDefault, @active, @createdBy, @created);
+                        SELECT LAST_INSERT_ID();", connection);
+                    
+                    cmd.Parameters.AddWithValue("@created", assembly.CreatedDate);
+                }
+                else
+                {
+                    cmd = new MySqlCommand(@"
+                        UPDATE AssemblyTemplates SET 
+                            AssemblyCode = @code, Name = @name, Description = @desc,
+                            Category = @category, RoughMinutes = @rough, FinishMinutes = @finish,
+                            ServiceMinutes = @service, ExtraMinutes = @extra,
+                            IsDefault = @isDefault, IsActive = @active,
+                            UpdatedBy = @updatedBy, UpdatedDate = @updated
+                        WHERE AssemblyId = @id", connection);
+                    
+                    cmd.Parameters.AddWithValue("@id", assembly.AssemblyId);
+                    cmd.Parameters.AddWithValue("@updatedBy", assembly.UpdatedBy);
+                    cmd.Parameters.AddWithValue("@updated", DateTime.Now);
+                }
+
+                cmd.Parameters.AddWithValue("@code", assembly.AssemblyCode);
+                cmd.Parameters.AddWithValue("@name", assembly.Name);
+                cmd.Parameters.AddWithValue("@desc", assembly.Description ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@category", assembly.Category);
+                cmd.Parameters.AddWithValue("@rough", assembly.RoughMinutes);
+                cmd.Parameters.AddWithValue("@finish", assembly.FinishMinutes);
+                cmd.Parameters.AddWithValue("@service", assembly.ServiceMinutes);
+                cmd.Parameters.AddWithValue("@extra", assembly.ExtraMinutes);
+                cmd.Parameters.AddWithValue("@isDefault", assembly.IsDefault);
+                cmd.Parameters.AddWithValue("@active", assembly.IsActive);
+                cmd.Parameters.AddWithValue("@createdBy", assembly.CreatedBy);
+
+                if (assembly.AssemblyId == 0)
+                {
+                    assembly.AssemblyId = Convert.ToInt32(cmd.ExecuteScalar());
+                }
+                else
+                {
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        public static void CreateAssemblyVariantRelationship(this DatabaseService db, 
+            int parentAssemblyId, int variantAssemblyId, int sortOrder = 0)
+        {
+            using (var connection = db.GetConnection())
+            {
+                var cmd = new MySqlCommand(@"
+                    INSERT INTO AssemblyVariants (ParentAssemblyId, VariantAssemblyId, SortOrder)
+                    VALUES (@parentId, @variantId, @sortOrder)", connection);
+
+                cmd.Parameters.AddWithValue("@parentId", parentAssemblyId);
+                cmd.Parameters.AddWithValue("@variantId", variantAssemblyId);
+                cmd.Parameters.AddWithValue("@sortOrder", sortOrder);
+
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        #endregion
+
+        #region Assembly Components
+
+        public static List<AssemblyComponent> GetAssemblyComponents(this DatabaseService db, int assemblyId)
+        {
+            var components = new List<AssemblyComponent>();
+            using (var connection = db.GetConnection())
+            {
+                var cmd = new MySqlCommand(@"
+                    SELECT ac.*, p.name AS ItemName, p.item_code AS ItemCode,
+                           p.base_cost AS UnitPrice
+                    FROM AssemblyComponents ac
+                    INNER JOIN PriceList p ON ac.PriceListItemId = p.item_id
+                    WHERE ac.AssemblyId = @assemblyId
+                    ORDER BY ac.ComponentId", connection);
+                
+                cmd.Parameters.AddWithValue("@assemblyId", assemblyId);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        components.Add(MapAssemblyComponent(reader));
+                    }
+                }
+            }
+            return components;
+        }
+
+        public static AssemblyComponent GetAssemblyComponentById(this DatabaseService db, int componentId)
+        {
+            using (var connection = db.GetConnection())
+            {
+                var cmd = new MySqlCommand(@"
+                    SELECT ac.*, p.name AS ItemName, p.item_code AS ItemCode,
+                           p.base_cost AS UnitPrice
+                    FROM AssemblyComponents ac
+                    INNER JOIN PriceList p ON ac.PriceListItemId = p.item_id
+                    WHERE ac.ComponentId = @componentId", connection);
+                
+                cmd.Parameters.AddWithValue("@componentId", componentId);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        return MapAssemblyComponent(reader);
+                    }
+                }
+            }
+            return null;
+        }
+
+        public static void SaveAssemblyComponent(this DatabaseService db, AssemblyComponent component)
+        {
+            using (var connection = db.GetConnection())
+            {
+                var cmd = new MySqlCommand(@"
+                    INSERT INTO AssemblyComponents (AssemblyId, PriceListItemId, Quantity, Notes)
+                    VALUES (@assemblyId, @itemId, @quantity, @notes);
+                    SELECT LAST_INSERT_ID();", connection);
+
+                cmd.Parameters.AddWithValue("@assemblyId", component.AssemblyId);
+                cmd.Parameters.AddWithValue("@itemId", component.PriceListItemId);
+                cmd.Parameters.AddWithValue("@quantity", component.Quantity);
+                cmd.Parameters.AddWithValue("@notes", component.Notes ?? (object)DBNull.Value);
+
+                component.ComponentId = Convert.ToInt32(cmd.ExecuteScalar());
+            }
+        }
+
+        public static void UpdateAssemblyComponent(this DatabaseService db, AssemblyComponent component)
+        {
+            using (var connection = db.GetConnection())
+            {
+                var cmd = new MySqlCommand(@"
+                    UPDATE AssemblyComponents 
+                    SET Quantity = @quantity, Notes = @notes
+                    WHERE ComponentId = @componentId", connection);
+
+                cmd.Parameters.AddWithValue("@componentId", component.ComponentId);
+                cmd.Parameters.AddWithValue("@quantity", component.Quantity);
+                cmd.Parameters.AddWithValue("@notes", component.Notes ?? (object)DBNull.Value);
+
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        public static void DeleteAssemblyComponent(this DatabaseService db, int componentId)
+        {
+            using (var connection = db.GetConnection())
+            {
+                var cmd = new MySqlCommand(
+                    "DELETE FROM AssemblyComponents WHERE ComponentId = @componentId", connection);
+                
+                cmd.Parameters.AddWithValue("@componentId", componentId);
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        #endregion
+
+        #region Difficulty Presets
+
+        public static List<DifficultyPreset> GetAllDifficultyPresets(this DatabaseService db)
+        {
+            var presets = new List<DifficultyPreset>();
+            using (var connection = db.GetConnection())
+            {
+                var cmd = new MySqlCommand(@"
+                    SELECT * FROM DifficultyPresets 
+                    WHERE IsActive = 1
+                    ORDER BY Category, SortOrder, Name", connection);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        presets.Add(MapDifficultyPreset(reader));
+                    }
+                }
+            }
+            return presets;
+        }
+
+        public static void SaveDifficultyPreset(this DatabaseService db, DifficultyPreset preset)
+        {
+            using (var connection = db.GetConnection())
+            {
+                MySqlCommand cmd;
+                
+                if (preset.PresetId == 0)
+                {
+                    cmd = new MySqlCommand(@"
+                        INSERT INTO DifficultyPresets (Name, Category, Description,
+                            RoughMultiplier, FinishMultiplier, ServiceMultiplier, ExtraMultiplier,
+                            IsActive, SortOrder)
+                        VALUES (@name, @category, @desc, @rough, @finish, @service, @extra,
+                            @active, @sortOrder);
+                        SELECT LAST_INSERT_ID();", connection);
+                }
+                else
+                {
+                    cmd = new MySqlCommand(@"
+                        UPDATE DifficultyPresets SET 
+                            Name = @name, Category = @category, Description = @desc,
+                            RoughMultiplier = @rough, FinishMultiplier = @finish,
+                            ServiceMultiplier = @service, ExtraMultiplier = @extra,
+                            IsActive = @active, SortOrder = @sortOrder
+                        WHERE PresetId = @id", connection);
+                    
+                    cmd.Parameters.AddWithValue("@id", preset.PresetId);
+                }
+
+                cmd.Parameters.AddWithValue("@name", preset.Name);
+                cmd.Parameters.AddWithValue("@category", preset.Category);
+                cmd.Parameters.AddWithValue("@desc", preset.Description ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@rough", preset.RoughMultiplier);
+                cmd.Parameters.AddWithValue("@finish", preset.FinishMultiplier);
+                cmd.Parameters.AddWithValue("@service", preset.ServiceMultiplier);
+                cmd.Parameters.AddWithValue("@extra", preset.ExtraMultiplier);
+                cmd.Parameters.AddWithValue("@active", preset.IsActive);
+                cmd.Parameters.AddWithValue("@sortOrder", preset.SortOrder);
+
+                if (preset.PresetId == 0)
+                {
+                    preset.PresetId = Convert.ToInt32(cmd.ExecuteScalar());
+                }
+                else
+                {
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        #endregion
+
+        #region Labor Adjustments
+
+        public static List<LaborAdjustment> GetLaborAdjustmentsByJob(this DatabaseService db, int jobId)
+        {
+            var adjustments = new List<LaborAdjustment>();
+            using (var connection = db.GetConnection())
+            {
+                var cmd = new MySqlCommand(@"
+                    SELECT la.*, dp.Name AS PresetName
+                    FROM LaborAdjustments la
+                    LEFT JOIN DifficultyPresets dp ON la.PresetId = dp.PresetId
+                    WHERE la.JobId = @jobId
+                    ORDER BY la.CreatedDate DESC", connection);
+                
+                cmd.Parameters.AddWithValue("@jobId", jobId);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        adjustments.Add(MapLaborAdjustment(reader));
+                    }
+                }
+            }
+            return adjustments;
+        }
+
+        public static void SaveLaborAdjustment(this DatabaseService db, LaborAdjustment adjustment)
+        {
+            using (var connection = db.GetConnection())
+            {
+                var cmd = new MySqlCommand(@"
+                    INSERT INTO LaborAdjustments (JobId, EstimateId, AssemblyId, PresetId,
+                        RoughMultiplier, FinishMultiplier, ServiceMultiplier, ExtraMultiplier,
+                        ReasonCode, Notes, CreatedBy, CreatedDate)
+                    VALUES (@jobId, @estimateId, @assemblyId, @presetId,
+                        @rough, @finish, @service, @extra,
+                        @reason, @notes, @createdBy, @created)", connection);
+
+                cmd.Parameters.AddWithValue("@jobId", adjustment.JobId ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@estimateId", adjustment.EstimateId ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@assemblyId", adjustment.AssemblyId ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@presetId", adjustment.PresetId ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@rough", adjustment.RoughMultiplier);
+                cmd.Parameters.AddWithValue("@finish", adjustment.FinishMultiplier);
+                cmd.Parameters.AddWithValue("@service", adjustment.ServiceMultiplier);
+                cmd.Parameters.AddWithValue("@extra", adjustment.ExtraMultiplier);
+                cmd.Parameters.AddWithValue("@reason", adjustment.ReasonCode ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@notes", adjustment.Notes ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@createdBy", adjustment.CreatedBy);
+                cmd.Parameters.AddWithValue("@created", adjustment.CreatedDate);
+
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        #endregion
+
+        #region Service Types
+
+        public static List<ServiceType> GetAllServiceTypes(this DatabaseService db)
+        {
+            var serviceTypes = new List<ServiceType>();
+            using (var connection = db.GetConnection())
+            {
+                var cmd = new MySqlCommand(@"
+                    SELECT * FROM ServiceTypes 
+                    WHERE IsActive = 1
+                    ORDER BY SortOrder, Name", connection);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        serviceTypes.Add(MapServiceType(reader));
+                    }
+                }
+            }
+            return serviceTypes;
+        }
+
+        #endregion
+
+        #region Analysis Methods
+
+        public static decimal GetAverageMaterialPrice(this DatabaseService db, int materialId, int days = 30)
+        {
+            using (var connection = db.GetConnection())
+            {
+                var cmd = new MySqlCommand(@"
+                    SELECT AVG(NewPrice) 
+                    FROM MaterialPriceHistory 
+                    WHERE MaterialId = @materialId 
+                    AND ChangeDate >= DATE_SUB(NOW(), INTERVAL @days DAY)", connection);
+                
+                cmd.Parameters.AddWithValue("@materialId", materialId);
+                cmd.Parameters.AddWithValue("@days", days);
+
+                var result = cmd.ExecuteScalar();
+                return result != DBNull.Value ? Convert.ToDecimal(result) : 0;
+            }
+        }
+
+        public static List<Estimate> GetEstimatesInDateRange(this DatabaseService db, 
             DateTime? startDate, DateTime? endDate)
         {
             var estimates = new List<Estimate>();
-            
-            using (var connection = service.GetConnection())
+            using (var connection = db.GetConnection())
             {
-                connection.Open();
-                var query = @"SELECT * FROM Estimates WHERE 1=1";
+                var query = "SELECT * FROM Estimates WHERE 1=1";
                 
                 if (startDate.HasValue)
-                    query += " AND created_date >= @startDate";
+                    query += " AND CreatedDate >= @startDate";
                 if (endDate.HasValue)
-                    query += " AND created_date <= @endDate";
-                    
-                query += " ORDER BY created_date DESC";
+                    query += " AND CreatedDate <= @endDate";
+
+                var cmd = new MySqlCommand(query, connection);
                 
-                using (var command = new MySqlCommand(query, connection))
+                if (startDate.HasValue)
+                    cmd.Parameters.AddWithValue("@startDate", startDate.Value);
+                if (endDate.HasValue)
+                    cmd.Parameters.AddWithValue("@endDate", endDate.Value);
+
+                using (var reader = cmd.ExecuteReader())
                 {
-                    if (startDate.HasValue)
-                        command.Parameters.AddWithValue("@startDate", startDate.Value);
-                    if (endDate.HasValue)
-                        command.Parameters.AddWithValue("@endDate", endDate.Value);
-                    
-                    using (var reader = command.ExecuteReader())
+                    while (reader.Read())
                     {
-                        while (reader.Read())
-                        {
-                            // Fix: Call ReadEstimate correctly - it's not an extension method on DatabaseService
-                            estimates.Add(ReadEstimate(reader));
-                        }
+                        estimates.Add(MapEstimate(reader));
                     }
                 }
-                
-                // Load line items for each estimate
-                foreach (var estimate in estimates)
-                {
-                    service.LoadEstimateDetails(estimate);
-                }
             }
-            
+
+            // Load line items for each estimate
+            foreach (var estimate in estimates)
+            {
+                estimate.LineItems = db.GetEstimateLineItems(estimate.EstimateId);
+            }
+
             return estimates;
         }
-        
-        // Add the ReadEstimate method that was missing
-        private static Estimate ReadEstimate(MySqlDataReader reader)
+
+        public static int GetAssemblyUsageCount(this DatabaseService db, int assemblyId)
         {
-            return new Estimate
+            using (var connection = db.GetConnection())
             {
-                EstimateId = reader.GetInt32("estimate_id"),
-                EstimateNumber = reader.GetString("estimate_number"),
-                CustomerId = reader.GetInt32("customer_id"),
-                JobName = reader.GetString("job_name"),
-                Address = reader.IsDBNull(reader.GetOrdinal("address")) ? null : reader.GetString("address"),
-                City = reader.IsDBNull(reader.GetOrdinal("city")) ? null : reader.GetString("city"),
-                State = reader.IsDBNull(reader.GetOrdinal("state")) ? null : reader.GetString("state"),
-                Zip = reader.IsDBNull(reader.GetOrdinal("zip")) ? null : reader.GetString("zip"),
-                Status = (EstimateStatus)Enum.Parse(typeof(EstimateStatus), reader.GetString("status")),
-                LaborRate = reader.GetDecimal("labor_rate"),
-                MaterialMarkup = reader.GetDecimal("material_markup"),
-                TaxRate = reader.GetDecimal("tax_rate"),
-                Notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString("notes"),
-                CreateDate = reader.GetDateTime("created_date"),
-                CreatedBy = reader.GetString("created_by"),
-                ConvertedToJobId = reader.IsDBNull(reader.GetOrdinal("converted_to_job_id")) ? null : (int?)reader.GetInt32("converted_to_job_id")
-            };
+                var cmd = new MySqlCommand(@"
+                    SELECT COUNT(*) 
+                    FROM EstimateLineItems 
+                    WHERE AssemblyId = @assemblyId", connection);
+                
+                cmd.Parameters.AddWithValue("@assemblyId", assemblyId);
+
+                return Convert.ToInt32(cmd.ExecuteScalar());
+            }
         }
-        
+
+        public static DateTime? GetAssemblyLastUsedDate(this DatabaseService db, int assemblyId)
+        {
+            using (var connection = db.GetConnection())
+            {
+                var cmd = new MySqlCommand(@"
+                    SELECT MAX(e.CreatedDate)
+                    FROM EstimateLineItems eli
+                    INNER JOIN Estimates e ON eli.EstimateId = e.EstimateId
+                    WHERE eli.AssemblyId = @assemblyId", connection);
+                
+                cmd.Parameters.AddWithValue("@assemblyId", assemblyId);
+
+                var result = cmd.ExecuteScalar();
+                return result != DBNull.Value ? (DateTime?)result : null;
+            }
+        }
+
         #endregion
-        
-        #region Helper Methods - Reading from DataReader
-        
-        private static Material ReadMaterial(MySqlDataReader reader)
+
+        #region Mapping Methods
+
+        private static Material MapMaterial(MySqlDataReader reader)
         {
-            return new Material
+            var material = new Material
             {
-                MaterialId = reader.GetInt32("material_id"),
-                MaterialCode = reader.GetString("material_code"),
-                Name = reader.GetString("name"),
-                Description = reader.IsDBNull(reader.GetOrdinal("description")) ? null : reader.GetString("description"),
-                Category = reader.GetString("category"),
-                UnitOfMeasure = reader.GetString("unit_of_measure"),
-                CurrentPrice = reader.GetDecimal("current_price"),
-                TaxRate = reader.GetDecimal("tax_rate"),
-                MinStockLevel = reader.GetInt32("min_stock_level"),
-                MaxStockLevel = reader.GetInt32("max_stock_level"),
-                PreferredVendorId = reader.IsDBNull(reader.GetOrdinal("preferred_vendor_id")) ? null : (int?)reader.GetInt32("preferred_vendor_id"),
-                IsActive = reader.GetBoolean("is_active"),
-                CreatedDate = reader.GetDateTime("created_date"),
-                UpdatedDate = reader.IsDBNull(reader.GetOrdinal("updated_date")) ? null : (DateTime?)reader.GetDateTime("updated_date")
+                MaterialId = reader.GetInt32("MaterialId"),
+                MaterialCode = reader.GetString("MaterialCode"),
+                Name = reader.GetString("Name"),
+                Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString("Description"),
+                Category = reader.GetString("Category"),
+                UnitOfMeasure = reader.GetString("UnitOfMeasure"),
+                CurrentPrice = reader.GetDecimal("CurrentPrice"),
+                TaxRate = reader.GetDecimal("TaxRate"),
+                MinStockLevel = reader.GetInt32("MinStockLevel"),
+                MaxStockLevel = reader.GetInt32("MaxStockLevel"),
+                PreferredVendorId = reader.IsDBNull(reader.GetOrdinal("PreferredVendorId")) ? null : (int?)reader.GetInt32("PreferredVendorId"),
+                IsActive = reader.GetBoolean("IsActive"),
+                CreatedDate = reader.GetDateTime("CreatedDate"),
+                UpdatedDate = reader.IsDBNull(reader.GetOrdinal("UpdatedDate")) ? null : (DateTime?)reader.GetDateTime("UpdatedDate")
             };
+
+            // Map vendor if joined
+            if (!reader.IsDBNull(reader.GetOrdinal("VendorName")))
+            {
+                material.PreferredVendor = new Vendor
+                {
+                    VendorId = material.PreferredVendorId.Value,
+                    Name = reader.GetString("VendorName")
+                };
+            }
+
+            return material;
         }
-        
-        private static MaterialPriceHistory ReadMaterialPriceHistory(MySqlDataReader reader)
+
+        private static MaterialPriceHistory MapMaterialPriceHistory(MySqlDataReader reader)
         {
             return new MaterialPriceHistory
             {
-                PriceHistoryId = reader.GetInt32("price_history_id"),
-                MaterialId = reader.GetInt32("material_id"),
-                Price = reader.GetDecimal("price"),
-                EffectiveDate = reader.GetDateTime("effective_date"),
-                VendorId = reader.IsDBNull(reader.GetOrdinal("vendor_id")) ? null : (int?)reader.GetInt32("vendor_id"),
-                PurchaseOrderNumber = reader.IsDBNull(reader.GetOrdinal("purchase_order_number")) ? null : reader.GetString("purchase_order_number"),
-                QuantityPurchased = reader.IsDBNull(reader.GetOrdinal("quantity_purchased")) ? null : (decimal?)reader.GetDecimal("quantity_purchased"),
-                Notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString("notes"),
-                CreatedBy = reader.GetString("created_by"),
-                CreatedDate = reader.GetDateTime("created_date")
+                HistoryId = reader.GetInt32("HistoryId"),
+                MaterialId = reader.GetInt32("MaterialId"),
+                OldPrice = reader.GetDecimal("OldPrice"),
+                NewPrice = reader.GetDecimal("NewPrice"),
+                PercentageChange = reader.GetDecimal("PercentageChange"),
+                ChangedBy = reader.GetString("ChangedBy"),
+                ChangeDate = reader.GetDateTime("ChangeDate"),
+                VendorId = reader.IsDBNull(reader.GetOrdinal("VendorId")) ? null : (int?)reader.GetInt32("VendorId"),
+                InvoiceNumber = reader.IsDBNull(reader.GetOrdinal("InvoiceNumber")) ? null : reader.GetString("InvoiceNumber"),
+                QuantityPurchased = reader.IsDBNull(reader.GetOrdinal("QuantityPurchased")) ? null : (decimal?)reader.GetDecimal("QuantityPurchased"),
+                Notes = reader.IsDBNull(reader.GetOrdinal("Notes")) ? null : reader.GetString("Notes")
             };
         }
-        
-        private static AssemblyTemplate ReadAssemblyTemplate(MySqlDataReader reader)
+
+        private static AssemblyTemplate MapAssemblyTemplate(MySqlDataReader reader)
         {
             return new AssemblyTemplate
             {
-                AssemblyId = reader.GetInt32("assembly_id"),
-                AssemblyCode = reader.GetString("assembly_code"),
-                Name = reader.GetString("name"),
-                Description = reader.IsDBNull(reader.GetOrdinal("description")) ? null : reader.GetString("description"),
-                Category = reader.GetString("category"),
-                RoughMinutes = reader.GetInt32("rough_minutes"),
-                FinishMinutes = reader.GetInt32("finish_minutes"),
-                ServiceMinutes = reader.GetInt32("service_minutes"),
-                ExtraMinutes = reader.GetInt32("extra_minutes"),
-                IsDefault = reader.GetBoolean("is_default"),
-                IsActive = reader.GetBoolean("is_active"),
-                SortOrder = reader.GetInt32("sort_order"),
-                CreatedDate = reader.GetDateTime("created_date"),
-                CreatedBy = reader.GetString("created_by"),
-                UpdatedDate = reader.IsDBNull(reader.GetOrdinal("updated_date")) ? null : (DateTime?)reader.GetDateTime("updated_date")
+                AssemblyId = reader.GetInt32("AssemblyId"),
+                AssemblyCode = reader.GetString("AssemblyCode"),
+                Name = reader.GetString("Name"),
+                Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString("Description"),
+                Category = reader.GetString("Category"),
+                RoughMinutes = reader.GetInt32("RoughMinutes"),
+                FinishMinutes = reader.GetInt32("FinishMinutes"),
+                ServiceMinutes = reader.GetInt32("ServiceMinutes"),
+                ExtraMinutes = reader.GetInt32("ExtraMinutes"),
+                IsDefault = reader.GetBoolean("IsDefault"),
+                IsActive = reader.GetBoolean("IsActive"),
+                CreatedBy = reader.GetString("CreatedBy"),
+                CreatedDate = reader.GetDateTime("CreatedDate"),
+                UpdatedBy = reader.IsDBNull(reader.GetOrdinal("UpdatedBy")) ? null : reader.GetString("UpdatedBy"),
+                UpdatedDate = reader.IsDBNull(reader.GetOrdinal("UpdatedDate")) ? null : (DateTime?)reader.GetDateTime("UpdatedDate")
             };
         }
-        
-        private static AssemblyComponent ReadAssemblyComponent(MySqlDataReader reader)
+
+        private static AssemblyComponent MapAssemblyComponent(MySqlDataReader reader)
         {
-            var component = new AssemblyComponent
+            return new AssemblyComponent
             {
-                ComponentId = reader.GetInt32("component_id"),
-                AssemblyId = reader.GetInt32("assembly_id"),
-                MaterialId = reader.GetInt32("material_id"),
-                Quantity = reader.GetDecimal("quantity"),
-                IsOptional = reader.GetBoolean("is_optional"),
-                Notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString("notes")
+                ComponentId = reader.GetInt32("ComponentId"),
+                AssemblyId = reader.GetInt32("AssemblyId"),
+                PriceListItemId = reader.GetInt32("PriceListItemId"),
+                Quantity = reader.GetDecimal("Quantity"),
+                Notes = reader.IsDBNull(reader.GetOrdinal("Notes")) ? null : reader.GetString("Notes"),
+                ItemName = reader.GetString("ItemName"),
+                ItemCode = reader.GetString("ItemCode"),
+                UnitPrice = reader.GetDecimal("UnitPrice")
             };
-            
-            // Read material data if present
-            if (reader.HasColumn("material_code"))
-            {
-                component.Material = ReadMaterial(reader);
-            }
-            
-            return component;
         }
-        
-        private static DifficultyPreset ReadDifficultyPreset(MySqlDataReader reader)
+
+        private static DifficultyPreset MapDifficultyPreset(MySqlDataReader reader)
         {
             return new DifficultyPreset
             {
-                PresetId = reader.GetInt32("preset_id"),
-                Name = reader.GetString("name"),
-                Description = reader.IsDBNull(reader.GetOrdinal("description")) ? null : reader.GetString("description"),
-                Category = reader.GetString("category"),
-                RoughMultiplier = reader.GetDecimal("rough_multiplier"),
-                FinishMultiplier = reader.GetDecimal("finish_multiplier"),
-                ServiceMultiplier = reader.GetDecimal("service_multiplier"),
-                ExtraMultiplier = reader.GetDecimal("extra_multiplier"),
-                IsActive = reader.GetBoolean("is_active"),
-                SortOrder = reader.GetInt32("sort_order")
+                PresetId = reader.GetInt32("PresetId"),
+                Name = reader.GetString("Name"),
+                Category = reader.GetString("Category"),
+                Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString("Description"),
+                RoughMultiplier = reader.GetDecimal("RoughMultiplier"),
+                FinishMultiplier = reader.GetDecimal("FinishMultiplier"),
+                ServiceMultiplier = reader.GetDecimal("ServiceMultiplier"),
+                ExtraMultiplier = reader.GetDecimal("ExtraMultiplier"),
+                IsActive = reader.GetBoolean("IsActive"),
+                SortOrder = reader.GetInt32("SortOrder")
             };
         }
-        
-        private static LaborAdjustment ReadLaborAdjustment(MySqlDataReader reader)
+
+        private static LaborAdjustment MapLaborAdjustment(MySqlDataReader reader)
         {
-            var adjustment = new LaborAdjustment
+            return new LaborAdjustment
             {
-                AdjustmentId = reader.GetInt32("adjustment_id"),
-                EstimateId = reader.IsDBNull(reader.GetOrdinal("estimate_id")) ? null : (int?)reader.GetInt32("estimate_id"),
-                JobId = reader.IsDBNull(reader.GetOrdinal("job_id")) ? null : (int?)reader.GetInt32("job_id"),
-                AdjustmentType = (AdjustmentType)Enum.Parse(typeof(AdjustmentType), reader.GetString("adjustment_type")),
-                PresetId = reader.IsDBNull(reader.GetOrdinal("preset_id")) ? null : (int?)reader.GetInt32("preset_id"),
-                RoughMultiplier = reader.GetDecimal("rough_multiplier"),
-                FinishMultiplier = reader.GetDecimal("finish_multiplier"),
-                ServiceMultiplier = reader.GetDecimal("service_multiplier"),
-                ExtraMultiplier = reader.GetDecimal("extra_multiplier"),
-                Reason = reader.IsDBNull(reader.GetOrdinal("reason")) ? null : reader.GetString("reason"),
-                CreatedBy = reader.GetString("created_by"),
-                CreatedDate = reader.GetDateTime("created_date")
+                AdjustmentId = reader.GetInt32("AdjustmentId"),
+                JobId = reader.IsDBNull(reader.GetOrdinal("JobId")) ? null : (int?)reader.GetInt32("JobId"),
+                EstimateId = reader.IsDBNull(reader.GetOrdinal("EstimateId")) ? null : (int?)reader.GetInt32("EstimateId"),
+                AssemblyId = reader.IsDBNull(reader.GetOrdinal("AssemblyId")) ? null : (int?)reader.GetInt32("AssemblyId"),
+                PresetId = reader.IsDBNull(reader.GetOrdinal("PresetId")) ? null : (int?)reader.GetInt32("PresetId"),
+                RoughMultiplier = reader.GetDecimal("RoughMultiplier"),
+                FinishMultiplier = reader.GetDecimal("FinishMultiplier"),
+                ServiceMultiplier = reader.GetDecimal("ServiceMultiplier"),
+                ExtraMultiplier = reader.GetDecimal("ExtraMultiplier"),
+                ReasonCode = reader.IsDBNull(reader.GetOrdinal("ReasonCode")) ? null : reader.GetString("ReasonCode"),
+                Notes = reader.IsDBNull(reader.GetOrdinal("Notes")) ? null : reader.GetString("Notes"),
+                CreatedBy = reader.GetString("CreatedBy"),
+                CreatedDate = reader.GetDateTime("CreatedDate")
             };
-            
-            // Read preset data if present
-            if (adjustment.PresetId.HasValue && reader.HasColumn("preset_id") && !reader.IsDBNull(reader.GetOrdinal("preset_id")))
-            {
-                adjustment.Preset = ReadDifficultyPreset(reader);
-            }
-            
-            return adjustment;
         }
-        
-        // Extension method to check if a column exists
-        private static bool HasColumn(this IDataReader reader, string columnName)
+
+        private static ServiceType MapServiceType(MySqlDataReader reader)
         {
-            for (int i = 0; i < reader.FieldCount; i++)
+            return new ServiceType
             {
-                if (reader.GetName(i).Equals(columnName, StringComparison.InvariantCultureIgnoreCase))
-                    return true;
-            }
-            return false;
+                ServiceTypeId = reader.GetInt32("ServiceTypeId"),
+                Name = reader.GetString("Name"),
+                Code = reader.GetString("Code"),
+                LaborMultiplier = reader.GetDecimal("LaborMultiplier"),
+                BaseHourlyRate = reader.GetDecimal("BaseHourlyRate"),
+                Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString("Description"),
+                IsActive = reader.GetBoolean("IsActive"),
+                SortOrder = reader.GetInt32("SortOrder")
+            };
         }
-        
+
+        private static Estimate MapEstimate(MySqlDataReader reader)
+        {
+            return new Estimate
+            {
+                EstimateId = reader.GetInt32("EstimateId"),
+                EstimateNumber = reader.GetString("EstimateNumber"),
+                CustomerId = reader.GetInt32("CustomerId"),
+                PropertyId = reader.IsDBNull(reader.GetOrdinal("PropertyId")) ? null : (int?)reader.GetInt32("PropertyId"),
+                ProjectName = reader.GetString("ProjectName"),
+                Status = reader.GetString("Status"),
+                CreatedDate = reader.GetDateTime("CreatedDate"),
+                ValidUntilDate = reader.GetDateTime("ValidUntilDate"),
+                ServiceTypeId = reader.IsDBNull(reader.GetOrdinal("ServiceTypeId")) ? null : (int?)reader.GetInt32("ServiceTypeId"),
+                TotalMaterialCost = reader.GetDecimal("TotalMaterialCost"),
+                TotalLaborHours = reader.GetDecimal("TotalLaborHours"),
+                TotalLaborCost = reader.GetDecimal("TotalLaborCost"),
+                TotalCost = reader.GetDecimal("TotalCost"),
+                ApprovedDate = reader.IsDBNull(reader.GetOrdinal("ApprovedDate")) ? null : (DateTime?)reader.GetDateTime("ApprovedDate"),
+                ApprovedBy = reader.IsDBNull(reader.GetOrdinal("ApprovedBy")) ? null : reader.GetString("ApprovedBy"),
+                ConvertedToJobId = reader.IsDBNull(reader.GetOrdinal("ConvertedToJobId")) ? null : (int?)reader.GetInt32("ConvertedToJobId"),
+                Notes = reader.IsDBNull(reader.GetOrdinal("Notes")) ? null : reader.GetString("Notes"),
+                CreatedBy = reader.GetString("CreatedBy"),
+                UpdatedBy = reader.IsDBNull(reader.GetOrdinal("UpdatedBy")) ? null : reader.GetString("UpdatedBy"),
+                UpdatedDate = reader.IsDBNull(reader.GetOrdinal("UpdatedDate")) ? null : (DateTime?)reader.GetDateTime("UpdatedDate")
+            };
+        }
+
         #endregion
     }
 }
