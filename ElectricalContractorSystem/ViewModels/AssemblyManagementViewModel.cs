@@ -8,7 +8,6 @@ using System.Windows.Input;
 using ElectricalContractorSystem.Helpers;
 using ElectricalContractorSystem.Models;
 using ElectricalContractorSystem.Services;
-using ElectricalContractorSystem.Views;
 
 namespace ElectricalContractorSystem.ViewModels
 {
@@ -174,8 +173,8 @@ namespace ElectricalContractorSystem.ViewModels
         {
             try
             {
-                // Load assemblies
-                var assemblies = _assemblyService.GetAllAssemblies();
+                // Load assemblies using DatabaseService extension method
+                var assemblies = _databaseService.GetAllAssemblies();
                 Assemblies.Clear();
                 foreach (var assembly in assemblies)
                 {
@@ -200,18 +199,18 @@ namespace ElectricalContractorSystem.ViewModels
             
             try
             {
-                // Load components
-                var components = _assemblyService.GetAssemblyComponents(SelectedAssembly.AssemblyId);
+                // Load components using DatabaseService extension method
+                var components = _databaseService.GetAssemblyComponents(SelectedAssembly.AssemblyId);
                 Components.Clear();
                 foreach (var component in components)
                 {
                     // Load the material details
-                    component.Material = _pricingService.GetMaterial(component.MaterialId);
+                    component.Material = _databaseService.GetMaterial(component.MaterialId);
                     Components.Add(component);
                 }
                 
-                // Load variants
-                var variantAssemblies = _assemblyService.GetAssemblyVariants(SelectedAssembly.Code);
+                // Load variants using AssemblyCode property
+                var variantAssemblies = _assemblyService.GetAssemblyVariants(SelectedAssembly.AssemblyCode);
                 Variants.Clear();
                 int sortOrder = 0;
                 foreach (var variantAssembly in variantAssemblies)
@@ -249,8 +248,8 @@ namespace ElectricalContractorSystem.ViewModels
                 return;
             }
             
-            var filtered = _assemblyService.GetAllAssemblies()
-                .Where(a => a.Code.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0 ||
+            var filtered = _databaseService.GetAllAssemblies()
+                .Where(a => a.AssemblyCode.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0 ||
                            a.Name.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0 ||
                            (a.Description?.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) ?? -1) >= 0)
                 .ToList();
@@ -264,8 +263,8 @@ namespace ElectricalContractorSystem.ViewModels
         
         private void CreateAssembly()
         {
-            var dialog = new AssemblyEditDialog();
-            var viewModel = new AssemblyEditViewModel(_databaseService);
+            var dialog = new Views.AssemblyEditDialog();
+            var viewModel = new ViewModels.AssemblyEditViewModel(_databaseService);
             dialog.DataContext = viewModel;
             dialog.Owner = System.Windows.Application.Current.MainWindow;
             
@@ -279,8 +278,8 @@ namespace ElectricalContractorSystem.ViewModels
         {
             if (SelectedAssembly == null) return;
             
-            var dialog = new AssemblyEditDialog();
-            var viewModel = new AssemblyEditViewModel(_databaseService, SelectedAssembly);
+            var dialog = new Views.AssemblyEditDialog();
+            var viewModel = new ViewModels.AssemblyEditViewModel(_databaseService, SelectedAssembly);
             dialog.DataContext = viewModel;
             dialog.Owner = System.Windows.Application.Current.MainWindow;
             
@@ -297,7 +296,7 @@ namespace ElectricalContractorSystem.ViewModels
             if (SelectedAssembly == null || SelectedAssembly.IsDefault) return;
             
             var result = System.Windows.MessageBox.Show(
-                $"Are you sure you want to delete the assembly '{SelectedAssembly.Code} - {SelectedAssembly.Name}'?\n\n" +
+                $"Are you sure you want to delete the assembly '{SelectedAssembly.AssemblyCode} - {SelectedAssembly.Name}'?\n\n" +
                 "This will also delete all components and cannot be undone.",
                 "Confirm Delete",
                 System.Windows.MessageBoxButton.YesNo,
@@ -307,7 +306,7 @@ namespace ElectricalContractorSystem.ViewModels
             {
                 try
                 {
-                    _assemblyService.DeleteAssembly(SelectedAssembly.AssemblyId);
+                    _databaseService.DeleteAssembly(SelectedAssembly.AssemblyId);
                     LoadData();
                     SelectedAssembly = null;
                 }
@@ -328,7 +327,7 @@ namespace ElectricalContractorSystem.ViewModels
                 // Create a copy of the assembly with a new code
                 var newAssembly = new AssemblyTemplate
                 {
-                    Code = GetNextAssemblyCode(SelectedAssembly.Code),
+                    AssemblyCode = GetNextAssemblyCode(SelectedAssembly.AssemblyCode),
                     Name = $"{SelectedAssembly.Name} (Copy)",
                     Description = SelectedAssembly.Description,
                     RoughMinutes = SelectedAssembly.RoughMinutes,
@@ -340,7 +339,7 @@ namespace ElectricalContractorSystem.ViewModels
                 };
                 
                 // Get the components
-                var components = _assemblyService.GetAssemblyComponents(SelectedAssembly.AssemblyId)
+                var components = _databaseService.GetAssemblyComponents(SelectedAssembly.AssemblyId)
                     .Select(c => new AssemblyComponent
                     {
                         MaterialId = c.MaterialId,
@@ -353,7 +352,7 @@ namespace ElectricalContractorSystem.ViewModels
                 
                 // Reload and select the new assembly
                 LoadData();
-                SelectedAssembly = Assemblies.FirstOrDefault(a => a.Code == newAssembly.Code);
+                SelectedAssembly = Assemblies.FirstOrDefault(a => a.AssemblyCode == newAssembly.AssemblyCode);
             }
             catch (Exception ex)
             {
@@ -371,7 +370,7 @@ namespace ElectricalContractorSystem.ViewModels
             {
                 newCode = $"{baseCode}-{suffix}";
                 suffix++;
-            } while (Assemblies.Any(a => a.Code == newCode));
+            } while (Assemblies.Any(a => a.AssemblyCode == newCode));
             
             return newCode;
         }
@@ -382,7 +381,7 @@ namespace ElectricalContractorSystem.ViewModels
             
             try
             {
-                _assemblyService.DeleteComponent(SelectedComponent.ComponentId);
+                _databaseService.DeleteAssemblyComponent(SelectedComponent.ComponentId);
                 Components.Remove(SelectedComponent);
                 SelectedComponent = null;
                 OnPropertyChanged(nameof(TotalMaterialCost));
@@ -399,12 +398,12 @@ namespace ElectricalContractorSystem.ViewModels
             if (SelectedAssembly == null) return;
             
             // Create a new assembly as a variant with the same code
-            var dialog = new AssemblyEditDialog();
+            var dialog = new Views.AssemblyEditDialog();
             
             // Create a copy of the current assembly to use as template
             var variantTemplate = new AssemblyTemplate
             {
-                Code = SelectedAssembly.Code, // Keep the same code for variants
+                AssemblyCode = SelectedAssembly.AssemblyCode, // Keep the same code for variants
                 Name = $"{SelectedAssembly.Name} - Variant",
                 Description = SelectedAssembly.Description,
                 RoughMinutes = SelectedAssembly.RoughMinutes,
@@ -415,7 +414,7 @@ namespace ElectricalContractorSystem.ViewModels
                 IsActive = true
             };
             
-            var viewModel = new AssemblyEditViewModel(_databaseService, variantTemplate);
+            var viewModel = new ViewModels.AssemblyEditViewModel(_databaseService, variantTemplate);
             dialog.DataContext = viewModel;
             dialog.Owner = System.Windows.Application.Current.MainWindow;
             
@@ -433,7 +432,7 @@ namespace ElectricalContractorSystem.ViewModels
             try
             {
                 // Update all assemblies with this code to set the selected one as default
-                var allVariants = _assemblyService.GetAssemblyVariants(SelectedAssembly.Code);
+                var allVariants = _assemblyService.GetAssemblyVariants(SelectedAssembly.AssemblyCode);
                 foreach (var variant in allVariants)
                 {
                     variant.IsDefault = (variant.AssemblyId == SelectedVariant.VariantAssemblyId);
@@ -464,7 +463,7 @@ namespace ElectricalContractorSystem.ViewModels
             {
                 try
                 {
-                    _assemblyService.DeleteAssembly(SelectedVariant.VariantAssemblyId);
+                    _databaseService.DeleteAssembly(SelectedVariant.VariantAssemblyId);
                     LoadAssemblyDetails();
                 }
                 catch (Exception ex)
