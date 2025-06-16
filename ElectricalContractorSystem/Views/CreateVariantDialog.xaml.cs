@@ -1,22 +1,19 @@
 using System.Windows;
-using ElectricalContractorSystem.Models;
 
 namespace ElectricalContractorSystem.Views
 {
     public partial class CreateVariantDialog : Window
     {
-        public AssemblyTemplate ParentAssembly { get; set; }
         public string VariantName { get; set; }
-        public bool UseSameCode { get; set; } = true;
-        public string ParentAssemblyName => ParentAssembly?.Name ?? "";
+        public string ParentAssemblyName { get; set; }
 
-        public CreateVariantDialog(AssemblyTemplate parentAssembly)
+        public CreateVariantDialog(string parentAssemblyName)
         {
             InitializeComponent();
-            ParentAssembly = parentAssembly;
+            ParentAssemblyName = parentAssemblyName;
             DataContext = this;
             
-            // Focus on the name textbox
+            // Focus on the variant name textbox
             Loaded += (s, e) => VariantNameTextBox.Focus();
         }
 
@@ -24,7 +21,7 @@ namespace ElectricalContractorSystem.Views
         {
             if (string.IsNullOrWhiteSpace(VariantName))
             {
-                MessageBox.Show("Please enter a variant name.", "Validation Error", 
+                MessageBox.Show("Please enter a name for the variant.", "Validation Error", 
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
