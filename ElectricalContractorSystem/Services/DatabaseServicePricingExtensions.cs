@@ -471,7 +471,7 @@ namespace ElectricalContractorSystem.Services
                     SELECT LAST_INSERT_ID();", connection);
 
                 cmd.Parameters.AddWithValue("@assemblyId", component.AssemblyId);
-                cmd.Parameters.AddWithValue("@materialId", component.MaterialId ?? component.PriceListItemId);  // Support both old and new
+                cmd.Parameters.AddWithValue("@materialId", component.MaterialId);  // MaterialId property already maps to PriceListItemId
                 cmd.Parameters.AddWithValue("@quantity", component.Quantity);
                 cmd.Parameters.AddWithValue("@notes", component.Notes ?? (object)DBNull.Value);
 
