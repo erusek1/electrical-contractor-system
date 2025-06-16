@@ -12,30 +12,30 @@ namespace ElectricalContractorSystem.Models
         
         public decimal NewPrice { get; set; }
         
-        // Add Price property that references NewPrice
-        public decimal Price => NewPrice;
+        // Changed from read-only to settable property
+        public decimal Price { get; set; }
         
         public decimal PercentageChange { get; set; }
         
-        // Add PercentageChangeFromPrevious that references PercentageChange
-        public decimal PercentageChangeFromPrevious => PercentageChange;
+        // Changed from read-only to settable property
+        public decimal PercentageChangeFromPrevious { get; set; }
         
         public string ChangedBy { get; set; }
         
-        // Add CreatedBy that references ChangedBy
-        public string CreatedBy => ChangedBy;
+        // Changed from read-only to settable property
+        public string CreatedBy { get; set; }
         
         public DateTime ChangeDate { get; set; }
         
-        // Add EffectiveDate that references ChangeDate
-        public DateTime EffectiveDate => ChangeDate;
+        // Changed from read-only to settable property
+        public DateTime EffectiveDate { get; set; }
         
         public int? VendorId { get; set; }
         
         public string InvoiceNumber { get; set; }
         
-        // Add PurchaseOrderNumber that references InvoiceNumber
-        public string PurchaseOrderNumber => InvoiceNumber;
+        // Changed from read-only to settable property
+        public string PurchaseOrderNumber { get; set; }
         
         public decimal? QuantityPurchased { get; set; }
         
