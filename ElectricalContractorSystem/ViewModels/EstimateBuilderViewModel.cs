@@ -547,7 +547,7 @@ namespace ElectricalContractorSystem.ViewModels
                         Description = item.Description,
                         Category = item.Category,
                         // For now, use labor minutes as rough minutes
-                        RoughMinutes = item.LaborMinutes.GetValueOrDefault(0),
+                        RoughMinutes = item.LaborMinutes,
                         FinishMinutes = 0,
                         ServiceMinutes = 0,
                         ExtraMinutes = 0,
