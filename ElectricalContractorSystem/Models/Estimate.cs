@@ -10,7 +10,9 @@ namespace ElectricalContractorSystem.Models
         public string EstimateNumber { get; set; }
         public int CustomerId { get; set; }
         public Customer Customer { get; set; }
-        public string JobName { get; set; }
+        public int? PropertyId { get; set; }
+        public string ProjectName { get; set; }
+        public string JobName { get => ProjectName; set => ProjectName = value; } // Backward compatibility
         
         // Address properties (simplified names to match usage)
         public string Address { get; set; }
@@ -29,21 +31,28 @@ namespace ElectricalContractorSystem.Models
         public EstimateStatus Status { get; set; }
         public DateTime CreateDate { get; set; }
         public DateTime CreatedDate { get => CreateDate; set => CreateDate = value; }
-        public DateTime? ExpirationDate { get; set; }
+        public DateTime ValidUntilDate { get; set; }
+        public DateTime? ExpirationDate { get => ValidUntilDate; set => ValidUntilDate = value; }
         public string Notes { get; set; }
         public decimal TaxRate { get; set; }
         public decimal MaterialMarkup { get; set; }
         public decimal LaborRate { get; set; }
         public decimal TotalMaterialCost { get; set; }
         public int TotalLaborMinutes { get; set; }
+        public decimal TotalLaborCost { get; set; }
         public decimal TotalPrice { get; set; }
         public int? JobId { get; set; }
+        public int? ServiceTypeId { get; set; }
         
         // New properties for versioning and conversion
         public int Version { get; set; } = 1;
         public int? ConvertedToJobId { get; set; }
         public DateTime? ConvertedDate { get; set; }
+        public DateTime? ApprovedDate { get; set; }
+        public string ApprovedBy { get; set; }
         public string CreatedBy { get; set; }
+        public string UpdatedBy { get; set; }
+        public DateTime? UpdatedDate { get; set; }
         
         // Collections
         public List<EstimateRoom> Rooms { get; set; }
@@ -66,6 +75,7 @@ namespace ElectricalContractorSystem.Models
             MaterialMarkup = 22.00m; // Default 22%
             LaborRate = 75.00m; // Default $75/hour
             CreateDate = DateTime.Now;
+            ValidUntilDate = DateTime.Now.AddDays(30); // Valid for 30 days by default
             Version = 1;
         }
 
@@ -93,13 +103,13 @@ namespace ElectricalContractorSystem.Models
 
             // Calculate labor cost
             decimal laborHours = TotalLaborMinutes / 60m;
-            decimal laborCost = laborHours * LaborRate;
+            TotalLaborCost = laborHours * LaborRate;
 
             // Calculate material with markup
             decimal materialWithMarkup = TotalMaterialCost * (1 + MaterialMarkup / 100);
 
             // Calculate subtotal
-            decimal subtotal = materialWithMarkup + laborCost;
+            decimal subtotal = materialWithMarkup + TotalLaborCost;
 
             // Calculate total with tax
             TotalPrice = subtotal * (1 + TaxRate);
@@ -112,7 +122,8 @@ namespace ElectricalContractorSystem.Models
                 EstimateNumber = EstimateNumber,
                 CustomerId = CustomerId,
                 Customer = Customer,
-                JobName = JobName,
+                PropertyId = PropertyId,
+                ProjectName = ProjectName,
                 Address = Address,
                 City = City,
                 State = State,
@@ -124,6 +135,7 @@ namespace ElectricalContractorSystem.Models
                 TaxRate = TaxRate,
                 MaterialMarkup = MaterialMarkup,
                 LaborRate = LaborRate,
+                ServiceTypeId = ServiceTypeId,
                 Version = Version + 1,
                 CreatedBy = CreatedBy
             };
