@@ -28,11 +28,13 @@ namespace ElectricalContractorSystem.Models
         // Navigation properties
         public virtual ICollection<Estimate> Estimates { get; set; }
         public virtual ICollection<Job> Jobs { get; set; }
+        public virtual ICollection<Property> Properties { get; set; }
         
         public Customer()
         {
             Estimates = new HashSet<Estimate>();
             Jobs = new HashSet<Job>();
+            Properties = new HashSet<Property>();
             CreatedDate = DateTime.Now;
         }
         
@@ -47,6 +49,41 @@ namespace ElectricalContractorSystem.Models
                 if (!string.IsNullOrWhiteSpace(State)) parts.Add(State);
                 if (!string.IsNullOrWhiteSpace(Zip)) parts.Add(Zip);
                 return string.Join(", ", parts);
+            }
+        }
+        
+        // Get count of properties
+        public int PropertyCount
+        {
+            get
+            {
+                return Properties?.Count ?? 0;
+            }
+        }
+        
+        // Get count of all jobs
+        public int TotalJobCount
+        {
+            get
+            {
+                return Jobs?.Count ?? 0;
+            }
+        }
+        
+        // Get count of active jobs
+        public int ActiveJobCount
+        {
+            get
+            {
+                if (Jobs == null) return 0;
+                
+                int count = 0;
+                foreach (var job in Jobs)
+                {
+                    if (job.Status != "Complete")
+                        count++;
+                }
+                return count;
             }
         }
     }
