@@ -1,4 +1,5 @@
 using System.Windows;
+using ElectricalContractorSystem.ViewModels;
 
 namespace ElectricalContractorSystem.Views
 {
@@ -8,24 +9,30 @@ namespace ElectricalContractorSystem.Views
         {
             InitializeComponent();
             
-            // Set up dialog result binding
-            DataContextChanged += (s, e) =>
+            // Handle ViewModel close request
+            if (DataContext is AssemblyEditViewModel viewModel)
             {
-                if (DataContext is ViewModels.AssemblyEditViewModel vm)
+                viewModel.RequestClose += (s, e) =>
                 {
-                    vm.PropertyChanged += (sender, args) =>
-                    {
-                        if (args.PropertyName == nameof(vm.DialogResult))
-                        {
-                            DialogResult = vm.DialogResult;
-                            if (DialogResult.HasValue)
-                            {
-                                Close();
-                            }
-                        }
-                    };
-                }
-            };
+                    DialogResult = viewModel.DialogResult;
+                    Close();
+                };
+            }
+        }
+
+        protected override void OnSourceInitialized(System.EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+
+            // Subscribe to RequestClose event when DataContext is set
+            if (DataContext is AssemblyEditViewModel viewModel)
+            {
+                viewModel.RequestClose += (s, args) =>
+                {
+                    DialogResult = viewModel.DialogResult;
+                    Close();
+                };
+            }
         }
     }
 }
