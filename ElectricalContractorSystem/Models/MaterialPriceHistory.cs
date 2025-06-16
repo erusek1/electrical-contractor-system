@@ -12,15 +12,30 @@ namespace ElectricalContractorSystem.Models
         
         public decimal NewPrice { get; set; }
         
+        // Add Price property that references NewPrice
+        public decimal Price => NewPrice;
+        
         public decimal PercentageChange { get; set; }
+        
+        // Add PercentageChangeFromPrevious that references PercentageChange
+        public decimal PercentageChangeFromPrevious => PercentageChange;
         
         public string ChangedBy { get; set; }
         
+        // Add CreatedBy that references ChangedBy
+        public string CreatedBy => ChangedBy;
+        
         public DateTime ChangeDate { get; set; }
+        
+        // Add EffectiveDate that references ChangeDate
+        public DateTime EffectiveDate => ChangeDate;
         
         public int? VendorId { get; set; }
         
         public string InvoiceNumber { get; set; }
+        
+        // Add PurchaseOrderNumber that references InvoiceNumber
+        public string PurchaseOrderNumber => InvoiceNumber;
         
         public decimal? QuantityPurchased { get; set; }
         
