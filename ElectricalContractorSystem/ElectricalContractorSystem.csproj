@@ -120,6 +120,7 @@
     </Compile>
     <Compile Include="DatabaseConnectionTest.cs" />
     <Compile Include="StartupTest.cs" />
+    <Compile Include="Helpers\BooleanToStringConverter.cs" />
     <Compile Include="Helpers\BooleanToVisibilityConverter.cs" />
     <Compile Include="Helpers\BoolToOpacityConverter.cs" />
     <Compile Include="Helpers\EmployeeHoursConverter.cs" />
