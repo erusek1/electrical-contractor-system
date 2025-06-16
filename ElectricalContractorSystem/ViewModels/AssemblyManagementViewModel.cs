@@ -8,6 +8,7 @@ using System.Windows.Input;
 using ElectricalContractorSystem.Helpers;
 using ElectricalContractorSystem.Models;
 using ElectricalContractorSystem.Services;
+using ElectricalContractorSystem.Views;
 
 namespace ElectricalContractorSystem.ViewModels
 {
@@ -209,8 +210,8 @@ namespace ElectricalContractorSystem.ViewModels
                     Components.Add(component);
                 }
                 
-                // Load variants using AssemblyCode property
-                var variantAssemblies = _assemblyService.GetAssemblyVariants(SelectedAssembly.AssemblyCode);
+                // Load variants using DatabaseService extension method
+                var variantAssemblies = _databaseService.GetAssemblyVariants(SelectedAssembly.AssemblyCode);
                 Variants.Clear();
                 int sortOrder = 0;
                 foreach (var variantAssembly in variantAssemblies)
@@ -263,8 +264,8 @@ namespace ElectricalContractorSystem.ViewModels
         
         private void CreateAssembly()
         {
-            var dialog = new Views.AssemblyEditDialog();
-            var viewModel = new ViewModels.AssemblyEditViewModel(_databaseService);
+            var dialog = new AssemblyEditDialog();
+            var viewModel = new AssemblyEditViewModel(_databaseService);
             dialog.DataContext = viewModel;
             dialog.Owner = System.Windows.Application.Current.MainWindow;
             
@@ -278,8 +279,8 @@ namespace ElectricalContractorSystem.ViewModels
         {
             if (SelectedAssembly == null) return;
             
-            var dialog = new Views.AssemblyEditDialog();
-            var viewModel = new ViewModels.AssemblyEditViewModel(_databaseService, SelectedAssembly);
+            var dialog = new AssemblyEditDialog();
+            var viewModel = new AssemblyEditViewModel(_databaseService, SelectedAssembly);
             dialog.DataContext = viewModel;
             dialog.Owner = System.Windows.Application.Current.MainWindow;
             
@@ -330,12 +331,14 @@ namespace ElectricalContractorSystem.ViewModels
                     AssemblyCode = GetNextAssemblyCode(SelectedAssembly.AssemblyCode),
                     Name = $"{SelectedAssembly.Name} (Copy)",
                     Description = SelectedAssembly.Description,
+                    Category = SelectedAssembly.Category ?? "General",
                     RoughMinutes = SelectedAssembly.RoughMinutes,
                     FinishMinutes = SelectedAssembly.FinishMinutes,
                     ServiceMinutes = SelectedAssembly.ServiceMinutes,
                     ExtraMinutes = SelectedAssembly.ExtraMinutes,
                     IsDefault = false,
-                    IsActive = true
+                    IsActive = true,
+                    CreatedBy = "System" // TODO: Get current user
                 };
                 
                 // Get the components
@@ -398,7 +401,7 @@ namespace ElectricalContractorSystem.ViewModels
             if (SelectedAssembly == null) return;
             
             // Create a new assembly as a variant with the same code
-            var dialog = new Views.AssemblyEditDialog();
+            var dialog = new AssemblyEditDialog();
             
             // Create a copy of the current assembly to use as template
             var variantTemplate = new AssemblyTemplate
@@ -406,15 +409,17 @@ namespace ElectricalContractorSystem.ViewModels
                 AssemblyCode = SelectedAssembly.AssemblyCode, // Keep the same code for variants
                 Name = $"{SelectedAssembly.Name} - Variant",
                 Description = SelectedAssembly.Description,
+                Category = SelectedAssembly.Category ?? "General",
                 RoughMinutes = SelectedAssembly.RoughMinutes,
                 FinishMinutes = SelectedAssembly.FinishMinutes,
                 ServiceMinutes = SelectedAssembly.ServiceMinutes,
                 ExtraMinutes = SelectedAssembly.ExtraMinutes,
                 IsDefault = false,
-                IsActive = true
+                IsActive = true,
+                CreatedBy = "System" // TODO: Get current user
             };
             
-            var viewModel = new ViewModels.AssemblyEditViewModel(_databaseService, variantTemplate);
+            var viewModel = new AssemblyEditViewModel(_databaseService, variantTemplate);
             dialog.DataContext = viewModel;
             dialog.Owner = System.Windows.Application.Current.MainWindow;
             
@@ -432,11 +437,11 @@ namespace ElectricalContractorSystem.ViewModels
             try
             {
                 // Update all assemblies with this code to set the selected one as default
-                var allVariants = _assemblyService.GetAssemblyVariants(SelectedAssembly.AssemblyCode);
+                var allVariants = _databaseService.GetAssemblyVariants(SelectedAssembly.AssemblyCode);
                 foreach (var variant in allVariants)
                 {
                     variant.IsDefault = (variant.AssemblyId == SelectedVariant.VariantAssemblyId);
-                    _assemblyService.UpdateAssembly(variant, null); // Don't update components
+                    _databaseService.UpdateAssembly(variant);
                 }
                 
                 // Refresh display
