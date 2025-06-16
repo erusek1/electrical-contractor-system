@@ -5,144 +5,119 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="{Binding Title}" 
-        Height="500" Width="600"
+        Height="600" Width="800"
         WindowStartupLocation="CenterOwner"
-        WindowStyle="ToolWindow"
-        ResizeMode="NoResize">
-    
-    <Grid Margin="20">
+        ShowInTaskbar="False">
+    <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        
-        <!-- Header -->
-        <TextBlock Text="{Binding Title}" 
-                   FontSize="18" 
-                   FontWeight="Bold" 
-                   Margin="0,0,0,20"/>
-        
-        <!-- Form -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel>
+
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="20">
                 <!-- Basic Information -->
-                <GroupBox Header="Basic Information" Margin="0,0,0,15" Padding="10">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="120"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-                        
-                        <Label Content="Assembly Code:" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center"/>
-                        <TextBox Text="{Binding AssemblyCode, UpdateSourceTrigger=PropertyChanged}" 
-                                 Grid.Row="0" Grid.Column="1" 
-                                 Margin="5" 
-                                 CharacterCasing="Lower"/>
-                        
-                        <Label Content="Name:" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center"/>
-                        <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" 
-                                 Grid.Row="1" Grid.Column="1" 
-                                 Margin="5"/>
-                        
-                        <Label Content="Category:" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center"/>
-                        <ComboBox ItemsSource="{Binding Categories}" 
-                                  SelectedItem="{Binding Category}" 
-                                  Grid.Row="2" Grid.Column="1" 
-                                  Margin="5"/>
-                        
-                        <Label Content="Description:" Grid.Row="3" Grid.Column="0" VerticalAlignment="Top" Margin="0,5,0,0"/>
-                        <TextBox Text="{Binding Description}" 
-                                 Grid.Row="3" Grid.Column="1" 
-                                 Margin="5" 
-                                 TextWrapping="Wrap" 
-                                 AcceptsReturn="True" 
-                                 Height="60"
-                                 VerticalScrollBarVisibility="Auto"/>
-                    </Grid>
-                </GroupBox>
+                <TextBlock Text="Basic Information" FontSize="16" FontWeight="Bold" Margin="0,0,0,10"/>
                 
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="120"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="120"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="Code:" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Margin="0,5"/>
+                    <TextBox Text="{Binding Code}" Grid.Row="0" Grid.Column="1" Margin="5"/>
+
+                    <TextBlock Text="Name:" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Margin="0,5"/>
+                    <TextBox Text="{Binding Name}" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Margin="5"/>
+
+                    <TextBlock Text="Description:" Grid.Row="2" Grid.Column="0" VerticalAlignment="Top" Margin="0,5"/>
+                    <TextBox Text="{Binding Description}" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3" 
+                             Height="60" TextWrapping="Wrap" AcceptsReturn="True" Margin="5"/>
+
+                    <CheckBox Content="Is Default" IsChecked="{Binding IsDefault}" 
+                             Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2" 
+                             HorizontalAlignment="Right" VerticalAlignment="Center" Margin="5"/>
+                </Grid>
+
                 <!-- Labor Minutes -->
-                <GroupBox Header="Labor Minutes by Stage" Margin="0,0,0,15" Padding="10">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="120"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="120"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-                        
-                        <Label Content="Rough:" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center"/>
-                        <TextBox Text="{Binding RoughMinutes, UpdateSourceTrigger=PropertyChanged}" 
-                                 Grid.Row="0" Grid.Column="1" 
-                                 Margin="5"/>
-                        
-                        <Label Content="Finish:" Grid.Row="0" Grid.Column="2" VerticalAlignment="Center"/>
-                        <TextBox Text="{Binding FinishMinutes, UpdateSourceTrigger=PropertyChanged}" 
-                                 Grid.Row="0" Grid.Column="3" 
-                                 Margin="5"/>
-                        
-                        <Label Content="Service:" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center"/>
-                        <TextBox Text="{Binding ServiceMinutes, UpdateSourceTrigger=PropertyChanged}" 
-                                 Grid.Row="1" Grid.Column="1" 
-                                 Margin="5"/>
-                        
-                        <Label Content="Extra:" Grid.Row="1" Grid.Column="2" VerticalAlignment="Center"/>
-                        <TextBox Text="{Binding ExtraMinutes, UpdateSourceTrigger=PropertyChanged}" 
-                                 Grid.Row="1" Grid.Column="3" 
-                                 Margin="5"/>
-                        
-                        <Label Content="Total Minutes:" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" FontWeight="Bold"/>
-                        <TextBlock Text="{Binding TotalMinutes}" 
-                                   Grid.Row="2" Grid.Column="1" 
-                                   VerticalAlignment="Center"
-                                   Margin="5"
-                                   FontWeight="Bold"/>
-                    </Grid>
-                </GroupBox>
+                <TextBlock Text="Labor Minutes by Stage" FontSize="16" FontWeight="Bold" Margin="0,20,0,10"/>
                 
-                <!-- Options -->
-                <GroupBox Header="Options" Margin="0,0,0,15" Padding="10">
-                    <StackPanel>
-                        <CheckBox Content="Set as default variant for this code" 
-                                  IsChecked="{Binding IsDefault}" 
-                                  Margin="5"/>
-                        <CheckBox Content="Active" 
-                                  IsChecked="{Binding IsActive}" 
-                                  Margin="5"/>
-                    </StackPanel>
-                </GroupBox>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="120"/>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="120"/>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="120"/>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="120"/>
+                        <ColumnDefinition Width="100"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Text="Rough:" Grid.Column="0" VerticalAlignment="Center"/>
+                    <TextBox Text="{Binding RoughMinutes}" Grid.Column="1" Margin="5"/>
+
+                    <TextBlock Text="Finish:" Grid.Column="2" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                    <TextBox Text="{Binding FinishMinutes}" Grid.Column="3" Margin="5"/>
+
+                    <TextBlock Text="Service:" Grid.Column="4" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                    <TextBox Text="{Binding ServiceMinutes}" Grid.Column="5" Margin="5"/>
+
+                    <TextBlock Text="Extra:" Grid.Column="6" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                    <TextBox Text="{Binding ExtraMinutes}" Grid.Column="7" Margin="5"/>
+                </Grid>
+
+                <!-- Components -->
+                <StackPanel Orientation="Horizontal" Margin="0,20,0,10">
+                    <TextBlock Text="Components" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
+                    <Button Content="Add Component" Command="{Binding AddComponentCommand}" 
+                           Margin="20,0,0,0" Padding="10,5"/>
+                </StackPanel>
+
+                <DataGrid ItemsSource="{Binding Components}" 
+                         AutoGenerateColumns="False"
+                         CanUserAddRows="False"
+                         Height="200"
+                         Margin="0,0,0,10">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Material" Binding="{Binding Material.Name}" Width="*"/>
+                        <DataGridTextColumn Header="Code" Binding="{Binding Material.Code}" Width="100"/>
+                        <DataGridTextColumn Header="Quantity" Binding="{Binding Quantity}" Width="80"/>
+                        <DataGridCheckBoxColumn Header="Optional" Binding="{Binding IsOptional}" Width="70"/>
+                        <DataGridTemplateColumn Header="Action" Width="70">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="Remove" 
+                                           Command="{Binding DataContext.RemoveComponentCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                           CommandParameter="{Binding}"
+                                           Margin="2"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <!-- Status -->
+                <CheckBox Content="Active" IsChecked="{Binding IsActive}" Margin="0,10,0,0"/>
             </StackPanel>
         </ScrollViewer>
-        
+
         <!-- Buttons -->
-        <StackPanel Grid.Row="2" 
-                    Orientation="Horizontal" 
-                    HorizontalAlignment="Right" 
-                    Margin="0,20,0,0">
-            <Button Content="Save" 
-                    Command="{Binding SaveCommand}" 
-                    Width="100" 
-                    Height="30" 
-                    Margin="5"
-                    IsDefault="True"/>
-            <Button Content="Cancel" 
-                    Command="{Binding CancelCommand}" 
-                    Width="100" 
-                    Height="30" 
-                    Margin="5"
-                    IsCancel="True"/>
-        </StackPanel>
+        <Border Grid.Row="1" BorderThickness="0,1,0,0" BorderBrush="LightGray" Background="#F5F5F5">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="10">
+                <Button Content="Save" Command="{Binding SaveCommand}" 
+                       IsDefault="True" Width="80" Margin="5" Padding="5"/>
+                <Button Content="Cancel" Command="{Binding CancelCommand}" 
+                       IsCancel="True" Width="80" Margin="5" Padding="5"/>
+            </StackPanel>
+        </Border>
     </Grid>
 </Window>
