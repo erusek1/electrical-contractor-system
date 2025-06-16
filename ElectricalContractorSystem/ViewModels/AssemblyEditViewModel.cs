@@ -291,7 +291,7 @@ namespace ElectricalContractorSystem.ViewModels
 
         private void LoadAssembly(AssemblyTemplate assembly)
         {
-            Code = assembly.Code;
+            Code = assembly.AssemblyCode;
             Name = assembly.Name;
             Description = assembly.Description;
             RoughMinutes = assembly.RoughMinutes;
@@ -300,11 +300,11 @@ namespace ElectricalContractorSystem.ViewModels
             ExtraMinutes = assembly.ExtraMinutes;
             IsDefault = assembly.IsDefault;
             
-            // Load components
-            var components = _assemblyService.GetAssemblyComponents(assembly.AssemblyId);
+            // Load components using DatabaseService extension
+            var components = _databaseService.GetAssemblyComponents(assembly.AssemblyId);
             foreach (var component in components)
             {
-                var material = _pricingService.GetMaterial(component.MaterialId);
+                var material = _databaseService.GetMaterial(component.MaterialId);
                 if (material != null)
                 {
                     Components.Add(new AssemblyComponentViewModel
@@ -332,7 +332,7 @@ namespace ElectricalContractorSystem.ViewModels
                 ExistingVariants.Clear();
                 foreach (var variant in variants.Where(v => v.AssemblyId != _originalAssembly?.AssemblyId))
                 {
-                    var componentCount = _assemblyService.GetAssemblyComponents(variant.AssemblyId).Count();
+                    var componentCount = _databaseService.GetAssemblyComponents(variant.AssemblyId).Count();
                     ExistingVariants.Add(new AssemblyVariantInfo
                     {
                         AssemblyId = variant.AssemblyId,
@@ -444,7 +444,7 @@ namespace ElectricalContractorSystem.ViewModels
                 var assembly = new AssemblyTemplate
                 {
                     AssemblyId = _originalAssembly?.AssemblyId ?? 0,
-                    Code = Code.Trim(),
+                    AssemblyCode = Code.Trim(),
                     Name = Name.Trim(),
                     Description = Description?.Trim(),
                     RoughMinutes = RoughMinutes,
@@ -498,7 +498,7 @@ namespace ElectricalContractorSystem.ViewModels
         {
             // This should close the dialog window
             // The actual implementation depends on how you handle dialog closing
-            if (System.Windows.Application.Current.Windows.OfType<AssemblyEditDialog>().FirstOrDefault() is AssemblyEditDialog dialog)
+            if (System.Windows.Application.Current.Windows.OfType<Views.AssemblyEditDialog>().FirstOrDefault() is Views.AssemblyEditDialog dialog)
             {
                 dialog.DialogResult = DialogResult;
                 dialog.Close();
