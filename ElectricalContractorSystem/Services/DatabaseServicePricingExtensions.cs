@@ -17,6 +17,22 @@ namespace ElectricalContractorSystem.Services
             using (var connection = db.GetConnection())
             {
                 connection.Open();
+                
+                // Check if Materials table exists
+                var checkCmd = new MySqlCommand(@"
+                    SELECT COUNT(*) 
+                    FROM information_schema.tables 
+                    WHERE table_schema = DATABASE() 
+                    AND table_name = 'Materials'", connection);
+                    
+                var tableExists = Convert.ToInt32(checkCmd.ExecuteScalar()) > 0;
+                
+                if (!tableExists)
+                {
+                    // Return empty list if table doesn't exist
+                    return materials;
+                }
+                
                 var cmd = new MySqlCommand(@"
                     SELECT m.*, v.name AS VendorName 
                     FROM Materials m
@@ -200,6 +216,22 @@ namespace ElectricalContractorSystem.Services
             using (var connection = db.GetConnection())
             {
                 connection.Open();
+                
+                // Check if AssemblyTemplates table exists
+                var checkCmd = new MySqlCommand(@"
+                    SELECT COUNT(*) 
+                    FROM information_schema.tables 
+                    WHERE table_schema = DATABASE() 
+                    AND table_name = 'AssemblyTemplates'", connection);
+                    
+                var tableExists = Convert.ToInt32(checkCmd.ExecuteScalar()) > 0;
+                
+                if (!tableExists)
+                {
+                    // Return empty list if table doesn't exist
+                    return assemblies;
+                }
+                
                 var cmd = new MySqlCommand(@"
                     SELECT * FROM AssemblyTemplates 
                     WHERE IsActive = 1
@@ -489,6 +521,22 @@ namespace ElectricalContractorSystem.Services
             using (var connection = db.GetConnection())
             {
                 connection.Open();
+                
+                // Check if DifficultyPresets table exists
+                var checkCmd = new MySqlCommand(@"
+                    SELECT COUNT(*) 
+                    FROM information_schema.tables 
+                    WHERE table_schema = DATABASE() 
+                    AND table_name = 'DifficultyPresets'", connection);
+                    
+                var tableExists = Convert.ToInt32(checkCmd.ExecuteScalar()) > 0;
+                
+                if (!tableExists)
+                {
+                    // Return empty list if table doesn't exist
+                    return presets;
+                }
+                
                 var cmd = new MySqlCommand(@"
                     SELECT * FROM DifficultyPresets 
                     WHERE IsActive = 1
@@ -626,6 +674,22 @@ namespace ElectricalContractorSystem.Services
             using (var connection = db.GetConnection())
             {
                 connection.Open();
+                
+                // Check if ServiceTypes table exists
+                var checkCmd = new MySqlCommand(@"
+                    SELECT COUNT(*) 
+                    FROM information_schema.tables 
+                    WHERE table_schema = DATABASE() 
+                    AND table_name = 'ServiceTypes'", connection);
+                    
+                var tableExists = Convert.ToInt32(checkCmd.ExecuteScalar()) > 0;
+                
+                if (!tableExists)
+                {
+                    // Return empty list if table doesn't exist
+                    return serviceTypes;
+                }
+                
                 var cmd = new MySqlCommand(@"
                     SELECT * FROM ServiceTypes 
                     WHERE IsActive = 1
