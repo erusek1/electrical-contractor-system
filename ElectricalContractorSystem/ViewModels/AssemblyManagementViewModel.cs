@@ -8,12 +8,15 @@ using System.Windows.Input;
 using ElectricalContractorSystem.Helpers;
 using ElectricalContractorSystem.Models;
 using ElectricalContractorSystem.Services;
+using ElectricalContractorSystem.Views;
 
 namespace ElectricalContractorSystem.ViewModels
 {
     public class AssemblyManagementViewModel : INotifyPropertyChanged
     {
         private readonly DatabaseService _databaseService;
+        private readonly AssemblyService _assemblyService;
+        private readonly PricingService _pricingService;
         
         private ObservableCollection<AssemblyTemplate> _assemblies;
         private AssemblyTemplate _selectedAssembly;
@@ -21,22 +24,7 @@ namespace ElectricalContractorSystem.ViewModels
         private AssemblyComponent _selectedComponent;
         private ObservableCollection<AssemblyVariant> _variants;
         private AssemblyVariant _selectedVariant;
-        private ObservableCollection<Material> _availableMaterials;
-        private Material _selectedMaterial;
         private string _searchText;
-        private bool _isEditingAssembly;
-        private bool _isEditingComponent;
-        
-        // Edit mode properties
-        private string _editCode;
-        private string _editName;
-        private string _editDescription;
-        private string _editCategory;
-        private int _editRoughMinutes;
-        private int _editFinishMinutes;
-        private int _editServiceMinutes;
-        private int _editExtraMinutes;
-        private decimal _editQuantity;
         
         public ObservableCollection<AssemblyTemplate> Assemblies
         {
@@ -79,7 +67,6 @@ namespace ElectricalContractorSystem.ViewModels
             {
                 _selectedComponent = value;
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(CanEditComponent));
                 OnPropertyChanged(nameof(CanDeleteComponent));
             }
         }
@@ -106,27 +93,6 @@ namespace ElectricalContractorSystem.ViewModels
             }
         }
         
-        public ObservableCollection<Material> AvailableMaterials
-        {
-            get => _availableMaterials;
-            set
-            {
-                _availableMaterials = value;
-                OnPropertyChanged();
-            }
-        }
-        
-        public Material SelectedMaterial
-        {
-            get => _selectedMaterial;
-            set
-            {
-                _selectedMaterial = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(CanAddComponent));
-            }
-        }
-        
         public string SearchText
         {
             get => _searchText;
@@ -138,123 +104,10 @@ namespace ElectricalContractorSystem.ViewModels
             }
         }
         
-        public bool IsEditingAssembly
-        {
-            get => _isEditingAssembly;
-            set
-            {
-                _isEditingAssembly = value;
-                OnPropertyChanged();
-            }
-        }
-        
-        public bool IsEditingComponent
-        {
-            get => _isEditingComponent;
-            set
-            {
-                _isEditingComponent = value;
-                OnPropertyChanged();
-            }
-        }
-        
-        // Edit properties
-        public string EditCode
-        {
-            get => _editCode;
-            set
-            {
-                _editCode = value;
-                OnPropertyChanged();
-            }
-        }
-        
-        public string EditName
-        {
-            get => _editName;
-            set
-            {
-                _editName = value;
-                OnPropertyChanged();
-            }
-        }
-        
-        public string EditDescription
-        {
-            get => _editDescription;
-            set
-            {
-                _editDescription = value;
-                OnPropertyChanged();
-            }
-        }
-        
-        public string EditCategory
-        {
-            get => _editCategory;
-            set
-            {
-                _editCategory = value;
-                OnPropertyChanged();
-            }
-        }
-        
-        public int EditRoughMinutes
-        {
-            get => _editRoughMinutes;
-            set
-            {
-                _editRoughMinutes = value;
-                OnPropertyChanged();
-            }
-        }
-        
-        public int EditFinishMinutes
-        {
-            get => _editFinishMinutes;
-            set
-            {
-                _editFinishMinutes = value;
-                OnPropertyChanged();
-            }
-        }
-        
-        public int EditServiceMinutes
-        {
-            get => _editServiceMinutes;
-            set
-            {
-                _editServiceMinutes = value;
-                OnPropertyChanged();
-            }
-        }
-        
-        public int EditExtraMinutes
-        {
-            get => _editExtraMinutes;
-            set
-            {
-                _editExtraMinutes = value;
-                OnPropertyChanged();
-            }
-        }
-        
-        public decimal EditQuantity
-        {
-            get => _editQuantity;
-            set
-            {
-                _editQuantity = value;
-                OnPropertyChanged();
-            }
-        }
-        
         // Calculated properties
         public bool IsAssemblySelected => SelectedAssembly != null;
         public bool CanEditAssembly => SelectedAssembly != null;
         public bool CanDeleteAssembly => SelectedAssembly != null && !SelectedAssembly.IsDefault;
-        public bool CanAddComponent => SelectedAssembly != null && SelectedMaterial != null;
-        public bool CanEditComponent => SelectedComponent != null;
         public bool CanDeleteComponent => SelectedComponent != null;
         public bool CanSetAsDefault => SelectedVariant != null && !IsVariantDefault(SelectedVariant);
         public bool CanDeleteVariant => SelectedVariant != null && !IsVariantDefault(SelectedVariant);
@@ -283,14 +136,8 @@ namespace ElectricalContractorSystem.ViewModels
         // Commands
         public ICommand CreateAssemblyCommand { get; }
         public ICommand EditAssemblyCommand { get; }
-        public ICommand SaveAssemblyCommand { get; }
-        public ICommand CancelEditAssemblyCommand { get; }
         public ICommand DeleteAssemblyCommand { get; }
         public ICommand DuplicateAssemblyCommand { get; }
-        public ICommand AddComponentCommand { get; }
-        public ICommand EditComponentCommand { get; }
-        public ICommand SaveComponentCommand { get; }
-        public ICommand CancelEditComponentCommand { get; }
         public ICommand DeleteComponentCommand { get; }
         public ICommand CreateVariantCommand { get; }
         public ICommand SetDefaultVariantCommand { get; }
@@ -300,31 +147,23 @@ namespace ElectricalContractorSystem.ViewModels
         public AssemblyManagementViewModel(DatabaseService databaseService)
         {
             _databaseService = databaseService;
+            _assemblyService = new AssemblyService(databaseService);
+            _pricingService = new PricingService(databaseService);
             
             // Initialize collections
             Assemblies = new ObservableCollection<AssemblyTemplate>();
             Components = new ObservableCollection<AssemblyComponent>();
             Variants = new ObservableCollection<AssemblyVariant>();
-            AvailableMaterials = new ObservableCollection<Material>();
             
             // Initialize commands
             CreateAssemblyCommand = new RelayCommand(CreateAssembly);
             EditAssemblyCommand = new RelayCommand(EditAssembly, () => CanEditAssembly);
-            SaveAssemblyCommand = new RelayCommand(SaveAssembly);
-            CancelEditAssemblyCommand = new RelayCommand(CancelEditAssembly);
             DeleteAssemblyCommand = new RelayCommand(DeleteAssembly, () => CanDeleteAssembly);
             DuplicateAssemblyCommand = new RelayCommand(DuplicateAssembly, () => SelectedAssembly != null);
-            
-            AddComponentCommand = new RelayCommand(AddComponent, () => CanAddComponent);
-            EditComponentCommand = new RelayCommand(EditComponent, () => CanEditComponent);
-            SaveComponentCommand = new RelayCommand(SaveComponent);
-            CancelEditComponentCommand = new RelayCommand(CancelEditComponent);
             DeleteComponentCommand = new RelayCommand(DeleteComponent, () => CanDeleteComponent);
-            
             CreateVariantCommand = new RelayCommand(CreateVariant, () => SelectedAssembly != null);
             SetDefaultVariantCommand = new RelayCommand(SetDefaultVariant, () => CanSetAsDefault);
             DeleteVariantCommand = new RelayCommand(DeleteVariant, () => CanDeleteVariant);
-            
             RefreshCommand = new RelayCommand(LoadData);
             
             // Load initial data
@@ -335,38 +174,18 @@ namespace ElectricalContractorSystem.ViewModels
         {
             try
             {
-                // Load assemblies using DatabaseService extension method
-                var assemblies = _databaseService.GetAllAssemblies();
+                // Load assemblies
+                var assemblies = _assemblyService.GetAllAssemblies();
                 Assemblies.Clear();
                 foreach (var assembly in assemblies)
                 {
                     Assemblies.Add(assembly);
                 }
-                
-                // Load available materials
-                LoadMaterials();
             }
             catch (Exception ex)
             {
-                // TODO: Show error message
-                System.Diagnostics.Debug.WriteLine($"Error loading data: {ex.Message}");
-            }
-        }
-        
-        private void LoadMaterials()
-        {
-            try
-            {
-                var materials = _databaseService.GetAllMaterials();
-                AvailableMaterials.Clear();
-                foreach (var material in materials)
-                {
-                    AvailableMaterials.Add(material);
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error loading materials: {ex.Message}");
+                System.Windows.MessageBox.Show($"Error loading assemblies: {ex.Message}", "Error", 
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
         
@@ -382,29 +201,32 @@ namespace ElectricalContractorSystem.ViewModels
             try
             {
                 // Load components
-                var components = _databaseService.GetAssemblyComponents(SelectedAssembly.AssemblyId);
+                var components = _assemblyService.GetAssemblyComponents(SelectedAssembly.AssemblyId);
                 Components.Clear();
                 foreach (var component in components)
                 {
-                    // Material should already be loaded by the database service
+                    // Load the material details
+                    component.Material = _pricingService.GetMaterial(component.MaterialId);
                     Components.Add(component);
                 }
                 
-                // Load variants - need to find other assemblies with same code
-                var variantAssemblies = _databaseService.GetAssemblyVariants(SelectedAssembly.AssemblyCode);
+                // Load variants
+                var variantAssemblies = _assemblyService.GetAssemblyVariants(SelectedAssembly.Code);
                 Variants.Clear();
                 int sortOrder = 0;
                 foreach (var variantAssembly in variantAssemblies)
                 {
-                    // Create AssemblyVariant objects for display
-                    var variant = new AssemblyVariant
+                    if (variantAssembly.AssemblyId != SelectedAssembly.AssemblyId)
                     {
-                        ParentAssemblyId = SelectedAssembly.AssemblyId,
-                        VariantAssemblyId = variantAssembly.AssemblyId,
-                        SortOrder = sortOrder++,
-                        VariantAssembly = variantAssembly
-                    };
-                    Variants.Add(variant);
+                        var variant = new AssemblyVariant
+                        {
+                            ParentAssemblyId = SelectedAssembly.AssemblyId,
+                            VariantAssemblyId = variantAssembly.AssemblyId,
+                            SortOrder = sortOrder++,
+                            VariantAssembly = variantAssembly
+                        };
+                        Variants.Add(variant);
+                    }
                 }
                 
                 // Notify property changes
@@ -414,7 +236,8 @@ namespace ElectricalContractorSystem.ViewModels
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error loading assembly details: {ex.Message}");
+                System.Windows.MessageBox.Show($"Error loading assembly details: {ex.Message}", "Error", 
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
         
@@ -426,8 +249,8 @@ namespace ElectricalContractorSystem.ViewModels
                 return;
             }
             
-            var filtered = _databaseService.GetAllAssemblies()
-                .Where(a => a.AssemblyCode.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0 ||
+            var filtered = _assemblyService.GetAllAssemblies()
+                .Where(a => a.Code.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0 ||
                            a.Name.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0 ||
                            (a.Description?.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) ?? -1) >= 0)
                 .ToList();
@@ -441,110 +264,58 @@ namespace ElectricalContractorSystem.ViewModels
         
         private void CreateAssembly()
         {
-            // Set up for creating new assembly
-            SelectedAssembly = null;
-            EditCode = "";
-            EditName = "";
-            EditDescription = "";
-            EditCategory = "General"; // Default category
-            EditRoughMinutes = 0;
-            EditFinishMinutes = 0;
-            EditServiceMinutes = 0;
-            EditExtraMinutes = 0;
-            IsEditingAssembly = true;
+            var dialog = new AssemblyEditDialog();
+            var viewModel = new AssemblyEditViewModel(_databaseService);
+            dialog.DataContext = viewModel;
+            dialog.Owner = System.Windows.Application.Current.MainWindow;
+            
+            if (dialog.ShowDialog() == true)
+            {
+                LoadData();
+            }
         }
         
         private void EditAssembly()
         {
             if (SelectedAssembly == null) return;
             
-            EditCode = SelectedAssembly.AssemblyCode;
-            EditName = SelectedAssembly.Name;
-            EditDescription = SelectedAssembly.Description;
-            EditCategory = SelectedAssembly.Category;
-            EditRoughMinutes = SelectedAssembly.RoughMinutes;
-            EditFinishMinutes = SelectedAssembly.FinishMinutes;
-            EditServiceMinutes = SelectedAssembly.ServiceMinutes;
-            EditExtraMinutes = SelectedAssembly.ExtraMinutes;
-            IsEditingAssembly = true;
-        }
-        
-        private void SaveAssembly()
-        {
-            try
+            var dialog = new AssemblyEditDialog();
+            var viewModel = new AssemblyEditViewModel(_databaseService, SelectedAssembly);
+            dialog.DataContext = viewModel;
+            dialog.Owner = System.Windows.Application.Current.MainWindow;
+            
+            if (dialog.ShowDialog() == true)
             {
-                if (SelectedAssembly == null)
-                {
-                    // Creating new assembly
-                    var newAssembly = new AssemblyTemplate
-                    {
-                        AssemblyCode = EditCode,
-                        Name = EditName,
-                        Description = EditDescription,
-                        Category = EditCategory,
-                        RoughMinutes = EditRoughMinutes,
-                        FinishMinutes = EditFinishMinutes,
-                        ServiceMinutes = EditServiceMinutes,
-                        ExtraMinutes = EditExtraMinutes,
-                        IsDefault = Assemblies.Count == 0 || !Assemblies.Any(a => a.AssemblyCode == EditCode),
-                        IsActive = true,
-                        CreatedDate = DateTime.Now,
-                        CreatedBy = "System" // TODO: Get current user
-                    };
-                    
-                    _databaseService.SaveAssembly(newAssembly);
-                    Assemblies.Add(newAssembly);
-                    SelectedAssembly = newAssembly;
-                }
-                else
-                {
-                    // Updating existing assembly
-                    SelectedAssembly.AssemblyCode = EditCode;
-                    SelectedAssembly.Name = EditName;
-                    SelectedAssembly.Description = EditDescription;
-                    SelectedAssembly.Category = EditCategory;
-                    SelectedAssembly.RoughMinutes = EditRoughMinutes;
-                    SelectedAssembly.FinishMinutes = EditFinishMinutes;
-                    SelectedAssembly.ServiceMinutes = EditServiceMinutes;
-                    SelectedAssembly.ExtraMinutes = EditExtraMinutes;
-                    
-                    _databaseService.UpdateAssembly(SelectedAssembly);
-                    
-                    // Refresh the display
-                    OnPropertyChanged(nameof(SelectedAssembly));
-                    OnPropertyChanged(nameof(TotalLaborMinutes));
-                    OnPropertyChanged(nameof(TotalLaborHours));
-                }
-                
-                IsEditingAssembly = false;
+                LoadData();
+                // Try to reselect the edited assembly
+                SelectedAssembly = Assemblies.FirstOrDefault(a => a.AssemblyId == SelectedAssembly.AssemblyId);
             }
-            catch (Exception ex)
-            {
-                // TODO: Show error message
-                System.Diagnostics.Debug.WriteLine($"Error saving assembly: {ex.Message}");
-            }
-        }
-        
-        private void CancelEditAssembly()
-        {
-            IsEditingAssembly = false;
         }
         
         private void DeleteAssembly()
         {
             if (SelectedAssembly == null || SelectedAssembly.IsDefault) return;
             
-            try
+            var result = System.Windows.MessageBox.Show(
+                $"Are you sure you want to delete the assembly '{SelectedAssembly.Code} - {SelectedAssembly.Name}'?\n\n" +
+                "This will also delete all components and cannot be undone.",
+                "Confirm Delete",
+                System.Windows.MessageBoxButton.YesNo,
+                System.Windows.MessageBoxImage.Warning);
+            
+            if (result == System.Windows.MessageBoxResult.Yes)
             {
-                // Need to implement delete in database service
-                // For now, just remove from collection
-                Assemblies.Remove(SelectedAssembly);
-                SelectedAssembly = null;
-            }
-            catch (Exception ex)
-            {
-                // TODO: Show error message
-                System.Diagnostics.Debug.WriteLine($"Error deleting assembly: {ex.Message}");
+                try
+                {
+                    _assemblyService.DeleteAssembly(SelectedAssembly.AssemblyId);
+                    LoadData();
+                    SelectedAssembly = null;
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.MessageBox.Show($"Error deleting assembly: {ex.Message}", "Error", 
+                        System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                }
             }
         }
         
@@ -554,144 +325,72 @@ namespace ElectricalContractorSystem.ViewModels
             
             try
             {
+                // Create a copy of the assembly with a new code
                 var newAssembly = new AssemblyTemplate
                 {
-                    AssemblyCode = $"{SelectedAssembly.AssemblyCode}-copy",
+                    Code = GetNextAssemblyCode(SelectedAssembly.Code),
                     Name = $"{SelectedAssembly.Name} (Copy)",
                     Description = SelectedAssembly.Description,
-                    Category = SelectedAssembly.Category,
                     RoughMinutes = SelectedAssembly.RoughMinutes,
                     FinishMinutes = SelectedAssembly.FinishMinutes,
                     ServiceMinutes = SelectedAssembly.ServiceMinutes,
                     ExtraMinutes = SelectedAssembly.ExtraMinutes,
                     IsDefault = false,
-                    IsActive = true,
-                    CreatedDate = DateTime.Now,
-                    CreatedBy = "System" // TODO: Get current user
+                    IsActive = true
                 };
                 
-                // Save the new assembly
-                _databaseService.SaveAssembly(newAssembly);
-                
-                // Copy components
-                var components = _databaseService.GetAssemblyComponents(SelectedAssembly.AssemblyId);
-                foreach (var component in components)
-                {
-                    var newComponent = new AssemblyComponent
+                // Get the components
+                var components = _assemblyService.GetAssemblyComponents(SelectedAssembly.AssemblyId)
+                    .Select(c => new AssemblyComponent
                     {
-                        AssemblyId = newAssembly.AssemblyId,
-                        MaterialId = component.MaterialId,
-                        Quantity = component.Quantity,
-                        IsOptional = component.IsOptional
-                    };
-                    _databaseService.SaveAssemblyComponent(newComponent);
-                }
+                        MaterialId = c.MaterialId,
+                        Quantity = c.Quantity,
+                        IsOptional = c.IsOptional
+                    }).ToList();
                 
-                // Reload data
+                // Create the new assembly with components
+                _assemblyService.CreateAssembly(newAssembly, components);
+                
+                // Reload and select the new assembly
                 LoadData();
-                SelectedAssembly = newAssembly;
+                SelectedAssembly = Assemblies.FirstOrDefault(a => a.Code == newAssembly.Code);
             }
             catch (Exception ex)
             {
-                // TODO: Show error message
-                System.Diagnostics.Debug.WriteLine($"Error duplicating assembly: {ex.Message}");
+                System.Windows.MessageBox.Show($"Error duplicating assembly: {ex.Message}", "Error", 
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
         
-        private void AddComponent()
+        private string GetNextAssemblyCode(string baseCode)
         {
-            if (SelectedAssembly == null || SelectedMaterial == null) return;
-            
-            SelectedComponent = null;
-            EditQuantity = 1;
-            IsEditingComponent = true;
-        }
-        
-        private void EditComponent()
-        {
-            if (SelectedComponent == null) return;
-            
-            SelectedMaterial = AvailableMaterials.FirstOrDefault(m => m.MaterialId == SelectedComponent.MaterialId);
-            EditQuantity = SelectedComponent.Quantity;
-            IsEditingComponent = true;
-        }
-        
-        private void SaveComponent()
-        {
-            if (SelectedAssembly == null || SelectedMaterial == null) return;
-            
-            try
+            // Find the next available code by appending numbers
+            int suffix = 2;
+            string newCode;
+            do
             {
-                if (SelectedComponent == null)
-                {
-                    // Adding new component
-                    var newComponent = new AssemblyComponent
-                    {
-                        AssemblyId = SelectedAssembly.AssemblyId,
-                        MaterialId = SelectedMaterial.MaterialId,
-                        Quantity = EditQuantity,
-                        IsOptional = false,
-                        Material = SelectedMaterial // Set the material reference
-                    };
-                    
-                    // Save to database and get the generated ComponentId
-                    _databaseService.SaveAssemblyComponent(newComponent);
-                    
-                    // Reload the component from database to get the ComponentId
-                    var savedComponent = _databaseService.GetAssemblyComponents(SelectedAssembly.AssemblyId)
-                        .FirstOrDefault(c => c.MaterialId == newComponent.MaterialId && 
-                                           c.Quantity == newComponent.Quantity);
-                    
-                    if (savedComponent != null)
-                    {
-                        Components.Add(savedComponent);
-                    }
-                }
-                else
-                {
-                    // Updating existing component
-                    SelectedComponent.MaterialId = SelectedMaterial.MaterialId;
-                    SelectedComponent.Material = SelectedMaterial;
-                    SelectedComponent.Quantity = EditQuantity;
-                    
-                    _databaseService.UpdateAssemblyComponent(SelectedComponent);
-                    
-                    // Refresh display by reloading components
-                    LoadAssemblyDetails();
-                }
-                
-                IsEditingComponent = false;
-                SelectedMaterial = null; // Clear selection
-                OnPropertyChanged(nameof(TotalMaterialCost));
-            }
-            catch (Exception ex)
-            {
-                // TODO: Show error message
-                System.Diagnostics.Debug.WriteLine($"Error saving component: {ex.Message}");
-            }
-        }
-        
-        private void CancelEditComponent()
-        {
-            IsEditingComponent = false;
-            SelectedMaterial = null; // Clear selection
+                newCode = $"{baseCode}-{suffix}";
+                suffix++;
+            } while (Assemblies.Any(a => a.Code == newCode));
+            
+            return newCode;
         }
         
         private void DeleteComponent()
         {
-            if (SelectedComponent == null) return;
+            if (SelectedComponent == null || SelectedAssembly == null) return;
             
             try
             {
-                _databaseService.DeleteAssemblyComponent(SelectedComponent.ComponentId);
+                _assemblyService.DeleteComponent(SelectedComponent.ComponentId);
                 Components.Remove(SelectedComponent);
                 SelectedComponent = null;
                 OnPropertyChanged(nameof(TotalMaterialCost));
             }
             catch (Exception ex)
             {
-                // TODO: Show error message
-                System.Diagnostics.Debug.WriteLine($"Error deleting component: {ex.Message}");
+                System.Windows.MessageBox.Show($"Error deleting component: {ex.Message}", "Error", 
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
         
@@ -699,40 +398,31 @@ namespace ElectricalContractorSystem.ViewModels
         {
             if (SelectedAssembly == null) return;
             
-            try
+            // Create a new assembly as a variant with the same code
+            var dialog = new AssemblyEditDialog();
+            
+            // Create a copy of the current assembly to use as template
+            var variantTemplate = new AssemblyTemplate
             {
-                // TODO: Show dialog to get variant details
-                // For now, create a simple variant
-                var variantNumber = Variants.Count + 1;
-                var newVariant = new AssemblyTemplate
-                {
-                    AssemblyCode = SelectedAssembly.AssemblyCode, // Keep same code
-                    Name = $"{SelectedAssembly.Name} - Variant {variantNumber}",
-                    Description = $"Variant {variantNumber} of {SelectedAssembly.Name}",
-                    Category = SelectedAssembly.Category,
-                    RoughMinutes = SelectedAssembly.RoughMinutes,
-                    FinishMinutes = SelectedAssembly.FinishMinutes,
-                    ServiceMinutes = SelectedAssembly.ServiceMinutes,
-                    ExtraMinutes = SelectedAssembly.ExtraMinutes,
-                    IsDefault = false,
-                    IsActive = true,
-                    CreatedDate = DateTime.Now,
-                    CreatedBy = "System" // TODO: Get current user
-                };
-                
-                // Save the variant assembly
-                _databaseService.SaveAssembly(newVariant);
-                
-                // Create the variant relationship
-                _databaseService.CreateAssemblyVariantRelationship(SelectedAssembly.AssemblyId, newVariant.AssemblyId);
-                
-                // Reload assembly details
+                Code = SelectedAssembly.Code, // Keep the same code for variants
+                Name = $"{SelectedAssembly.Name} - Variant",
+                Description = SelectedAssembly.Description,
+                RoughMinutes = SelectedAssembly.RoughMinutes,
+                FinishMinutes = SelectedAssembly.FinishMinutes,
+                ServiceMinutes = SelectedAssembly.ServiceMinutes,
+                ExtraMinutes = SelectedAssembly.ExtraMinutes,
+                IsDefault = false,
+                IsActive = true
+            };
+            
+            var viewModel = new AssemblyEditViewModel(_databaseService, variantTemplate);
+            dialog.DataContext = viewModel;
+            dialog.Owner = System.Windows.Application.Current.MainWindow;
+            
+            if (dialog.ShowDialog() == true)
+            {
+                LoadData();
                 LoadAssemblyDetails();
-            }
-            catch (Exception ex)
-            {
-                // TODO: Show error message
-                System.Diagnostics.Debug.WriteLine($"Error creating variant: {ex.Message}");
             }
         }
         
@@ -742,14 +432,12 @@ namespace ElectricalContractorSystem.ViewModels
             
             try
             {
-                // Update all variants to set the selected one as default
-                foreach (var variant in Variants)
+                // Update all assemblies with this code to set the selected one as default
+                var allVariants = _assemblyService.GetAssemblyVariants(SelectedAssembly.Code);
+                foreach (var variant in allVariants)
                 {
-                    if (variant.VariantAssembly != null)
-                    {
-                        variant.VariantAssembly.IsDefault = (variant.VariantAssemblyId == SelectedVariant.VariantAssemblyId);
-                        _databaseService.UpdateAssembly(variant.VariantAssembly);
-                    }
+                    variant.IsDefault = (variant.AssemblyId == SelectedVariant.VariantAssemblyId);
+                    _assemblyService.UpdateAssembly(variant, null); // Don't update components
                 }
                 
                 // Refresh display
@@ -757,8 +445,8 @@ namespace ElectricalContractorSystem.ViewModels
             }
             catch (Exception ex)
             {
-                // TODO: Show error message
-                System.Diagnostics.Debug.WriteLine($"Error setting default variant: {ex.Message}");
+                System.Windows.MessageBox.Show($"Error setting default variant: {ex.Message}", "Error", 
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
         
@@ -766,16 +454,24 @@ namespace ElectricalContractorSystem.ViewModels
         {
             if (SelectedVariant == null || IsVariantDefault(SelectedVariant)) return;
             
-            try
+            var result = System.Windows.MessageBox.Show(
+                $"Are you sure you want to delete this variant?\n\nThis cannot be undone.",
+                "Confirm Delete",
+                System.Windows.MessageBoxButton.YesNo,
+                System.Windows.MessageBoxImage.Warning);
+            
+            if (result == System.Windows.MessageBoxResult.Yes)
             {
-                // TODO: Implement delete variant in database
-                Variants.Remove(SelectedVariant);
-                SelectedVariant = null;
-            }
-            catch (Exception ex)
-            {
-                // TODO: Show error message
-                System.Diagnostics.Debug.WriteLine($"Error deleting variant: {ex.Message}");
+                try
+                {
+                    _assemblyService.DeleteAssembly(SelectedVariant.VariantAssemblyId);
+                    LoadAssemblyDetails();
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.MessageBox.Show($"Error deleting variant: {ex.Message}", "Error", 
+                        System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                }
             }
         }
         
