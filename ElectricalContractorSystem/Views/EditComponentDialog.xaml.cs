@@ -6,19 +6,20 @@ namespace ElectricalContractorSystem.Views
     public partial class EditComponentDialog : Window
     {
         public AssemblyComponent Component { get; set; }
-        public string ComponentName => $"{Component?.ItemCode} - {Component?.ItemName}";
         public decimal Quantity { get; set; }
-        public string Notes { get; set; }
+        public bool IsOptional { get; set; }
 
         public EditComponentDialog(AssemblyComponent component)
         {
             InitializeComponent();
+            
             Component = component;
             Quantity = component.Quantity;
-            Notes = component.Notes;
+            IsOptional = component.IsOptional;
+            
             DataContext = this;
             
-            // Focus on the quantity textbox
+            // Focus on quantity textbox
             Loaded += (s, e) => QuantityTextBox.Focus();
         }
 
@@ -26,13 +27,14 @@ namespace ElectricalContractorSystem.Views
         {
             if (Quantity <= 0)
             {
-                MessageBox.Show("Quantity must be greater than zero.", "Validation Error", 
+                MessageBox.Show("Quantity must be greater than 0.", "Validation Error", 
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
+            // Update the component
             Component.Quantity = Quantity;
-            Component.Notes = Notes;
+            Component.IsOptional = IsOptional;
 
             DialogResult = true;
             Close();
