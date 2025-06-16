@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
@@ -546,7 +547,7 @@ namespace ElectricalContractorSystem.ViewModels
                         Description = item.Description,
                         Category = item.Category,
                         // For now, use labor minutes as rough minutes
-                        RoughMinutes = item.LaborMinutes ?? 0,
+                        RoughMinutes = item.LaborMinutes.GetValueOrDefault(0),
                         FinishMinutes = 0,
                         ServiceMinutes = 0,
                         ExtraMinutes = 0,
