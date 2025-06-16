@@ -10,40 +10,50 @@ namespace ElectricalContractorSystem.Views
 {
     public partial class AddComponentDialog : Window, INotifyPropertyChanged
     {
-        private ObservableCollection<Material> _allMaterials;
-        private ObservableCollection<Material> _filteredMaterials;
-        private Material _selectedMaterial;
+        private ObservableCollection<PriceListItem> _allItems;
+        private ObservableCollection<PriceListItem> _filteredItems;
+        private PriceListItem _selectedItem;
         private decimal _quantity = 1;
         private bool _isOptional;
 
-        public AddComponentDialog(List<Material> materials)
+        public AddComponentDialog()
         {
             InitializeComponent();
             DataContext = this;
             
-            _allMaterials = new ObservableCollection<Material>(materials);
-            _filteredMaterials = new ObservableCollection<Material>(_allMaterials);
+            _allItems = new ObservableCollection<PriceListItem>();
+            _filteredItems = new ObservableCollection<PriceListItem>();
             
             // Focus on search box
             Loaded += (s, e) => SearchTextBox.Focus();
         }
 
-        public ObservableCollection<Material> FilteredMaterials
+        public List<PriceListItem> AvailableItems
         {
-            get => _filteredMaterials;
             set
             {
-                _filteredMaterials = value;
+                _allItems = new ObservableCollection<PriceListItem>(value);
+                _filteredItems = new ObservableCollection<PriceListItem>(_allItems);
+                OnPropertyChanged(nameof(FilteredItems));
+            }
+        }
+
+        public ObservableCollection<PriceListItem> FilteredItems
+        {
+            get => _filteredItems;
+            set
+            {
+                _filteredItems = value;
                 OnPropertyChanged();
             }
         }
 
-        public Material SelectedMaterial
+        public PriceListItem SelectedItem
         {
-            get => _selectedMaterial;
+            get => _selectedItem;
             set
             {
-                _selectedMaterial = value;
+                _selectedItem = value;
                 OnPropertyChanged();
             }
         }
@@ -74,24 +84,24 @@ namespace ElectricalContractorSystem.Views
             
             if (string.IsNullOrWhiteSpace(searchText))
             {
-                FilteredMaterials = new ObservableCollection<Material>(_allMaterials);
+                FilteredItems = new ObservableCollection<PriceListItem>(_allItems);
             }
             else
             {
-                var filtered = _allMaterials.Where(m => 
-                    m.Code.ToLower().Contains(searchText) || 
+                var filtered = _allItems.Where(m => 
+                    m.ItemCode.ToLower().Contains(searchText) || 
                     m.Name.ToLower().Contains(searchText) ||
                     (m.Category != null && m.Category.ToLower().Contains(searchText))).ToList();
                     
-                FilteredMaterials = new ObservableCollection<Material>(filtered);
+                FilteredItems = new ObservableCollection<PriceListItem>(filtered);
             }
         }
 
         private void AddButton_Click(object sender, RoutedEventArgs e)
         {
-            if (SelectedMaterial == null)
+            if (SelectedItem == null)
             {
-                MessageBox.Show("Please select a material.", "Validation Error", 
+                MessageBox.Show("Please select an item.", "Validation Error", 
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
