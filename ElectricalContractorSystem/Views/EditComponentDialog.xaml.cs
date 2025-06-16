@@ -15,8 +15,15 @@ namespace ElectricalContractorSystem.Views
             InitializeComponent();
             DataContext = this;
             
+            // Initialize NewQuantity with CurrentQuantity
+            NewQuantity = CurrentQuantity;
+            
             // Focus on quantity textbox
-            Loaded += (s, e) => QuantityTextBox.Focus();
+            Loaded += (s, e) => 
+            {
+                QuantityTextBox.Focus();
+                QuantityTextBox.SelectAll();
+            };
         }
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
