@@ -18,24 +18,24 @@
 
         <!-- Search -->
         <StackPanel Grid.Row="0" Margin="10">
-            <TextBlock Text="Search Materials:" Margin="0,0,0,5"/>
+            <TextBlock Text="Search Items:" Margin="0,0,0,5"/>
             <TextBox x:Name="SearchTextBox" TextChanged="SearchTextBox_TextChanged" />
         </StackPanel>
 
-        <!-- Materials List -->
-        <DataGrid Grid.Row="1" x:Name="MaterialsDataGrid"
-                 ItemsSource="{Binding FilteredMaterials}"
-                 SelectedItem="{Binding SelectedMaterial}"
+        <!-- Items List -->
+        <DataGrid Grid.Row="1" x:Name="ItemsDataGrid"
+                 ItemsSource="{Binding FilteredItems}"
+                 SelectedItem="{Binding SelectedItem}"
                  AutoGenerateColumns="False"
                  CanUserAddRows="False"
                  SelectionMode="Single"
                  Margin="10,0,10,10">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Code" Binding="{Binding Code}" Width="100"/>
+                <DataGridTextColumn Header="Code" Binding="{Binding ItemCode}" Width="100"/>
                 <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
                 <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="100"/>
-                <DataGridTextColumn Header="Price" Binding="{Binding CurrentPrice, StringFormat=C}" Width="80"/>
-                <DataGridTextColumn Header="Unit" Binding="{Binding UnitOfMeasure}" Width="80"/>
+                <DataGridTextColumn Header="Price" Binding="{Binding BaseCost, StringFormat=C}" Width="80"/>
+                <DataGridTextColumn Header="Labor Min" Binding="{Binding LaborMinutes}" Width="80"/>
             </DataGrid.Columns>
         </DataGrid>
 
