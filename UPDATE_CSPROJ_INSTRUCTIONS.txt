@@ -1,0 +1,40 @@
+Instructions to update ElectricalContractorSystem.csproj file:
+
+Add these entries to the .csproj file in the appropriate sections:
+
+1. In the ViewModels section (after line with AssemblyManagementViewModel.cs), add:
+    <Compile Include="ViewModels\AssemblyEditViewModel.cs" />
+
+2. In the Views code-behind section (after line with AddCustomerDialog.xaml.cs), add:
+    <Compile Include="Views\AssemblyEditDialog.xaml.cs">
+      <DependentUpon>AssemblyEditDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\CreateVariantDialog.xaml.cs">
+      <DependentUpon>CreateVariantDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\AddComponentDialog.xaml.cs">
+      <DependentUpon>AddComponentDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\EditComponentDialog.xaml.cs">
+      <DependentUpon>EditComponentDialog.xaml</DependentUpon>
+    </Compile>
+
+3. In the Views XAML section (after line with AddCustomerDialog.xaml), add:
+    <Page Include="Views\AssemblyEditDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\CreateVariantDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\AddComponentDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\EditComponentDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+
+After adding these entries, save the .csproj file and rebuild the solution.
