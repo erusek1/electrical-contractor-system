@@ -529,13 +529,58 @@ namespace ElectricalContractorSystem.ViewModels
         
         private void LoadAssemblies()
         {
-            // Use SearchAssemblies with empty string to get all assemblies
-            var assemblies = _assemblyService.SearchAssemblies("");
-            Assemblies.Clear();
-            foreach (var assembly in assemblies.Where(a => a.IsActive).OrderBy(a => a.Category).ThenBy(a => a.AssemblyCode))
+            try
             {
-                Assemblies.Add(assembly);
+                // For now, create assembly templates from PriceList items until the assembly tables are created
+                var priceListItems = _databaseService.GetActivePriceListItems();
+                Assemblies.Clear();
+                
+                foreach (var item in priceListItems.Where(i => !string.IsNullOrEmpty(i.ItemCode)))
+                {
+                    // Create a temporary assembly template from price list item
+                    var assembly = new AssemblyTemplate
+                    {
+                        AssemblyId = item.ItemId,
+                        AssemblyCode = item.ItemCode,
+                        Name = item.Name,
+                        Description = item.Description,
+                        Category = item.Category,
+                        // For now, use labor minutes as rough minutes
+                        RoughMinutes = item.LaborMinutes ?? 0,
+                        FinishMinutes = 0,
+                        ServiceMinutes = 0,
+                        ExtraMinutes = 0,
+                        IsDefault = true,
+                        IsActive = true,
+                        CreatedBy = "System",
+                        CreatedDate = DateTime.Now,
+                        Components = new List<AssemblyComponent>()
+                    };
+                    
+                    // Add a single component representing the price list item
+                    assembly.Components.Add(new AssemblyComponent
+                    {
+                        ComponentId = 1,
+                        AssemblyId = assembly.AssemblyId,
+                        PriceListItemId = item.ItemId,
+                        Quantity = 1,
+                        ItemCode = item.ItemCode,
+                        ItemName = item.Name,
+                        UnitPrice = item.BaseCost
+                    });
+                    
+                    Assemblies.Add(assembly);
+                }
             }
+            catch (Exception ex)
+            {
+                // If there's an error, just load as price list items
+                System.Windows.MessageBox.Show($"Note: Using price list items instead of assemblies. {ex.Message}", 
+                    "Information", 
+                    System.Windows.MessageBoxButton.OK, 
+                    System.Windows.MessageBoxImage.Information);
+            }
+            
             FilterItems();
         }
         
