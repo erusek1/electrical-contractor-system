@@ -6,23 +6,29 @@ using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using ElectricalContractorSystem.Helpers;
 using ElectricalContractorSystem.Models;
+using ElectricalContractorSystem.Services;
 
 namespace ElectricalContractorSystem.ViewModels
 {
     public class AssemblyEditViewModel : INotifyPropertyChanged
     {
+        private DatabaseService _databaseService;
         private AssemblyTemplate _assembly;
         private ObservableCollection<Material> _availableMaterials;
         private bool _isEditMode;
         private string _title;
 
-        public AssemblyEditViewModel(AssemblyTemplate assembly = null)
+        public AssemblyEditViewModel(DatabaseService databaseService, AssemblyTemplate assembly = null)
         {
+            _databaseService = databaseService;
             _assembly = assembly ?? new AssemblyTemplate
             {
                 Components = new ObservableCollection<AssemblyComponent>(),
                 IsActive = true,
-                IsDefault = false
+                IsDefault = false,
+                Category = "Devices",
+                CreatedBy = "System",
+                CreatedDate = DateTime.Now
             };
             
             _isEditMode = assembly != null;
@@ -47,10 +53,10 @@ namespace ElectricalContractorSystem.ViewModels
 
         public string Code
         {
-            get => _assembly.Code;
+            get => _assembly.AssemblyCode;
             set
             {
-                _assembly.Code = value;
+                _assembly.AssemblyCode = value;
                 OnPropertyChanged();
                 ((RelayCommand)SaveCommand).RaiseCanExecuteChanged();
             }
@@ -73,6 +79,16 @@ namespace ElectricalContractorSystem.ViewModels
             set
             {
                 _assembly.Description = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string Category
+        {
+            get => _assembly.Category;
+            set
+            {
+                _assembly.Category = value;
                 OnPropertyChanged();
             }
         }
@@ -174,13 +190,31 @@ namespace ElectricalContractorSystem.ViewModels
         private bool CanSave()
         {
             return !string.IsNullOrWhiteSpace(Code) && 
-                   !string.IsNullOrWhiteSpace(Name);
+                   !string.IsNullOrWhiteSpace(Name) &&
+                   !string.IsNullOrWhiteSpace(Category);
         }
 
         private void Save()
         {
-            DialogResult = true;
-            RequestClose?.Invoke(this, EventArgs.Empty);
+            try
+            {
+                // Save the assembly
+                if (_isEditMode)
+                {
+                    _assembly.UpdatedBy = "System";
+                    _assembly.UpdatedDate = DateTime.Now;
+                }
+                
+                _databaseService.SaveAssembly(_assembly);
+                
+                DialogResult = true;
+                RequestClose?.Invoke(this, EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Error saving assembly: {ex.Message}", 
+                    "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
         }
 
         private void Cancel()
@@ -195,6 +229,7 @@ namespace ElectricalContractorSystem.ViewModels
             // For now, just add a placeholder
             var component = new AssemblyComponent
             {
+                AssemblyId = _assembly.AssemblyId,
                 Quantity = 1,
                 IsOptional = false
             };
