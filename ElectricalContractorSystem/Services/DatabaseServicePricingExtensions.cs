@@ -36,8 +36,8 @@ namespace ElectricalContractorSystem.Services
                 var cmd = new MySqlCommand(@"
                     SELECT m.*, v.name AS VendorName 
                     FROM Materials m
-                    LEFT JOIN Vendors v ON m.PreferredVendorId = v.vendor_id
-                    ORDER BY m.Category, m.Name", connection);
+                    LEFT JOIN Vendors v ON m.preferred_vendor_id = v.vendor_id
+                    ORDER BY m.category, m.name", connection);
 
                 using (var reader = cmd.ExecuteReader())
                 {
@@ -58,8 +58,8 @@ namespace ElectricalContractorSystem.Services
                 var cmd = new MySqlCommand(@"
                     SELECT m.*, v.name AS VendorName 
                     FROM Materials m
-                    LEFT JOIN Vendors v ON m.PreferredVendorId = v.vendor_id
-                    WHERE m.MaterialId = @materialId", connection);
+                    LEFT JOIN Vendors v ON m.preferred_vendor_id = v.vendor_id
+                    WHERE m.material_id = @materialId", connection);
                 
                 cmd.Parameters.AddWithValue("@materialId", materialId);
 
@@ -84,9 +84,9 @@ namespace ElectricalContractorSystem.Services
                 if (material.MaterialId == 0)
                 {
                     cmd = new MySqlCommand(@"
-                        INSERT INTO Materials (MaterialCode, Name, Description, Category, 
-                            UnitOfMeasure, CurrentPrice, TaxRate, MinStockLevel, MaxStockLevel,
-                            PreferredVendorId, IsActive, CreatedDate)
+                        INSERT INTO Materials (material_code, name, description, category, 
+                            unit_of_measure, current_price, tax_rate, min_stock_level, max_stock_level,
+                            preferred_vendor_id, is_active, created_date)
                         VALUES (@code, @name, @desc, @category, @unit, @price, @tax, 
                             @minStock, @maxStock, @vendorId, @active, @created);
                         SELECT LAST_INSERT_ID();", connection);
@@ -97,11 +97,11 @@ namespace ElectricalContractorSystem.Services
                 {
                     cmd = new MySqlCommand(@"
                         UPDATE Materials SET 
-                            MaterialCode = @code, Name = @name, Description = @desc,
-                            Category = @category, UnitOfMeasure = @unit, CurrentPrice = @price,
-                            TaxRate = @tax, MinStockLevel = @minStock, MaxStockLevel = @maxStock,
-                            PreferredVendorId = @vendorId, IsActive = @active, UpdatedDate = @updated
-                        WHERE MaterialId = @id", connection);
+                            material_code = @code, name = @name, description = @desc,
+                            category = @category, unit_of_measure = @unit, current_price = @price,
+                            tax_rate = @tax, min_stock_level = @minStock, max_stock_level = @maxStock,
+                            preferred_vendor_id = @vendorId, is_active = @active, updated_date = @updated
+                        WHERE material_id = @id", connection);
                     
                     cmd.Parameters.AddWithValue("@id", material.MaterialId);
                     cmd.Parameters.AddWithValue("@updated", DateTime.Now);
@@ -146,11 +146,10 @@ namespace ElectricalContractorSystem.Services
             {
                 connection.Open();
                 var cmd = new MySqlCommand(@"
-                    INSERT INTO MaterialPriceHistory (MaterialId, OldPrice, NewPrice, 
-                        PercentageChange, ChangedBy, ChangeDate, VendorId, InvoiceNumber,
-                        QuantityPurchased, Notes)
-                    VALUES (@materialId, @oldPrice, @newPrice, @percentChange, @changedBy,
-                        @changeDate, @vendorId, @invoice, @quantity, @notes)", connection);
+                    INSERT INTO MaterialPriceHistory (material_id, price, effective_date, 
+                        vendor_id, purchase_order_number, quantity_purchased, notes, created_by)
+                    VALUES (@materialId, @newPrice, @changeDate, @vendorId, @invoice, 
+                        @quantity, @notes, @changedBy)", connection);
 
                 cmd.Parameters.AddWithValue("@materialId", history.MaterialId);
                 cmd.Parameters.AddWithValue("@oldPrice", history.OldPrice);
@@ -175,18 +174,18 @@ namespace ElectricalContractorSystem.Services
             {
                 connection.Open();
                 var query = @"
-                    SELECT mph.*, v.name AS VendorName, m.Name AS MaterialName
+                    SELECT mph.*, v.name AS VendorName, m.name AS MaterialName
                     FROM MaterialPriceHistory mph
-                    LEFT JOIN Vendors v ON mph.VendorId = v.vendor_id
-                    LEFT JOIN Materials m ON mph.MaterialId = m.MaterialId
-                    WHERE mph.MaterialId = @materialId";
+                    LEFT JOIN Vendors v ON mph.vendor_id = v.vendor_id
+                    LEFT JOIN Materials m ON mph.material_id = m.material_id
+                    WHERE mph.material_id = @materialId";
 
                 if (startDate.HasValue)
-                    query += " AND mph.ChangeDate >= @startDate";
+                    query += " AND mph.effective_date >= @startDate";
                 if (endDate.HasValue)
-                    query += " AND mph.ChangeDate <= @endDate";
+                    query += " AND mph.effective_date <= @endDate";
 
-                query += " ORDER BY mph.ChangeDate DESC";
+                query += " ORDER BY mph.effective_date DESC";
 
                 var cmd = new MySqlCommand(query, connection);
                 cmd.Parameters.AddWithValue("@materialId", materialId);
@@ -234,8 +233,8 @@ namespace ElectricalContractorSystem.Services
                 
                 var cmd = new MySqlCommand(@"
                     SELECT * FROM AssemblyTemplates 
-                    WHERE IsActive = 1
-                    ORDER BY Category, AssemblyCode, Name", connection);
+                    WHERE is_active = 1
+                    ORDER BY category, assembly_code, name", connection);
 
                 using (var reader = cmd.ExecuteReader())
                 {
@@ -262,7 +261,7 @@ namespace ElectricalContractorSystem.Services
                 connection.Open();
                 var cmd = new MySqlCommand(@"
                     SELECT * FROM AssemblyTemplates 
-                    WHERE AssemblyId = @assemblyId", connection);
+                    WHERE assembly_id = @assemblyId", connection);
                 
                 cmd.Parameters.AddWithValue("@assemblyId", assemblyId);
 
@@ -288,8 +287,8 @@ namespace ElectricalContractorSystem.Services
                 // First get the main assembly
                 var cmd = new MySqlCommand(@"
                     SELECT * FROM AssemblyTemplates 
-                    WHERE AssemblyCode = @code AND IsActive = 1
-                    ORDER BY IsDefault DESC, Name", connection);
+                    WHERE assembly_code = @code AND is_active = 1
+                    ORDER BY is_default DESC, name", connection);
                 
                 cmd.Parameters.AddWithValue("@code", assemblyCode);
 
@@ -304,10 +303,10 @@ namespace ElectricalContractorSystem.Services
                 // Then get variants
                 cmd = new MySqlCommand(@"
                     SELECT at.* FROM AssemblyTemplates at
-                    INNER JOIN AssemblyVariants av ON at.AssemblyId = av.VariantAssemblyId
-                    INNER JOIN AssemblyTemplates parent ON av.ParentAssemblyId = parent.AssemblyId
-                    WHERE parent.AssemblyCode = @code AND at.IsActive = 1
-                    ORDER BY av.SortOrder, at.Name", connection);
+                    INNER JOIN AssemblyVariants av ON at.assembly_id = av.variant_assembly_id
+                    INNER JOIN AssemblyTemplates parent ON av.parent_assembly_id = parent.assembly_id
+                    WHERE parent.assembly_code = @code AND at.is_active = 1
+                    ORDER BY av.sort_order, at.name", connection);
                 
                 cmd.Parameters.AddWithValue("@code", assemblyCode);
 
@@ -339,9 +338,9 @@ namespace ElectricalContractorSystem.Services
                 if (assembly.AssemblyId == 0)
                 {
                     cmd = new MySqlCommand(@"
-                        INSERT INTO AssemblyTemplates (AssemblyCode, Name, Description, Category,
-                            RoughMinutes, FinishMinutes, ServiceMinutes, ExtraMinutes,
-                            IsDefault, IsActive, CreatedBy, CreatedDate)
+                        INSERT INTO AssemblyTemplates (assembly_code, name, description, category,
+                            rough_minutes, finish_minutes, service_minutes, extra_minutes,
+                            is_default, is_active, created_by, created_date)
                         VALUES (@code, @name, @desc, @category, @rough, @finish, @service, @extra,
                             @isDefault, @active, @createdBy, @created);
                         SELECT LAST_INSERT_ID();", connection);
@@ -352,12 +351,12 @@ namespace ElectricalContractorSystem.Services
                 {
                     cmd = new MySqlCommand(@"
                         UPDATE AssemblyTemplates SET 
-                            AssemblyCode = @code, Name = @name, Description = @desc,
-                            Category = @category, RoughMinutes = @rough, FinishMinutes = @finish,
-                            ServiceMinutes = @service, ExtraMinutes = @extra,
-                            IsDefault = @isDefault, IsActive = @active,
-                            UpdatedBy = @updatedBy, UpdatedDate = @updated
-                        WHERE AssemblyId = @id", connection);
+                            assembly_code = @code, name = @name, description = @desc,
+                            category = @category, rough_minutes = @rough, finish_minutes = @finish,
+                            service_minutes = @service, extra_minutes = @extra,
+                            is_default = @isDefault, is_active = @active,
+                            updated_by = @updatedBy, updated_date = @updated
+                        WHERE assembly_id = @id", connection);
                     
                     cmd.Parameters.AddWithValue("@id", assembly.AssemblyId);
                     cmd.Parameters.AddWithValue("@updatedBy", assembly.UpdatedBy);
@@ -394,7 +393,7 @@ namespace ElectricalContractorSystem.Services
             {
                 connection.Open();
                 var cmd = new MySqlCommand(@"
-                    INSERT INTO AssemblyVariants (ParentAssemblyId, VariantAssemblyId, SortOrder)
+                    INSERT INTO AssemblyVariants (parent_assembly_id, variant_assembly_id, sort_order)
                     VALUES (@parentId, @variantId, @sortOrder)", connection);
 
                 cmd.Parameters.AddWithValue("@parentId", parentAssemblyId);
@@ -416,12 +415,12 @@ namespace ElectricalContractorSystem.Services
             {
                 connection.Open();
                 var cmd = new MySqlCommand(@"
-                    SELECT ac.*, p.name AS ItemName, p.item_code AS ItemCode,
-                           p.base_cost AS UnitPrice
+                    SELECT ac.*, m.name AS ItemName, m.material_code AS ItemCode,
+                           m.current_price AS UnitPrice
                     FROM AssemblyComponents ac
-                    INNER JOIN PriceList p ON ac.PriceListItemId = p.item_id
-                    WHERE ac.AssemblyId = @assemblyId
-                    ORDER BY ac.ComponentId", connection);
+                    INNER JOIN Materials m ON ac.material_id = m.material_id
+                    WHERE ac.assembly_id = @assemblyId
+                    ORDER BY ac.component_id", connection);
                 
                 cmd.Parameters.AddWithValue("@assemblyId", assemblyId);
 
@@ -442,11 +441,11 @@ namespace ElectricalContractorSystem.Services
             {
                 connection.Open();
                 var cmd = new MySqlCommand(@"
-                    SELECT ac.*, p.name AS ItemName, p.item_code AS ItemCode,
-                           p.base_cost AS UnitPrice
+                    SELECT ac.*, m.name AS ItemName, m.material_code AS ItemCode,
+                           m.current_price AS UnitPrice
                     FROM AssemblyComponents ac
-                    INNER JOIN PriceList p ON ac.PriceListItemId = p.item_id
-                    WHERE ac.ComponentId = @componentId", connection);
+                    INNER JOIN Materials m ON ac.material_id = m.material_id
+                    WHERE ac.component_id = @componentId", connection);
                 
                 cmd.Parameters.AddWithValue("@componentId", componentId);
 
@@ -467,12 +466,12 @@ namespace ElectricalContractorSystem.Services
             {
                 connection.Open();
                 var cmd = new MySqlCommand(@"
-                    INSERT INTO AssemblyComponents (AssemblyId, PriceListItemId, Quantity, Notes)
-                    VALUES (@assemblyId, @itemId, @quantity, @notes);
+                    INSERT INTO AssemblyComponents (assembly_id, material_id, quantity, notes)
+                    VALUES (@assemblyId, @materialId, @quantity, @notes);
                     SELECT LAST_INSERT_ID();", connection);
 
                 cmd.Parameters.AddWithValue("@assemblyId", component.AssemblyId);
-                cmd.Parameters.AddWithValue("@itemId", component.PriceListItemId);
+                cmd.Parameters.AddWithValue("@materialId", component.MaterialId ?? component.PriceListItemId);  // Support both old and new
                 cmd.Parameters.AddWithValue("@quantity", component.Quantity);
                 cmd.Parameters.AddWithValue("@notes", component.Notes ?? (object)DBNull.Value);
 
@@ -487,8 +486,8 @@ namespace ElectricalContractorSystem.Services
                 connection.Open();
                 var cmd = new MySqlCommand(@"
                     UPDATE AssemblyComponents 
-                    SET Quantity = @quantity, Notes = @notes
-                    WHERE ComponentId = @componentId", connection);
+                    SET quantity = @quantity, notes = @notes
+                    WHERE component_id = @componentId", connection);
 
                 cmd.Parameters.AddWithValue("@componentId", component.ComponentId);
                 cmd.Parameters.AddWithValue("@quantity", component.Quantity);
@@ -504,7 +503,7 @@ namespace ElectricalContractorSystem.Services
             {
                 connection.Open();
                 var cmd = new MySqlCommand(
-                    "DELETE FROM AssemblyComponents WHERE ComponentId = @componentId", connection);
+                    "DELETE FROM AssemblyComponents WHERE component_id = @componentId", connection);
                 
                 cmd.Parameters.AddWithValue("@componentId", componentId);
                 cmd.ExecuteNonQuery();
@@ -539,8 +538,8 @@ namespace ElectricalContractorSystem.Services
                 
                 var cmd = new MySqlCommand(@"
                     SELECT * FROM DifficultyPresets 
-                    WHERE IsActive = 1
-                    ORDER BY Category, SortOrder, Name", connection);
+                    WHERE is_active = 1
+                    ORDER BY category, sort_order, name", connection);
 
                 using (var reader = cmd.ExecuteReader())
                 {
@@ -563,9 +562,9 @@ namespace ElectricalContractorSystem.Services
                 if (preset.PresetId == 0)
                 {
                     cmd = new MySqlCommand(@"
-                        INSERT INTO DifficultyPresets (Name, Category, Description,
-                            RoughMultiplier, FinishMultiplier, ServiceMultiplier, ExtraMultiplier,
-                            IsActive, SortOrder)
+                        INSERT INTO DifficultyPresets (name, category, description,
+                            rough_multiplier, finish_multiplier, service_multiplier, extra_multiplier,
+                            is_active, sort_order)
                         VALUES (@name, @category, @desc, @rough, @finish, @service, @extra,
                             @active, @sortOrder);
                         SELECT LAST_INSERT_ID();", connection);
@@ -574,11 +573,11 @@ namespace ElectricalContractorSystem.Services
                 {
                     cmd = new MySqlCommand(@"
                         UPDATE DifficultyPresets SET 
-                            Name = @name, Category = @category, Description = @desc,
-                            RoughMultiplier = @rough, FinishMultiplier = @finish,
-                            ServiceMultiplier = @service, ExtraMultiplier = @extra,
-                            IsActive = @active, SortOrder = @sortOrder
-                        WHERE PresetId = @id", connection);
+                            name = @name, category = @category, description = @desc,
+                            rough_multiplier = @rough, finish_multiplier = @finish,
+                            service_multiplier = @service, extra_multiplier = @extra,
+                            is_active = @active, sort_order = @sortOrder
+                        WHERE preset_id = @id", connection);
                     
                     cmd.Parameters.AddWithValue("@id", preset.PresetId);
                 }
@@ -615,11 +614,11 @@ namespace ElectricalContractorSystem.Services
             {
                 connection.Open();
                 var cmd = new MySqlCommand(@"
-                    SELECT la.*, dp.Name AS PresetName
+                    SELECT la.*, dp.name AS PresetName
                     FROM LaborAdjustments la
-                    LEFT JOIN DifficultyPresets dp ON la.PresetId = dp.PresetId
-                    WHERE la.JobId = @jobId
-                    ORDER BY la.CreatedDate DESC", connection);
+                    LEFT JOIN DifficultyPresets dp ON la.preset_id = dp.preset_id
+                    WHERE la.job_id = @jobId
+                    ORDER BY la.created_date DESC", connection);
                 
                 cmd.Parameters.AddWithValue("@jobId", jobId);
 
@@ -640,12 +639,12 @@ namespace ElectricalContractorSystem.Services
             {
                 connection.Open();
                 var cmd = new MySqlCommand(@"
-                    INSERT INTO LaborAdjustments (JobId, EstimateId, AssemblyId, PresetId,
-                        RoughMultiplier, FinishMultiplier, ServiceMultiplier, ExtraMultiplier,
-                        ReasonCode, Notes, CreatedBy, CreatedDate)
-                    VALUES (@jobId, @estimateId, @assemblyId, @presetId,
+                    INSERT INTO LaborAdjustments (job_id, estimate_id, adjustment_type, preset_id,
+                        rough_multiplier, finish_multiplier, service_multiplier, extra_multiplier,
+                        reason, created_by, created_date)
+                    VALUES (@jobId, @estimateId, @reason, @presetId,
                         @rough, @finish, @service, @extra,
-                        @reason, @notes, @createdBy, @created)", connection);
+                        @notes, @createdBy, @created)", connection);
 
                 cmd.Parameters.AddWithValue("@jobId", adjustment.JobId ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@estimateId", adjustment.EstimateId ?? (object)DBNull.Value);
@@ -692,8 +691,8 @@ namespace ElectricalContractorSystem.Services
                 
                 var cmd = new MySqlCommand(@"
                     SELECT * FROM ServiceTypes 
-                    WHERE IsActive = 1
-                    ORDER BY SortOrder, Name", connection);
+                    WHERE is_active = 1
+                    ORDER BY service_type_id, name", connection);
 
                 using (var reader = cmd.ExecuteReader())
                 {
@@ -716,10 +715,10 @@ namespace ElectricalContractorSystem.Services
             {
                 connection.Open();
                 var cmd = new MySqlCommand(@"
-                    SELECT AVG(NewPrice) 
+                    SELECT AVG(price) 
                     FROM MaterialPriceHistory 
-                    WHERE MaterialId = @materialId 
-                    AND ChangeDate >= DATE_SUB(NOW(), INTERVAL @days DAY)", connection);
+                    WHERE material_id = @materialId 
+                    AND effective_date >= DATE_SUB(NOW(), INTERVAL @days DAY)", connection);
                 
                 cmd.Parameters.AddWithValue("@materialId", materialId);
                 cmd.Parameters.AddWithValue("@days", days);
@@ -778,7 +777,7 @@ namespace ElectricalContractorSystem.Services
                 var cmd = new MySqlCommand(@"
                     SELECT COUNT(*) 
                     FROM EstimateLineItems 
-                    WHERE AssemblyId = @assemblyId", connection);
+                    WHERE assembly_id = @assemblyId", connection);
                 
                 cmd.Parameters.AddWithValue("@assemblyId", assemblyId);
 
@@ -794,8 +793,8 @@ namespace ElectricalContractorSystem.Services
                 var cmd = new MySqlCommand(@"
                     SELECT MAX(e.CreatedDate)
                     FROM EstimateLineItems eli
-                    INNER JOIN Estimates e ON eli.EstimateId = e.EstimateId
-                    WHERE eli.AssemblyId = @assemblyId", connection);
+                    INNER JOIN Estimates e ON eli.estimate_id = e.EstimateId
+                    WHERE eli.assembly_id = @assemblyId", connection);
                 
                 cmd.Parameters.AddWithValue("@assemblyId", assemblyId);
 
@@ -812,20 +811,20 @@ namespace ElectricalContractorSystem.Services
         {
             var material = new Material
             {
-                MaterialId = reader.GetInt32("MaterialId"),
-                MaterialCode = reader.GetString("MaterialCode"),
-                Name = reader.GetString("Name"),
-                Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString("Description"),
-                Category = reader.GetString("Category"),
-                UnitOfMeasure = reader.GetString("UnitOfMeasure"),
-                CurrentPrice = reader.GetDecimal("CurrentPrice"),
-                TaxRate = reader.GetDecimal("TaxRate"),
-                MinStockLevel = reader.GetInt32("MinStockLevel"),
-                MaxStockLevel = reader.GetInt32("MaxStockLevel"),
-                PreferredVendorId = reader.IsDBNull(reader.GetOrdinal("PreferredVendorId")) ? null : (int?)reader.GetInt32("PreferredVendorId"),
-                IsActive = reader.GetBoolean("IsActive"),
-                CreatedDate = reader.GetDateTime("CreatedDate"),
-                UpdatedDate = reader.IsDBNull(reader.GetOrdinal("UpdatedDate")) ? null : (DateTime?)reader.GetDateTime("UpdatedDate")
+                MaterialId = reader.GetInt32("material_id"),
+                MaterialCode = reader.GetString("material_code"),
+                Name = reader.GetString("name"),
+                Description = reader.IsDBNull(reader.GetOrdinal("description")) ? null : reader.GetString("description"),
+                Category = reader.GetString("category"),
+                UnitOfMeasure = reader.GetString("unit_of_measure"),
+                CurrentPrice = reader.GetDecimal("current_price"),
+                TaxRate = reader.GetDecimal("tax_rate"),
+                MinStockLevel = reader.GetInt32("min_stock_level"),
+                MaxStockLevel = reader.GetInt32("max_stock_level"),
+                PreferredVendorId = reader.IsDBNull(reader.GetOrdinal("preferred_vendor_id")) ? null : (int?)reader.GetInt32("preferred_vendor_id"),
+                IsActive = reader.GetBoolean("is_active"),
+                CreatedDate = reader.GetDateTime("created_date"),
+                UpdatedDate = reader.IsDBNull(reader.GetOrdinal("updated_date")) ? null : (DateTime?)reader.GetDateTime("updated_date")
             };
 
             // Map vendor if joined
@@ -845,17 +844,17 @@ namespace ElectricalContractorSystem.Services
         {
             return new MaterialPriceHistory
             {
-                HistoryId = reader.GetInt32("HistoryId"),
-                MaterialId = reader.GetInt32("MaterialId"),
-                OldPrice = reader.GetDecimal("OldPrice"),
-                NewPrice = reader.GetDecimal("NewPrice"),
-                PercentageChange = reader.GetDecimal("PercentageChange"),
-                ChangedBy = reader.GetString("ChangedBy"),
-                ChangeDate = reader.GetDateTime("ChangeDate"),
-                VendorId = reader.IsDBNull(reader.GetOrdinal("VendorId")) ? null : (int?)reader.GetInt32("VendorId"),
-                InvoiceNumber = reader.IsDBNull(reader.GetOrdinal("InvoiceNumber")) ? null : reader.GetString("InvoiceNumber"),
-                QuantityPurchased = reader.IsDBNull(reader.GetOrdinal("QuantityPurchased")) ? null : (decimal?)reader.GetDecimal("QuantityPurchased"),
-                Notes = reader.IsDBNull(reader.GetOrdinal("Notes")) ? null : reader.GetString("Notes")
+                HistoryId = reader.GetInt32("price_history_id"),
+                MaterialId = reader.GetInt32("material_id"),
+                OldPrice = 0, // Not in new schema, handle separately
+                NewPrice = reader.GetDecimal("price"),
+                PercentageChange = 0, // Calculate separately
+                ChangedBy = reader.GetString("created_by"),
+                ChangeDate = reader.GetDateTime("effective_date"),
+                VendorId = reader.IsDBNull(reader.GetOrdinal("vendor_id")) ? null : (int?)reader.GetInt32("vendor_id"),
+                InvoiceNumber = reader.IsDBNull(reader.GetOrdinal("purchase_order_number")) ? null : reader.GetString("purchase_order_number"),
+                QuantityPurchased = reader.IsDBNull(reader.GetOrdinal("quantity_purchased")) ? null : (decimal?)reader.GetDecimal("quantity_purchased"),
+                Notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString("notes")
             };
         }
 
@@ -863,21 +862,21 @@ namespace ElectricalContractorSystem.Services
         {
             return new AssemblyTemplate
             {
-                AssemblyId = reader.GetInt32("AssemblyId"),
-                AssemblyCode = reader.GetString("AssemblyCode"),
-                Name = reader.GetString("Name"),
-                Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString("Description"),
-                Category = reader.GetString("Category"),
-                RoughMinutes = reader.GetInt32("RoughMinutes"),
-                FinishMinutes = reader.GetInt32("FinishMinutes"),
-                ServiceMinutes = reader.GetInt32("ServiceMinutes"),
-                ExtraMinutes = reader.GetInt32("ExtraMinutes"),
-                IsDefault = reader.GetBoolean("IsDefault"),
-                IsActive = reader.GetBoolean("IsActive"),
-                CreatedBy = reader.GetString("CreatedBy"),
-                CreatedDate = reader.GetDateTime("CreatedDate"),
-                UpdatedBy = reader.IsDBNull(reader.GetOrdinal("UpdatedBy")) ? null : reader.GetString("UpdatedBy"),
-                UpdatedDate = reader.IsDBNull(reader.GetOrdinal("UpdatedDate")) ? null : (DateTime?)reader.GetDateTime("UpdatedDate")
+                AssemblyId = reader.GetInt32("assembly_id"),
+                AssemblyCode = reader.GetString("assembly_code"),
+                Name = reader.GetString("name"),
+                Description = reader.IsDBNull(reader.GetOrdinal("description")) ? null : reader.GetString("description"),
+                Category = reader.GetString("category"),
+                RoughMinutes = reader.GetInt32("rough_minutes"),
+                FinishMinutes = reader.GetInt32("finish_minutes"),
+                ServiceMinutes = reader.GetInt32("service_minutes"),
+                ExtraMinutes = reader.GetInt32("extra_minutes"),
+                IsDefault = reader.GetBoolean("is_default"),
+                IsActive = reader.GetBoolean("is_active"),
+                CreatedBy = reader.GetString("created_by"),
+                CreatedDate = reader.GetDateTime("created_date"),
+                UpdatedBy = reader.IsDBNull(reader.GetOrdinal("updated_by")) ? null : reader.GetString("updated_by"),
+                UpdatedDate = reader.IsDBNull(reader.GetOrdinal("updated_date")) ? null : (DateTime?)reader.GetDateTime("updated_date")
             };
         }
 
@@ -885,11 +884,12 @@ namespace ElectricalContractorSystem.Services
         {
             return new AssemblyComponent
             {
-                ComponentId = reader.GetInt32("ComponentId"),
-                AssemblyId = reader.GetInt32("AssemblyId"),
-                PriceListItemId = reader.GetInt32("PriceListItemId"),
-                Quantity = reader.GetDecimal("Quantity"),
-                Notes = reader.IsDBNull(reader.GetOrdinal("Notes")) ? null : reader.GetString("Notes"),
+                ComponentId = reader.GetInt32("component_id"),
+                AssemblyId = reader.GetInt32("assembly_id"),
+                MaterialId = reader.GetInt32("material_id"),
+                PriceListItemId = reader.GetInt32("material_id"), // Map to same for compatibility
+                Quantity = reader.GetDecimal("quantity"),
+                Notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString("notes"),
                 ItemName = reader.GetString("ItemName"),
                 ItemCode = reader.GetString("ItemCode"),
                 UnitPrice = reader.GetDecimal("UnitPrice")
@@ -900,16 +900,16 @@ namespace ElectricalContractorSystem.Services
         {
             return new DifficultyPreset
             {
-                PresetId = reader.GetInt32("PresetId"),
-                Name = reader.GetString("Name"),
-                Category = reader.GetString("Category"),
-                Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString("Description"),
-                RoughMultiplier = reader.GetDecimal("RoughMultiplier"),
-                FinishMultiplier = reader.GetDecimal("FinishMultiplier"),
-                ServiceMultiplier = reader.GetDecimal("ServiceMultiplier"),
-                ExtraMultiplier = reader.GetDecimal("ExtraMultiplier"),
-                IsActive = reader.GetBoolean("IsActive"),
-                SortOrder = reader.GetInt32("SortOrder")
+                PresetId = reader.GetInt32("preset_id"),
+                Name = reader.GetString("name"),
+                Category = reader.GetString("category"),
+                Description = reader.IsDBNull(reader.GetOrdinal("description")) ? null : reader.GetString("description"),
+                RoughMultiplier = reader.GetDecimal("rough_multiplier"),
+                FinishMultiplier = reader.GetDecimal("finish_multiplier"),
+                ServiceMultiplier = reader.GetDecimal("service_multiplier"),
+                ExtraMultiplier = reader.GetDecimal("extra_multiplier"),
+                IsActive = reader.GetBoolean("is_active"),
+                SortOrder = reader.GetInt32("sort_order")
             };
         }
 
@@ -917,19 +917,19 @@ namespace ElectricalContractorSystem.Services
         {
             return new LaborAdjustment
             {
-                AdjustmentId = reader.GetInt32("AdjustmentId"),
-                JobId = reader.IsDBNull(reader.GetOrdinal("JobId")) ? null : (int?)reader.GetInt32("JobId"),
-                EstimateId = reader.IsDBNull(reader.GetOrdinal("EstimateId")) ? null : (int?)reader.GetInt32("EstimateId"),
-                AssemblyId = reader.IsDBNull(reader.GetOrdinal("AssemblyId")) ? null : (int?)reader.GetInt32("AssemblyId"),
-                PresetId = reader.IsDBNull(reader.GetOrdinal("PresetId")) ? null : (int?)reader.GetInt32("PresetId"),
-                RoughMultiplier = reader.GetDecimal("RoughMultiplier"),
-                FinishMultiplier = reader.GetDecimal("FinishMultiplier"),
-                ServiceMultiplier = reader.GetDecimal("ServiceMultiplier"),
-                ExtraMultiplier = reader.GetDecimal("ExtraMultiplier"),
-                ReasonCode = reader.IsDBNull(reader.GetOrdinal("ReasonCode")) ? null : reader.GetString("ReasonCode"),
-                Notes = reader.IsDBNull(reader.GetOrdinal("Notes")) ? null : reader.GetString("Notes"),
-                CreatedBy = reader.GetString("CreatedBy"),
-                CreatedDate = reader.GetDateTime("CreatedDate")
+                AdjustmentId = reader.GetInt32("adjustment_id"),
+                JobId = reader.IsDBNull(reader.GetOrdinal("job_id")) ? null : (int?)reader.GetInt32("job_id"),
+                EstimateId = reader.IsDBNull(reader.GetOrdinal("estimate_id")) ? null : (int?)reader.GetInt32("estimate_id"),
+                AssemblyId = null, // Not in new schema
+                PresetId = reader.IsDBNull(reader.GetOrdinal("preset_id")) ? null : (int?)reader.GetInt32("preset_id"),
+                RoughMultiplier = reader.GetDecimal("rough_multiplier"),
+                FinishMultiplier = reader.GetDecimal("finish_multiplier"),
+                ServiceMultiplier = reader.GetDecimal("service_multiplier"),
+                ExtraMultiplier = reader.GetDecimal("extra_multiplier"),
+                ReasonCode = reader.GetString("adjustment_type"),
+                Notes = reader.IsDBNull(reader.GetOrdinal("reason")) ? null : reader.GetString("reason"),
+                CreatedBy = reader.GetString("created_by"),
+                CreatedDate = reader.GetDateTime("created_date")
             };
         }
 
@@ -937,14 +937,14 @@ namespace ElectricalContractorSystem.Services
         {
             return new ServiceType
             {
-                ServiceTypeId = reader.GetInt32("ServiceTypeId"),
-                Name = reader.GetString("Name"),
-                Code = reader.GetString("Code"),
-                LaborMultiplier = reader.GetDecimal("LaborMultiplier"),
-                BaseHourlyRate = reader.GetDecimal("BaseHourlyRate"),
-                Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString("Description"),
-                IsActive = reader.GetBoolean("IsActive"),
-                SortOrder = reader.GetInt32("SortOrder")
+                ServiceTypeId = reader.GetInt32("service_type_id"),
+                Name = reader.GetString("name"),
+                Code = "", // Not in schema, set default
+                LaborMultiplier = reader.GetDecimal("labor_multiplier"),
+                BaseHourlyRate = 85.00m, // Default base rate
+                Description = reader.IsDBNull(reader.GetOrdinal("description")) ? null : reader.GetString("description"),
+                IsActive = reader.GetBoolean("is_active"),
+                SortOrder = 0 // Not in schema
             };
         }
 
