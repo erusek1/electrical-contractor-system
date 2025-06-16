@@ -10,6 +10,8 @@ namespace ElectricalContractorSystem.Models
         
         public int? JobId { get; set; }
         
+        public int? AssemblyId { get; set; }
+        
         public AdjustmentType AdjustmentType { get; set; }
         
         public int? PresetId { get; set; }
@@ -19,7 +21,9 @@ namespace ElectricalContractorSystem.Models
         public decimal ServiceMultiplier { get; set; } = 1.00m;
         public decimal ExtraMultiplier { get; set; } = 1.00m;
         
-        public string Reason { get; set; }
+        public string ReasonCode { get; set; }
+        
+        public string Notes { get; set; }
         
         public string CreatedBy { get; set; }
         
@@ -42,9 +46,9 @@ namespace ElectricalContractorSystem.Models
             get
             {
                 if (Preset != null)
-                    return $"{Preset.Name} - {Reason}";
+                    return $"{Preset.Name} - {ReasonCode ?? Notes}";
                     
-                return $"Custom Adjustment - {Reason}";
+                return $"Custom Adjustment - {ReasonCode ?? Notes}";
             }
         }
         
