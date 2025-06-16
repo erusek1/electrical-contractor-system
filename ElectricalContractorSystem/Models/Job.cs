@@ -24,6 +24,11 @@ namespace ElectricalContractorSystem.Models
         public int CustomerId { get; set; }
 
         /// <summary>
+        /// Associated property ID (optional - for jobs at existing properties)
+        /// </summary>
+        public int? PropertyId { get; set; }
+
+        /// <summary>
         /// Job name/description
         /// </summary>
         public string JobName { get; set; }
@@ -97,6 +102,11 @@ namespace ElectricalContractorSystem.Models
         /// Navigation property to Customer
         /// </summary>
         public Customer Customer { get; set; }
+
+        /// <summary>
+        /// Navigation property to Property
+        /// </summary>
+        public Property Property { get; set; }
         
         /// <summary>
         /// Navigation property to source Estimate
@@ -135,7 +145,56 @@ namespace ElectricalContractorSystem.Models
         {
             get
             {
+                // Use property address if available, otherwise use job address
+                if (Property != null)
+                {
+                    return Property.FullAddress;
+                }
                 return $"{Address}, {City}, {State} {Zip}".Trim();
+            }
+        }
+
+        /// <summary>
+        /// Gets the display address (prefers property address over job address)
+        /// </summary>
+        public string DisplayAddress
+        {
+            get
+            {
+                return Property?.Address ?? Address;
+            }
+        }
+
+        /// <summary>
+        /// Gets the display city (prefers property city over job city)
+        /// </summary>
+        public string DisplayCity
+        {
+            get
+            {
+                return Property?.City ?? City;
+            }
+        }
+
+        /// <summary>
+        /// Gets the display state (prefers property state over job state)
+        /// </summary>
+        public string DisplayState
+        {
+            get
+            {
+                return Property?.State ?? State;
+            }
+        }
+
+        /// <summary>
+        /// Gets the display zip (prefers property zip over job zip)
+        /// </summary>
+        public string DisplayZip
+        {
+            get
+            {
+                return Property?.Zip ?? Zip;
             }
         }
 
@@ -153,6 +212,22 @@ namespace ElectricalContractorSystem.Models
                     return JobNumber;
                     
                 return $"{JobNumber} - {JobName}";
+            }
+        }
+
+        /// <summary>
+        /// Gets job display with property info
+        /// </summary>
+        public string JobDisplayWithProperty
+        {
+            get
+            {
+                var display = JobNumberWithDescription;
+                if (Property != null)
+                {
+                    display += $" @ {Property.Address}";
+                }
+                return display;
             }
         }
 
@@ -183,6 +258,17 @@ namespace ElectricalContractorSystem.Models
                     return ((TotalEstimate.Value - TotalActual.Value) / TotalEstimate.Value) * 100;
                 }
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// Indicates if this job is at an existing property
+        /// </summary>
+        public bool IsAtExistingProperty
+        {
+            get
+            {
+                return PropertyId.HasValue;
             }
         }
     }
