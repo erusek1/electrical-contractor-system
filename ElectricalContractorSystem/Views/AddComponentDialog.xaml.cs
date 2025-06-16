@@ -1,64 +1,50 @@
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
-using System.Windows.Input;
 using ElectricalContractorSystem.Models;
-using ElectricalContractorSystem.Services;
 
 namespace ElectricalContractorSystem.Views
 {
     public partial class AddComponentDialog : Window, INotifyPropertyChanged
     {
-        private readonly DatabaseService _databaseService;
-        private List<PriceListItem> _allItems;
-        private List<PriceListItem> _filteredItems;
-        private PriceListItem _selectedItem;
-        private string _searchText = "";
+        private ObservableCollection<Material> _allMaterials;
+        private ObservableCollection<Material> _filteredMaterials;
+        private Material _selectedMaterial;
         private decimal _quantity = 1;
+        private bool _isOptional;
 
-        public AddComponentDialog(DatabaseService databaseService)
+        public AddComponentDialog(List<Material> materials)
         {
             InitializeComponent();
-            _databaseService = databaseService;
             DataContext = this;
             
-            LoadPriceListItems();
+            _allMaterials = new ObservableCollection<Material>(materials);
+            _filteredMaterials = new ObservableCollection<Material>(_allMaterials);
             
             // Focus on search box
             Loaded += (s, e) => SearchTextBox.Focus();
         }
 
-        public List<PriceListItem> FilteredPriceListItems
+        public ObservableCollection<Material> FilteredMaterials
         {
-            get => _filteredItems;
+            get => _filteredMaterials;
             set
             {
-                _filteredItems = value;
+                _filteredMaterials = value;
                 OnPropertyChanged();
             }
         }
 
-        public PriceListItem SelectedItem
+        public Material SelectedMaterial
         {
-            get => _selectedItem;
+            get => _selectedMaterial;
             set
             {
-                _selectedItem = value;
+                _selectedMaterial = value;
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(CanAdd));
-            }
-        }
-
-        public string SearchText
-        {
-            get => _searchText;
-            set
-            {
-                _searchText = value;
-                OnPropertyChanged();
-                FilterItems();
             }
         }
 
@@ -69,45 +55,54 @@ namespace ElectricalContractorSystem.Views
             {
                 _quantity = value;
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(CanAdd));
             }
         }
 
-        public bool CanAdd => SelectedItem != null && Quantity > 0;
-
-        private void LoadPriceListItems()
+        public bool IsOptional
         {
-            _allItems = _databaseService.GetAllPriceListItems();
-            FilteredPriceListItems = _allItems;
+            get => _isOptional;
+            set
+            {
+                _isOptional = value;
+                OnPropertyChanged();
+            }
         }
 
-        private void FilterItems()
+        private void SearchTextBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(SearchText))
+            var searchText = SearchTextBox.Text.ToLower();
+            
+            if (string.IsNullOrWhiteSpace(searchText))
             {
-                FilteredPriceListItems = _allItems;
+                FilteredMaterials = new ObservableCollection<Material>(_allMaterials);
             }
             else
             {
-                var searchLower = SearchText.ToLower();
-                FilteredPriceListItems = _allItems.Where(i => 
-                    i.ItemCode.ToLower().Contains(searchLower) ||
-                    i.Name.ToLower().Contains(searchLower) ||
-                    (i.Category?.ToLower().Contains(searchLower) ?? false)
-                ).ToList();
-            }
-        }
-
-        private void DataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            if (CanAdd)
-            {
-                AddButton_Click(sender, null);
+                var filtered = _allMaterials.Where(m => 
+                    m.Code.ToLower().Contains(searchText) || 
+                    m.Name.ToLower().Contains(searchText) ||
+                    (m.Category != null && m.Category.ToLower().Contains(searchText))).ToList();
+                    
+                FilteredMaterials = new ObservableCollection<Material>(filtered);
             }
         }
 
         private void AddButton_Click(object sender, RoutedEventArgs e)
         {
+            if (SelectedMaterial == null)
+            {
+                MessageBox.Show("Please select a material.", "Validation Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (Quantity <= 0)
+            {
+                MessageBox.Show("Quantity must be greater than 0.", "Validation Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             DialogResult = true;
             Close();
         }
@@ -120,7 +115,7 @@ namespace ElectricalContractorSystem.Views
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
