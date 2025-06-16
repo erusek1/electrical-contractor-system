@@ -19,10 +19,15 @@ namespace ElectricalContractorSystem.Models
         public virtual AssemblyTemplate Assembly { get; set; }
         public virtual PriceListItem PriceListItem { get; set; }
         
-        // Calculated properties
-        public decimal TotalCost => Quantity * (PriceListItem?.SellPrice ?? 0);
+        // Additional properties for easier access (not stored in DB)
+        public string ItemName { get; set; }
+        public string ItemCode { get; set; }
+        public decimal UnitPrice { get; set; }
         
-        public string DisplayText => $"{Quantity} x {PriceListItem?.Name ?? "Unknown"}";
+        // Calculated properties
+        public decimal TotalCost => Quantity * (PriceListItem?.SellPrice ?? UnitPrice);
+        
+        public string DisplayText => $"{Quantity} x {ItemName ?? PriceListItem?.Name ?? "Unknown"}";
         
         // Backward compatibility properties for migration
         public int MaterialId 
