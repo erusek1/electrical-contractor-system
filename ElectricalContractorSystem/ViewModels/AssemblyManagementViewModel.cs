@@ -8,6 +8,7 @@ using System.Windows.Input;
 using ElectricalContractorSystem.Models;
 using ElectricalContractorSystem.Services;
 using ElectricalContractorSystem.Views;
+using ElectricalContractorSystem.Helpers;
 
 namespace ElectricalContractorSystem.ViewModels
 {
@@ -277,7 +278,6 @@ namespace ElectricalContractorSystem.ViewModels
                 try
                 {
                     SelectedAssembly.IsActive = false;
-                    SelectedAssembly.UpdatedBy = "System";
                     SelectedAssembly.UpdatedDate = DateTime.Now;
                     _databaseService.SaveAssembly(SelectedAssembly);
                     
@@ -389,7 +389,7 @@ namespace ElectricalContractorSystem.ViewModels
             if (SelectedComponent == null) return;
             
             var dialog = new EditComponentDialog();
-            dialog.ComponentName = SelectedComponent.ItemName;
+            dialog.ComponentName = SelectedComponent.PriceListItem?.Name ?? "Unknown Component";
             dialog.CurrentQuantity = SelectedComponent.Quantity;
             
             if (dialog.ShowDialog() == true)
@@ -416,7 +416,7 @@ namespace ElectricalContractorSystem.ViewModels
             if (SelectedComponent == null) return;
             
             var result = System.Windows.MessageBox.Show(
-                $"Are you sure you want to remove '{SelectedComponent.ItemName}' from this assembly?",
+                $"Are you sure you want to remove '{SelectedComponent.PriceListItem?.Name ?? "this component"}' from this assembly?",
                 "Confirm Remove",
                 System.Windows.MessageBoxButton.YesNo,
                 System.Windows.MessageBoxImage.Question);
