@@ -1,82 +1,128 @@
-using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Input;
+using ElectricalContractorSystem.Models;
+using ElectricalContractorSystem.Services;
 
 namespace ElectricalContractorSystem.Views
 {
     public partial class AddComponentDialog : Window, INotifyPropertyChanged
     {
+        private readonly DatabaseService _databaseService;
+        private List<PriceListItem> _allItems;
+        private List<PriceListItem> _filteredItems;
+        private PriceListItem _selectedItem;
+        private string _searchText = "";
         private decimal _quantity = 1;
-        private string _notes;
-        
-        public AddComponentDialog()
+
+        public AddComponentDialog(DatabaseService databaseService)
         {
             InitializeComponent();
+            _databaseService = databaseService;
             DataContext = this;
             
-            // Focus on quantity textbox and select all
-            Loaded += (s, e) =>
-            {
-                QuantityTextBox.Focus();
-                QuantityTextBox.SelectAll();
-            };
+            LoadPriceListItems();
+            
+            // Focus on search box
+            Loaded += (s, e) => SearchTextBox.Focus();
         }
-        
+
+        public List<PriceListItem> FilteredPriceListItems
+        {
+            get => _filteredItems;
+            set
+            {
+                _filteredItems = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public PriceListItem SelectedItem
+        {
+            get => _selectedItem;
+            set
+            {
+                _selectedItem = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(CanAdd));
+            }
+        }
+
+        public string SearchText
+        {
+            get => _searchText;
+            set
+            {
+                _searchText = value;
+                OnPropertyChanged();
+                FilterItems();
+            }
+        }
+
         public decimal Quantity
         {
             get => _quantity;
             set
             {
-                if (value <= 0)
-                    throw new ArgumentException("Quantity must be greater than zero");
-                    
                 _quantity = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(CanAdd));
             }
         }
-        
-        public string Notes
+
+        public bool CanAdd => SelectedItem != null && Quantity > 0;
+
+        private void LoadPriceListItems()
         {
-            get => _notes;
-            set
+            _allItems = _databaseService.GetAllPriceListItems();
+            FilteredPriceListItems = _allItems;
+        }
+
+        private void FilterItems()
+        {
+            if (string.IsNullOrWhiteSpace(SearchText))
             {
-                _notes = value;
-                OnPropertyChanged();
+                FilteredPriceListItems = _allItems;
+            }
+            else
+            {
+                var searchLower = SearchText.ToLower();
+                FilteredPriceListItems = _allItems.Where(i => 
+                    i.ItemCode.ToLower().Contains(searchLower) ||
+                    i.Name.ToLower().Contains(searchLower) ||
+                    (i.Category?.ToLower().Contains(searchLower) ?? false)
+                ).ToList();
             }
         }
-        
+
+        private void DataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (CanAdd)
+            {
+                AddButton_Click(sender, null);
+            }
+        }
+
         private void AddButton_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                // Validate quantity
-                if (Quantity <= 0)
-                {
-                    MessageBox.Show("Quantity must be greater than zero.", "Validation Error", 
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
-                    QuantityTextBox.Focus();
-                    return;
-                }
-                
-                DialogResult = true;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error: {ex.Message}", "Error", 
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            DialogResult = true;
+            Close();
         }
-        
-        #region INotifyPropertyChanged
-        
+
+        private void CancelButton_Click(object sender, RoutedEventArgs e)
+        {
+            DialogResult = false;
+            Close();
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
-        
-        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
-        
-        #endregion
     }
 }
