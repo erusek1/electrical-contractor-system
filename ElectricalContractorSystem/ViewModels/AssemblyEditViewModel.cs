@@ -1,313 +1,218 @@
 using System;
 using System.Collections.ObjectModel;
-using System.Linq;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using ElectricalContractorSystem.Helpers;
 using ElectricalContractorSystem.Models;
-using ElectricalContractorSystem.Services;
 
 namespace ElectricalContractorSystem.ViewModels
 {
-    public class AssemblyEditViewModel : ViewModelBase
+    public class AssemblyEditViewModel : INotifyPropertyChanged
     {
-        private readonly DatabaseService _databaseService;
         private AssemblyTemplate _assembly;
-        private bool _isNewAssembly;
-        private string _windowTitle;
+        private ObservableCollection<string> _categories;
+        private bool _isNew;
 
-        public AssemblyEditViewModel(DatabaseService databaseService, AssemblyTemplate assembly = null)
+        public AssemblyEditViewModel(AssemblyTemplate assembly = null)
         {
-            _databaseService = databaseService;
-            _isNewAssembly = assembly == null;
-            
-            if (_isNewAssembly)
+            _isNew = assembly == null;
+            _assembly = assembly ?? new AssemblyTemplate
             {
-                Assembly = new AssemblyTemplate
-                {
-                    IsActive = true,
-                    IsDefault = true,
-                    CreatedBy = "System",
-                    CreatedDate = DateTime.Now
-                };
-                WindowTitle = "Create New Assembly";
-            }
-            else
-            {
-                // Clone the assembly to avoid modifying the original
-                Assembly = new AssemblyTemplate
-                {
-                    AssemblyId = assembly.AssemblyId,
-                    AssemblyCode = assembly.AssemblyCode,
-                    Name = assembly.Name,
-                    Description = assembly.Description,
-                    Category = assembly.Category,
-                    RoughMinutes = assembly.RoughMinutes,
-                    FinishMinutes = assembly.FinishMinutes,
-                    ServiceMinutes = assembly.ServiceMinutes,
-                    ExtraMinutes = assembly.ExtraMinutes,
-                    IsDefault = assembly.IsDefault,
-                    IsActive = assembly.IsActive,
-                    CreatedBy = assembly.CreatedBy,
-                    CreatedDate = assembly.CreatedDate,
-                    UpdatedBy = assembly.UpdatedBy,
-                    UpdatedDate = assembly.UpdatedDate
-                };
-                
-                // Load components
-                LoadComponents();
-                WindowTitle = $"Edit Assembly - {assembly.Name}";
-            }
+                AssemblyCode = "",
+                Name = "",
+                Category = "Outlets/Switches",
+                RoughMinutes = 0,
+                FinishMinutes = 0,
+                ServiceMinutes = 0,
+                ExtraMinutes = 0,
+                IsDefault = false,
+                IsActive = true,
+                CreatedBy = Environment.UserName,
+                CreatedDate = DateTime.Now
+            };
 
-            LoadPriceListItems();
-            InitializeCommands();
-        }
-
-        #region Properties
-
-        public string WindowTitle
-        {
-            get => _windowTitle;
-            set => SetProperty(ref _windowTitle, value);
+            LoadCategories();
+            SaveCommand = new RelayCommand(Save, CanSave);
+            CancelCommand = new RelayCommand(Cancel);
         }
 
         public AssemblyTemplate Assembly
         {
             get => _assembly;
-            set => SetProperty(ref _assembly, value);
-        }
-
-        public bool IsNewAssembly => _isNewAssembly;
-
-        public ObservableCollection<AssemblyComponent> Components { get; } = new ObservableCollection<AssemblyComponent>();
-        public ObservableCollection<PriceListItem> AvailableItems { get; } = new ObservableCollection<PriceListItem>();
-        public ObservableCollection<string> Categories { get; } = new ObservableCollection<string>
-        {
-            "Devices",
-            "Lighting",
-            "Rough-In",
-            "Service",
-            "Special",
-            "Other"
-        };
-
-        private PriceListItem _selectedAvailableItem;
-        public PriceListItem SelectedAvailableItem
-        {
-            get => _selectedAvailableItem;
-            set => SetProperty(ref _selectedAvailableItem, value);
-        }
-
-        private AssemblyComponent _selectedComponent;
-        public AssemblyComponent SelectedComponent
-        {
-            get => _selectedComponent;
-            set => SetProperty(ref _selectedComponent, value);
-        }
-
-        private decimal _newComponentQuantity = 1;
-        public decimal NewComponentQuantity
-        {
-            get => _newComponentQuantity;
-            set => SetProperty(ref _newComponentQuantity, value);
-        }
-
-        public decimal TotalMaterialCost => Components.Sum(c => c.TotalCost);
-        public decimal TotalLaborMinutes => Assembly.RoughMinutes + Assembly.FinishMinutes + Assembly.ServiceMinutes + Assembly.ExtraMinutes;
-        public decimal TotalLaborHours => TotalLaborMinutes / 60m;
-
-        public bool DialogResult { get; private set; }
-
-        #endregion
-
-        #region Commands
-
-        public ICommand SaveCommand { get; private set; }
-        public ICommand CancelCommand { get; private set; }
-        public ICommand AddComponentCommand { get; private set; }
-        public ICommand RemoveComponentCommand { get; private set; }
-        public ICommand UpdateComponentQuantityCommand { get; private set; }
-
-        private void InitializeCommands()
-        {
-            SaveCommand = new RelayCommand(Save, CanSave);
-            CancelCommand = new RelayCommand(Cancel);
-            AddComponentCommand = new RelayCommand(AddComponent, CanAddComponent);
-            RemoveComponentCommand = new RelayCommand(RemoveComponent, CanRemoveComponent);
-            UpdateComponentQuantityCommand = new RelayCommand(UpdateComponentQuantity);
-        }
-
-        #endregion
-
-        #region Methods
-
-        private void LoadComponents()
-        {
-            Components.Clear();
-            if (!_isNewAssembly && Assembly.AssemblyId > 0)
+            set
             {
-                var components = _databaseService.GetAssemblyComponents(Assembly.AssemblyId);
-                foreach (var component in components)
-                {
-                    Components.Add(component);
-                }
+                _assembly = value;
+                OnPropertyChanged();
             }
         }
 
-        private void LoadPriceListItems()
+        public string AssemblyCode
         {
-            AvailableItems.Clear();
-            var items = _databaseService.GetAllPriceListItems()
-                .Where(i => i.IsActive)
-                .OrderBy(i => i.Category)
-                .ThenBy(i => i.Name);
-                
-            foreach (var item in items)
+            get => _assembly.AssemblyCode;
+            set
             {
-                AvailableItems.Add(item);
+                _assembly.AssemblyCode = value;
+                OnPropertyChanged();
             }
+        }
+
+        public string Name
+        {
+            get => _assembly.Name;
+            set
+            {
+                _assembly.Name = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string Description
+        {
+            get => _assembly.Description;
+            set
+            {
+                _assembly.Description = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string Category
+        {
+            get => _assembly.Category;
+            set
+            {
+                _assembly.Category = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public int RoughMinutes
+        {
+            get => _assembly.RoughMinutes;
+            set
+            {
+                _assembly.RoughMinutes = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(TotalMinutes));
+            }
+        }
+
+        public int FinishMinutes
+        {
+            get => _assembly.FinishMinutes;
+            set
+            {
+                _assembly.FinishMinutes = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(TotalMinutes));
+            }
+        }
+
+        public int ServiceMinutes
+        {
+            get => _assembly.ServiceMinutes;
+            set
+            {
+                _assembly.ServiceMinutes = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(TotalMinutes));
+            }
+        }
+
+        public int ExtraMinutes
+        {
+            get => _assembly.ExtraMinutes;
+            set
+            {
+                _assembly.ExtraMinutes = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(TotalMinutes));
+            }
+        }
+
+        public int TotalMinutes => RoughMinutes + FinishMinutes + ServiceMinutes + ExtraMinutes;
+
+        public bool IsDefault
+        {
+            get => _assembly.IsDefault;
+            set
+            {
+                _assembly.IsDefault = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public bool IsActive
+        {
+            get => _assembly.IsActive;
+            set
+            {
+                _assembly.IsActive = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public ObservableCollection<string> Categories
+        {
+            get => _categories;
+            set
+            {
+                _categories = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public bool IsNew => _isNew;
+        public string Title => IsNew ? "New Assembly" : $"Edit Assembly: {_assembly.Name}";
+
+        public ICommand SaveCommand { get; }
+        public ICommand CancelCommand { get; }
+
+        public bool? DialogResult { get; set; }
+
+        private void LoadCategories()
+        {
+            Categories = new ObservableCollection<string>
+            {
+                "Outlets/Switches",
+                "Lighting",
+                "Panels/Service",
+                "Low Voltage",
+                "HVAC",
+                "Special Systems",
+                "Other"
+            };
         }
 
         private bool CanSave()
         {
-            return !string.IsNullOrWhiteSpace(Assembly?.AssemblyCode) &&
-                   !string.IsNullOrWhiteSpace(Assembly?.Name) &&
-                   !string.IsNullOrWhiteSpace(Assembly?.Category);
+            return !string.IsNullOrWhiteSpace(AssemblyCode) &&
+                   !string.IsNullOrWhiteSpace(Name) &&
+                   !string.IsNullOrWhiteSpace(Category);
         }
 
         private void Save()
         {
-            try
+            if (!_isNew)
             {
-                if (_isNewAssembly)
-                {
-                    // Check if code already exists
-                    var existing = _databaseService.GetAssemblyVariants(Assembly.AssemblyCode);
-                    if (existing.Any())
-                    {
-                        // This is a variant of an existing assembly
-                        Assembly.IsDefault = false;
-                    }
-                }
-                else
-                {
-                    Assembly.UpdatedBy = "System";
-                    Assembly.UpdatedDate = DateTime.Now;
-                }
-
-                // Save the assembly
-                _databaseService.SaveAssembly(Assembly);
-
-                // Save components
-                if (_isNewAssembly)
-                {
-                    foreach (var component in Components)
-                    {
-                        component.AssemblyId = Assembly.AssemblyId;
-                        _databaseService.SaveAssemblyComponent(component);
-                    }
-                }
-                else
-                {
-                    // For existing assembly, we need to handle adds/updates/deletes
-                    var existingComponents = _databaseService.GetAssemblyComponents(Assembly.AssemblyId);
-                    
-                    // Remove deleted components
-                    foreach (var existing in existingComponents)
-                    {
-                        if (!Components.Any(c => c.ComponentId == existing.ComponentId))
-                        {
-                            _databaseService.DeleteAssemblyComponent(existing.ComponentId);
-                        }
-                    }
-
-                    // Add new or update existing
-                    foreach (var component in Components)
-                    {
-                        if (component.ComponentId == 0)
-                        {
-                            component.AssemblyId = Assembly.AssemblyId;
-                            _databaseService.SaveAssemblyComponent(component);
-                        }
-                        else
-                        {
-                            _databaseService.UpdateAssemblyComponent(component);
-                        }
-                    }
-                }
-
-                DialogResult = true;
-                CloseWindow();
+                _assembly.UpdatedBy = Environment.UserName;
+                _assembly.UpdatedDate = DateTime.Now;
             }
-            catch (Exception ex)
-            {
-                System.Windows.MessageBox.Show($"Error saving assembly: {ex.Message}", 
-                    "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
-            }
+
+            DialogResult = true;
         }
 
         private void Cancel()
         {
             DialogResult = false;
-            CloseWindow();
         }
 
-        private bool CanAddComponent()
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
-            return SelectedAvailableItem != null && NewComponentQuantity > 0 &&
-                   !Components.Any(c => c.PriceListItemId == SelectedAvailableItem.ItemId);
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
-
-        private void AddComponent()
-        {
-            if (SelectedAvailableItem == null) return;
-
-            var component = new AssemblyComponent
-            {
-                AssemblyId = Assembly.AssemblyId,
-                PriceListItemId = SelectedAvailableItem.ItemId,
-                Quantity = NewComponentQuantity,
-                ItemName = SelectedAvailableItem.Name,
-                ItemCode = SelectedAvailableItem.MaterialCode,  // Changed from ItemCode to MaterialCode
-                UnitPrice = SelectedAvailableItem.BaseCost
-            };
-
-            Components.Add(component);
-            OnPropertyChanged(nameof(TotalMaterialCost));
-            
-            // Reset
-            NewComponentQuantity = 1;
-            SelectedAvailableItem = null;
-        }
-
-        private bool CanRemoveComponent()
-        {
-            return SelectedComponent != null;
-        }
-
-        private void RemoveComponent()
-        {
-            if (SelectedComponent == null) return;
-
-            Components.Remove(SelectedComponent);
-            OnPropertyChanged(nameof(TotalMaterialCost));
-        }
-
-        private void UpdateComponentQuantity(object parameter)
-        {
-            OnPropertyChanged(nameof(TotalMaterialCost));
-        }
-
-        private void CloseWindow()
-        {
-            // This will be hooked up to close the actual window
-            if (System.Windows.Application.Current.Windows.Count > 0)
-            {
-                var window = System.Windows.Application.Current.Windows
-                    .OfType<System.Windows.Window>()
-                    .FirstOrDefault(w => w.DataContext == this);
-                window?.Close();
-            }
-        }
-
-        #endregion
     }
 }
