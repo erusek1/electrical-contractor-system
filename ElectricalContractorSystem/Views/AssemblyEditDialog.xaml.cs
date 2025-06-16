@@ -1,5 +1,4 @@
 using System.Windows;
-using System.Windows.Input;
 
 namespace ElectricalContractorSystem.Views
 {
@@ -8,15 +7,25 @@ namespace ElectricalContractorSystem.Views
         public AssemblyEditDialog()
         {
             InitializeComponent();
-        }
-
-        private void MaterialsGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            // Double-click adds the material to components
-            if (DataContext is ViewModels.AssemblyEditViewModel viewModel)
+            
+            // Set up dialog result binding
+            DataContextChanged += (s, e) =>
             {
-                viewModel.AddSelectedMaterialCommand.Execute(null);
-            }
+                if (DataContext is ViewModels.AssemblyEditViewModel vm)
+                {
+                    vm.PropertyChanged += (sender, args) =>
+                    {
+                        if (args.PropertyName == nameof(vm.DialogResult))
+                        {
+                            DialogResult = vm.DialogResult;
+                            if (DialogResult.HasValue)
+                            {
+                                Close();
+                            }
+                        }
+                    };
+                }
+            };
         }
     }
 }
