@@ -26,22 +26,18 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Text="Material:" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Margin="0,5"/>
-                <TextBlock Text="{Binding Component.Material.Name}" Grid.Row="0" Grid.Column="1" 
+                <TextBlock Text="Component:" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Margin="0,5"/>
+                <TextBlock Text="{Binding ComponentName}" Grid.Row="0" Grid.Column="1" 
                           VerticalAlignment="Center" Margin="5" FontWeight="Bold"/>
 
-                <TextBlock Text="Code:" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Margin="0,5"/>
-                <TextBlock Text="{Binding Component.Material.Code}" Grid.Row="1" Grid.Column="1" 
+                <TextBlock Text="Current Quantity:" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Margin="0,5"/>
+                <TextBlock Text="{Binding CurrentQuantity}" Grid.Row="1" Grid.Column="1" 
                           VerticalAlignment="Center" Margin="5"/>
 
-                <TextBlock Text="Quantity:" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" Margin="0,5"/>
-                <TextBox x:Name="QuantityTextBox" Text="{Binding Quantity}" Grid.Row="2" Grid.Column="1" Margin="5"/>
-
-                <CheckBox Content="Optional Component" IsChecked="{Binding IsOptional}" 
-                         Grid.Row="3" Grid.Column="1" Margin="5" VerticalAlignment="Center"/>
+                <TextBlock Text="New Quantity:" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" Margin="0,5"/>
+                <TextBox x:Name="QuantityTextBox" Text="{Binding NewQuantity}" Grid.Row="2" Grid.Column="1" Margin="5"/>
             </Grid>
         </StackPanel>
 
