@@ -17,8 +17,8 @@ namespace ElectricalContractorSystem.ViewModels
     public class PriceListManagementViewModel : INotifyPropertyChanged
     {
         private readonly DatabaseService _databaseService;
-        private ObservableCollection<PriceList> _priceListItems;
-        private PriceList _selectedItem;
+        private ObservableCollection<PriceListItem> _priceListItems;
+        private PriceListItem _selectedItem;
         private string _searchText;
         private string _selectedCategory = "All";
 
@@ -30,7 +30,7 @@ namespace ElectricalContractorSystem.ViewModels
             LoadCategories();
         }
 
-        public ObservableCollection<PriceList> PriceListItems
+        public ObservableCollection<PriceListItem> PriceListItems
         {
             get => _priceListItems;
             set
@@ -41,7 +41,7 @@ namespace ElectricalContractorSystem.ViewModels
             }
         }
 
-        public ObservableCollection<PriceList> FilteredItems
+        public ObservableCollection<PriceListItem> FilteredItems
         {
             get
             {
@@ -63,13 +63,13 @@ namespace ElectricalContractorSystem.ViewModels
                     );
                 }
 
-                return new ObservableCollection<PriceList>(filtered);
+                return new ObservableCollection<PriceListItem>(filtered);
             }
         }
 
         public ObservableCollection<string> Categories { get; private set; }
 
-        public PriceList SelectedItem
+        public PriceListItem SelectedItem
         {
             get => _selectedItem;
             set
@@ -142,12 +142,12 @@ namespace ElectricalContractorSystem.ViewModels
             try
             {
                 var items = _databaseService.GetAllPriceListItems();
-                PriceListItems = new ObservableCollection<PriceList>(items.OrderBy(i => i.Category).ThenBy(i => i.Name));
+                PriceListItems = new ObservableCollection<PriceListItem>(items.OrderBy(i => i.Category).ThenBy(i => i.Name));
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error loading price list: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                PriceListItems = new ObservableCollection<PriceList>();
+                PriceListItems = new ObservableCollection<PriceListItem>();
             }
         }
 
@@ -170,7 +170,7 @@ namespace ElectricalContractorSystem.ViewModels
 
             if (dialog.ShowDialog() == true)
             {
-                _databaseService.UpdatePriceListItem(dialog.PriceListItem);
+                _databaseService.SavePriceListItem(dialog.PriceListItem);
                 LoadPriceList();
             }
         }
@@ -256,7 +256,7 @@ namespace ElectricalContractorSystem.ViewModels
                 string assemblyName = SelectedItem.Name;
                 
                 // Default labor distribution
-                int totalMinutes = SelectedItem.LaborMinutes ?? 50; // Default 50 minutes if not specified
+                int totalMinutes = SelectedItem.LaborMinutes;
                 int roughMinutes = (int)(totalMinutes * 0.4);
                 int finishMinutes = (int)(totalMinutes * 0.4);
                 int serviceMinutes = totalMinutes - roughMinutes - finishMinutes;
@@ -316,7 +316,7 @@ namespace ElectricalContractorSystem.ViewModels
                     Category = SelectedItem.Category ?? "General",
                     UnitOfMeasure = "Each",
                     CurrentPrice = SelectedItem.BaseCost,
-                    TaxRate = SelectedItem.TaxRate ?? 6.4m,
+                    TaxRate = SelectedItem.TaxRate,
                     IsActive = true,
                     CreatedDate = DateTime.Now
                 };
@@ -362,8 +362,7 @@ namespace ElectricalContractorSystem.ViewModels
                 {
                     AssemblyId = assembly.AssemblyId,
                     MaterialId = material.MaterialId,
-                    Quantity = 1,
-                    IsOptional = false
+                    Quantity = 1
                 };
 
                 _databaseService.SaveAssemblyComponent(component);
