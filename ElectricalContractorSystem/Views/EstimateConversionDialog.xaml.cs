@@ -1,27 +1,35 @@
 using System.Windows;
 using ElectricalContractorSystem.ViewModels;
+using ElectricalContractorSystem.Models;
+using ElectricalContractorSystem.Services;
 
 namespace ElectricalContractorSystem.Views
 {
     public partial class EstimateConversionDialog : Window
     {
-        public EstimateConversionDialog()
+        public Job ConvertedJob { get; private set; }
+        public bool DialogResult { get; private set; }
+
+        public EstimateConversionDialog(Estimate estimate, DatabaseService databaseService)
         {
             InitializeComponent();
+            var viewModel = new EstimateConversionViewModel(estimate, databaseService);
+            viewModel.JobCreated += OnJobCreated;
+            viewModel.DialogCancelled += OnDialogCancelled;
+            DataContext = viewModel;
         }
-        
-        protected override void OnSourceInitialized(System.EventArgs e)
+
+        private void OnJobCreated(Job job)
         {
-            base.OnSourceInitialized(e);
-            
-            if (DataContext is EstimateConversionViewModel viewModel)
-            {
-                viewModel.ConversionCompleted += (sender, result) =>
-                {
-                    DialogResult = result;
-                    Close();
-                };
-            }
+            ConvertedJob = job;
+            DialogResult = true;
+            Close();
+        }
+
+        private void OnDialogCancelled()
+        {
+            DialogResult = false;
+            Close();
         }
     }
 }
