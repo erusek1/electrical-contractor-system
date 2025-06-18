@@ -28,13 +28,13 @@
                 </StackPanel>
                 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button x:Name="AddPropertyButton" Content="Add Property" 
+                    <Button Content="Add Property" 
+                            Command="{Binding AddPropertyCommand}"
                             Style="{StaticResource PrimaryButtonStyle}" 
-                            Click="AddPropertyButton_Click"
                             Margin="0,0,10,0"/>
-                    <Button x:Name="RefreshButton" Content="Refresh" 
-                            Style="{StaticResource SecondaryButtonStyle}"
-                            Click="RefreshButton_Click"/>
+                    <Button Content="Refresh" 
+                            Command="{Binding RefreshCommand}"
+                            Style="{StaticResource SecondaryButtonStyle}"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -61,44 +61,28 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBox x:Name="SearchTextBox" 
-                                     Style="{StaticResource SearchBoxStyle}"
-                                     TextChanged="SearchTextBox_TextChanged"/>
+                            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+                                     Style="{StaticResource SearchBoxStyle}"/>
                             <Button Grid.Column="1" Content="🔍" Width="30" Height="30" Margin="5,0,0,0"/>
                         </Grid>
                     </Border>
 
-                    <!-- Customer TreeView -->
-                    <TreeView x:Name="CustomerTreeView" Grid.Row="1" Margin="10,0,10,10"
-                              SelectedItemChanged="CustomerTreeView_SelectedItemChanged">
-                        <TreeView.ItemTemplate>
-                            <HierarchicalDataTemplate ItemsSource="{Binding Properties}">
+                    <!-- Customer List -->
+                    <ListBox Grid.Row="1" Margin="10,0,10,10"
+                             ItemsSource="{Binding Customers}"
+                             SelectedItem="{Binding SelectedCustomer}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
                                 <Border Background="White" CornerRadius="5" Padding="10" Margin="0,2">
                                     <StackPanel>
                                         <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="14"/>
-                                        <TextBlock Text="{Binding PropertyCountText}" FontSize="12" Foreground="Gray"/>
+                                        <TextBlock Text="{Binding Address}" FontSize="12" Foreground="Gray"/>
+                                        <TextBlock Text="{Binding Phone}" FontSize="11" Foreground="Gray"/>
                                     </StackPanel>
                                 </Border>
-                                <HierarchicalDataTemplate.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Background="#F9F9F9" CornerRadius="3" Padding="8" Margin="20,2,0,2">
-                                            <StackPanel>
-                                                <TextBlock Text="{Binding Address}" FontWeight="SemiBold"/>
-                                                <TextBlock FontSize="11" Foreground="Gray">
-                                                    <TextBlock.Text>
-                                                        <MultiBinding StringFormat="{}{0} • {1} Jobs">
-                                                            <Binding Path="PropertyType"/>
-                                                            <Binding Path="TotalJobCount"/>
-                                                        </MultiBinding>
-                                                    </TextBlock.Text>
-                                                </TextBlock>
-                                            </StackPanel>
-                                        </Border>
-                                    </DataTemplate>
-                                </HierarchicalDataTemplate.ItemTemplate>
-                            </HierarchicalDataTemplate>
-                        </TreeView.ItemTemplate>
-                    </TreeView>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
                 </Grid>
             </Border>
 
@@ -106,149 +90,73 @@
             <Grid Grid.Column="1" Margin="20">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <!-- Property Details -->
-                <Border x:Name="PropertyDetailsPanel" Grid.Row="0" Background="White" 
-                        CornerRadius="5" Padding="20" Margin="0,0,0,20"
-                        Visibility="Collapsed">
+                <!-- Properties for Selected Customer -->
+                <StackPanel Grid.Row="0" Margin="0,0,0,20">
                     <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-
-                        <!-- Property Header -->
-                        <Grid Grid.Row="0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            
-                            <StackPanel Grid.Column="0">
-                                <TextBlock x:Name="PropertyAddressText" FontSize="20" FontWeight="Bold"/>
-                                <TextBlock x:Name="PropertyCustomerText" FontSize="14" Foreground="Gray" Margin="0,5,0,0"/>
-                            </StackPanel>
-                            
-                            <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                <Button x:Name="EditPropertyButton" Content="Edit" 
-                                        Style="{StaticResource SmallButtonStyle}"
-                                        Click="EditPropertyButton_Click"
-                                        Margin="0,0,5,0"/>
-                                <Button x:Name="AddJobButton" Content="Add Job" 
-                                        Style="{StaticResource PrimaryButtonStyle}"
-                                        Click="AddJobButton_Click"/>
-                            </StackPanel>
-                        </Grid>
-
-                        <!-- Property Info Grid -->
-                        <Grid Grid.Row="1" Margin="0,20,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="Property Type" FontWeight="Bold" FontSize="12" Foreground="Gray"/>
-                                <TextBlock x:Name="PropertyTypeText" FontSize="14" Margin="0,5,0,0"/>
-                                
-                                <TextBlock Text="Square Footage" FontWeight="Bold" FontSize="12" Foreground="Gray" Margin="0,15,0,0"/>
-                                <TextBlock x:Name="SquareFootageText" FontSize="14" Margin="0,5,0,0"/>
-                            </StackPanel>
-
-                            <StackPanel Grid.Column="1">
-                                <TextBlock Text="Year Built" FontWeight="Bold" FontSize="12" Foreground="Gray"/>
-                                <TextBlock x:Name="YearBuiltText" FontSize="14" Margin="0,5,0,0"/>
-                                
-                                <TextBlock Text="Floors" FontWeight="Bold" FontSize="12" Foreground="Gray" Margin="0,15,0,0"/>
-                                <TextBlock x:Name="NumFloorsText" FontSize="14" Margin="0,5,0,0"/>
-                            </StackPanel>
-
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="Total Jobs" FontWeight="Bold" FontSize="12" Foreground="Gray"/>
-                                <TextBlock x:Name="TotalJobsText" FontSize="14" Margin="0,5,0,0"/>
-                                
-                                <TextBlock Text="Active Jobs" FontWeight="Bold" FontSize="12" Foreground="Gray" Margin="0,15,0,0"/>
-                                <TextBlock x:Name="ActiveJobsText" FontSize="14" Margin="0,5,0,0"/>
-                            </StackPanel>
-                        </Grid>
-
-                        <!-- Electrical Panel Info -->
-                        <StackPanel Grid.Row="2" Margin="0,20,0,0">
-                            <TextBlock Text="Electrical Panel Information" FontWeight="Bold" FontSize="12" Foreground="Gray"/>
-                            <TextBlock x:Name="ElectricalPanelText" FontSize="14" Margin="0,5,0,0" TextWrapping="Wrap"/>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Properties" FontSize="18" FontWeight="Bold"/>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Button Content="Add Property" 
+                                    Command="{Binding AddPropertyCommand}"
+                                    Style="{StaticResource SmallButtonStyle}"
+                                    Margin="0,0,5,0"/>
+                            <Button Content="Edit Property" 
+                                    Command="{Binding EditPropertyCommand}"
+                                    Style="{StaticResource SmallButtonStyle}"
+                                    Margin="0,0,5,0"/>
+                            <Button Content="Delete Property" 
+                                    Command="{Binding DeletePropertyCommand}"
+                                    Style="{StaticResource DeleteButtonStyle}"/>
                         </StackPanel>
                     </Grid>
-                </Border>
+                </StackPanel>
 
-                <!-- Jobs List Header -->
-                <Border x:Name="JobsHeaderPanel" Grid.Row="1" Visibility="Collapsed">
-                    <TextBlock Text="Job History" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
-                </Border>
-
-                <!-- Jobs DataGrid -->
-                <DataGrid x:Name="JobsDataGrid" Grid.Row="2"
+                <!-- Properties DataGrid -->
+                <DataGrid Grid.Row="1"
+                          ItemsSource="{Binding Properties}"
+                          SelectedItem="{Binding SelectedProperty}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
                           CanUserDeleteRows="False"
                           GridLinesVisibility="None"
-                          HeadersVisibility="Column"
-                          Visibility="Collapsed"
-                          MouseDoubleClick="JobsDataGrid_MouseDoubleClick">
+                          HeadersVisibility="Column">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Job #" Binding="{Binding JobNumber}" Width="60"/>
-                        <DataGridTextColumn Header="Job Name" Binding="{Binding JobName}" Width="*"/>
-                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100">
-                            <DataGridTextColumn.ElementStyle>
-                                <Style TargetType="TextBlock">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Status}" Value="Complete">
-                                            <Setter Property="Foreground" Value="Green"/>
-                                            <Setter Property="FontWeight" Value="Bold"/>
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding Status}" Value="In Progress">
-                                            <Setter Property="Foreground" Value="Blue"/>
-                                            <Setter Property="FontWeight" Value="Bold"/>
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding Status}" Value="Estimate">
-                                            <Setter Property="Foreground" Value="Orange"/>
-                                            <Setter Property="FontWeight" Value="Bold"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </DataGridTextColumn.ElementStyle>
-                        </DataGridTextColumn>
-                        <DataGridTextColumn Header="Created" Binding="{Binding CreateDate, StringFormat=\{0:MM/dd/yyyy\}}" Width="100"/>
-                        <DataGridTextColumn Header="Completed" Binding="{Binding CompletionDate, StringFormat=\{0:MM/dd/yyyy\}}" Width="100"/>
-                        <DataGridTextColumn Header="Estimate" Binding="{Binding TotalEstimate, StringFormat=C}" Width="100">
-                            <DataGridTextColumn.ElementStyle>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="HorizontalAlignment" Value="Right"/>
-                                </Style>
-                            </DataGridTextColumn.ElementStyle>
-                        </DataGridTextColumn>
-                        <DataGridTextColumn Header="Actual" Binding="{Binding TotalActual, StringFormat=C}" Width="100">
-                            <DataGridTextColumn.ElementStyle>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="HorizontalAlignment" Value="Right"/>
-                                </Style>
-                            </DataGridTextColumn.ElementStyle>
-                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Address" Binding="{Binding Address}" Width="*"/>
+                        <DataGridTextColumn Header="City" Binding="{Binding City}" Width="120"/>
+                        <DataGridTextColumn Header="Type" Binding="{Binding PropertyType}" Width="100"/>
+                        <DataGridTextColumn Header="Sq Ft" Binding="{Binding SquareFootage, StringFormat=N0}" Width="80"/>
+                        <DataGridTextColumn Header="Year Built" Binding="{Binding YearBuilt}" Width="80"/>
+                        <DataGridTemplateColumn Header="Actions" Width="120">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Content="Add Job" 
+                                                Command="{Binding DataContext.AddJobAtPropertyCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource SmallButtonStyle}"
+                                                Margin="0,0,5,0"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
 
                 <!-- No Selection Message -->
-                <Border x:Name="NoSelectionPanel" Grid.Row="0" Grid.RowSpan="3" 
-                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Border Grid.Row="0" Grid.RowSpan="2" 
+                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Visibility="{Binding SelectedCustomer, Converter={StaticResource NullToVisibilityConverter}}">
                     <StackPanel>
-                        <TextBlock Text="Select a property to view details" 
+                        <TextBlock Text="Select a customer to view their properties" 
                                    FontSize="18" Foreground="Gray" 
                                    HorizontalAlignment="Center"/>
-                        <TextBlock Text="Properties are grouped by customer on the left" 
+                        <TextBlock Text="Use the search box to find specific customers" 
                                    FontSize="14" Foreground="Gray" 
                                    HorizontalAlignment="Center" Margin="0,10,0,0"/>
                     </StackPanel>
@@ -259,14 +167,26 @@
         <!-- Status Bar -->
         <StatusBar Grid.Row="2">
             <StatusBarItem>
-                <TextBlock x:Name="StatusText" Text="Ready"/>
+                <TextBlock Text="{Binding IsLoading, Converter={StaticResource BoolToStatusTextConverter}}"/>
             </StatusBarItem>
             <Separator/>
             <StatusBarItem>
-                <TextBlock x:Name="CustomerCountText" Text="0 Customers"/>
+                <TextBlock>
+                    <TextBlock.Text>
+                        <MultiBinding StringFormat="{}{0} Customers">
+                            <Binding Path="Customers.Count"/>
+                        </MultiBinding>
+                    </TextBlock.Text>
+                </TextBlock>
             </StatusBarItem>
             <StatusBarItem>
-                <TextBlock x:Name="PropertyCountText" Text="0 Properties"/>
+                <TextBlock>
+                    <TextBlock.Text>
+                        <MultiBinding StringFormat="{}{0} Properties">
+                            <Binding Path="Properties.Count"/>
+                        </MultiBinding>
+                    </TextBlock.Text>
+                </TextBlock>
             </StatusBarItem>
         </StatusBar>
     </Grid>
