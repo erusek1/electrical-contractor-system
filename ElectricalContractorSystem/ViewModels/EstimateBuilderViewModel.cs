@@ -53,6 +53,7 @@ namespace ElectricalContractorSystem.ViewModels
             MoveRoomUpCommand = new RelayCommand(ExecuteMoveRoomUp, CanExecuteMoveRoomUp);
             MoveRoomDownCommand = new RelayCommand(ExecuteMoveRoomDown, CanExecuteMoveRoomDown);
             QuickAddCommand = new RelayCommand(ExecuteQuickAdd, CanExecuteQuickAdd);
+            GeneratePdfCommand = new RelayCommand(ExecuteGeneratePdf, CanExecuteGeneratePdf);
             
             LoadPriceListItems();
             LoadAssemblies();
@@ -251,6 +252,7 @@ namespace ElectricalContractorSystem.ViewModels
         public ICommand MoveRoomUpCommand { get; }
         public ICommand MoveRoomDownCommand { get; }
         public ICommand QuickAddCommand { get; }
+        public ICommand GeneratePdfCommand { get; }
         
         #endregion
         
@@ -432,10 +434,54 @@ namespace ElectricalContractorSystem.ViewModels
         
         private void ExecuteSaveEstimate(object parameter)
         {
-            CurrentEstimate.CalculateTotals();
-            _databaseService.SaveEstimate(CurrentEstimate);
-            IsNewEstimate = false;
-            OnPropertyChanged(nameof(EstimateTitle));
+            try
+            {
+                CurrentEstimate.CalculateTotals();
+                _databaseService.SaveEstimate(CurrentEstimate);
+                IsNewEstimate = false;
+                OnPropertyChanged(nameof(EstimateTitle));
+                
+                System.Windows.MessageBox.Show("Estimate saved successfully!", 
+                    "Estimate Saved", 
+                    System.Windows.MessageBoxButton.OK, 
+                    System.Windows.MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Error saving estimate: {ex.Message}", 
+                    "Save Error", 
+                    System.Windows.MessageBoxButton.OK, 
+                    System.Windows.MessageBoxImage.Error);
+            }
+        }
+        
+        private bool CanExecuteGeneratePdf(object parameter)
+        {
+            return CurrentEstimate != null && !IsNewEstimate;
+        }
+        
+        private void ExecuteGeneratePdf(object parameter)
+        {
+            try
+            {
+                System.Windows.MessageBox.Show("PDF generation is coming soon!\n\n" +
+                    "This feature will generate a professional estimate PDF that includes:\n" +
+                    "• Customer information\n" +
+                    "• Room-by-room breakdown\n" +
+                    "• Labor and material costs\n" +
+                    "• Terms and conditions\n\n" +
+                    "The PDF will be saved to your Documents folder when available.", 
+                    "PDF Generation", 
+                    System.Windows.MessageBoxButton.OK, 
+                    System.Windows.MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Error generating PDF: {ex.Message}", 
+                    "PDF Error", 
+                    System.Windows.MessageBoxButton.OK, 
+                    System.Windows.MessageBoxImage.Error);
+            }
         }
         
         private bool CanExecuteDuplicateRoom(object parameter)
