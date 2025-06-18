@@ -13,6 +13,7 @@ namespace ElectricalContractorSystem.Helpers
             {
                 return intValue > 0 ? Visibility.Visible : Visibility.Collapsed;
             }
+            
             return Visibility.Collapsed;
         }
 
