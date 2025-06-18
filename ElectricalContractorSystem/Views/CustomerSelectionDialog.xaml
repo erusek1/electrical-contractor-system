@@ -1,150 +1,47 @@
 <Window x:Class="ElectricalContractorSystem.Views.CustomerSelectionDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d"
-        Title="Select Customer" 
-        Height="500" Width="700"
-        WindowStartupLocation="CenterOwner"
-        ShowInTaskbar="False"
-        ResizeMode="CanResize"
-        MinHeight="400" MinWidth="600">
-    
-    <Grid>
+        Title="Select Customer" Height="500" Width="700"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="10">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         
-        <!-- Header -->
-        <Border Grid.Row="0" Background="{StaticResource PrimaryBrush}" Padding="20">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                
-                <TextBlock Text="Select Customer for Estimate" 
-                           FontSize="20" FontWeight="Bold" 
-                           Foreground="White"/>
-                
-                <Button Grid.Column="1" 
-                        Content="New Customer" 
-                        Command="{Binding NewCustomerCommand}"
-                        Style="{StaticResource AccentButtonStyle}"/>
-            </Grid>
-        </Border>
+        <TextBlock Grid.Row="0" Text="Select Customer for New Estimate" 
+                   FontSize="16" FontWeight="Bold" Margin="0,0,0,10"/>
         
-        <!-- Search and List -->
-        <Grid Grid.Row="1" Margin="20">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-            
-            <!-- Search Box -->
-            <Grid Grid.Row="0" Margin="0,0,0,15">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                
-                <TextBox Grid.Column="0" 
-                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                         Style="{StaticResource SearchBoxStyle}"
-                         Tag="Search customers..."/>
-                
-                <TextBlock Grid.Column="1" 
-                           Text="{Binding FilteredCustomers.Count, StringFormat='{}{0} customers'}"
-                           VerticalAlignment="Center"
-                           Margin="15,0,0,0"
-                           Foreground="{StaticResource DarkGrayBrush}"/>
-            </Grid>
-            
-            <!-- Customer List -->
-            <DataGrid Grid.Row="1" 
-                      ItemsSource="{Binding FilteredCustomers}"
-                      SelectedItem="{Binding SelectedCustomer}"
-                      AutoGenerateColumns="False"
-                      CanUserAddRows="False"
-                      GridLinesVisibility="Horizontal"
-                      BorderThickness="1"
-                      BorderBrush="#E0E0E0"
-                      MouseDoubleClick="DataGrid_MouseDoubleClick">
-                
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Name" 
-                                        Binding="{Binding Name}" 
-                                        Width="2*"/>
-                    <DataGridTextColumn Header="Address" 
-                                        Binding="{Binding Address}" 
-                                        Width="2*"/>
-                    <DataGridTextColumn Header="City" 
-                                        Binding="{Binding City}" 
-                                        Width="*"/>
-                    <DataGridTextColumn Header="Phone" 
-                                        Binding="{Binding Phone}" 
-                                        Width="*"/>
-                    <DataGridTextColumn Header="Email" 
-                                        Binding="{Binding Email}" 
-                                        Width="1.5*"/>
-                </DataGrid.Columns>
-                
-                <DataGrid.RowStyle>
-                    <Style TargetType="DataGridRow">
-                        <Style.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#F5F5F5"/>
-                            </Trigger>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter Property="Background" Value="{StaticResource SystemHighlightBrush}"/>
-                            </Trigger>
-                        </Style.Triggers>
-                    </Style>
-                </DataGrid.RowStyle>
-            </DataGrid>
-        </Grid>
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
+            <TextBox x:Name="SearchTextBox" Width="300" Height="25" 
+                     VerticalAlignment="Center" Margin="0,0,10,0"
+                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
+            <Button Content="Search" Width="75" Height="25" 
+                    Command="{Binding SearchCommand}"/>
+            <Button Content="New Customer" Width="100" Height="25" Margin="10,0,0,0"
+                    Command="{Binding NewCustomerCommand}"/>
+        </StackPanel>
         
-        <!-- Footer -->
-        <Border Grid.Row="2" Background="#F8F9FA" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0">
-            <Grid Margin="20,15">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                
-                <TextBlock Grid.Column="0" 
-                           VerticalAlignment="Center"
-                           Foreground="{StaticResource DarkGrayBrush}">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="Text" Value="Select a customer to continue"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding SelectedCustomer}" Value="{x:Null}">
-                                    <Setter Property="Text" Value="Select a customer to continue"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
-                
-                <Button Grid.Column="1" 
-                        Content="Cancel" 
-                        Click="CancelButton_Click"
-                        Style="{StaticResource SecondaryButtonStyle}"
-                        Width="100"
-                        Margin="0,0,10,0"/>
-                
-                <Button Grid.Column="2" 
-                        Content="Select" 
-                        Command="{Binding SelectCommand}"
-                        Style="{StaticResource PrimaryButtonStyle}"
-                        Width="100"
-                        IsDefault="True"/>
-            </Grid>
-        </Border>
+        <DataGrid Grid.Row="2" x:Name="CustomersGrid" 
+                  ItemsSource="{Binding FilteredCustomers}"
+                  SelectedItem="{Binding SelectedCustomer}"
+                  AutoGenerateColumns="False" CanUserAddRows="False"
+                  SelectionMode="Single" IsReadOnly="True">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="200"/>
+                <DataGridTextColumn Header="Address" Binding="{Binding Address}" Width="250"/>
+                <DataGridTextColumn Header="City" Binding="{Binding City}" Width="120"/>
+                <DataGridTextColumn Header="Phone" Binding="{Binding Phone}" Width="100"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button Content="Select" Width="75" Height="30" Margin="0,0,10,0"
+                    IsDefault="True" Command="{Binding SelectCommand}"/>
+            <Button Content="Cancel" Width="75" Height="30" 
+                    IsCancel="True" Command="{Binding CancelCommand}"/>
+        </StackPanel>
     </Grid>
 </Window>
