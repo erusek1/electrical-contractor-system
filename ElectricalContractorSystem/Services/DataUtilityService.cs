@@ -53,9 +53,14 @@ namespace ElectricalContractorSystem.Services
                 var inProgressJobs = recentJobs.Take(10);
                 foreach (var job in inProgressJobs)
                 {
-                    if (_databaseService.UpdateJobStatus(job.JobId, "In Progress"))
+                    try
                     {
+                        _databaseService.UpdateJobStatus(job.JobId, "In Progress");
                         updatedCount++;
+                    }
+                    catch
+                    {
+                        // Continue with other jobs if one fails
                     }
                 }
 
@@ -63,9 +68,14 @@ namespace ElectricalContractorSystem.Services
                 var estimateJobs = recentJobs.Skip(10).Take(5);
                 foreach (var job in estimateJobs)
                 {
-                    if (_databaseService.UpdateJobStatus(job.JobId, "Estimate"))
+                    try
                     {
+                        _databaseService.UpdateJobStatus(job.JobId, "Estimate");
                         updatedCount++;
+                    }
+                    catch
+                    {
+                        // Continue with other jobs if one fails
                     }
                 }
 
@@ -97,9 +107,14 @@ namespace ElectricalContractorSystem.Services
                     var job = allJobs.FirstOrDefault(j => j.JobNumber == jobNumber);
                     if (job != null)
                     {
-                        if (_databaseService.UpdateJobStatus(job.JobId, "In Progress"))
+                        try
                         {
+                            _databaseService.UpdateJobStatus(job.JobId, "In Progress");
                             updatedCount++;
+                        }
+                        catch
+                        {
+                            // Continue with other jobs if one fails
                         }
                     }
                 }
