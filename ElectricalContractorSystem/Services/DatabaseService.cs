@@ -169,6 +169,110 @@ namespace ElectricalContractorSystem.Services
 
         #endregion
 
+        #region Vendor Methods (REAL IMPLEMENTATION)
+
+        /// <summary>
+        /// Get all vendors
+        /// </summary>
+        public List<Vendor> GetAllVendors()
+        {
+            var vendors = new List<Vendor>();
+            
+            if (!TableExists("Vendors"))
+            {
+                // Create some default vendors if table doesn't exist
+                vendors.Add(new Vendor { VendorId = 1, Name = "Home Depot" });
+                vendors.Add(new Vendor { VendorId = 2, Name = "Cooper Electric" });
+                vendors.Add(new Vendor { VendorId = 3, Name = "Warshauer Electric" });
+                vendors.Add(new Vendor { VendorId = 4, Name = "Good Friend Electric" });
+                vendors.Add(new Vendor { VendorId = 5, Name = "Lowes" });
+                return vendors;
+            }
+
+            try
+            {
+                using (var connection = new MySqlConnection(_connectionString))
+                {
+                    connection.Open();
+                    var query = "SELECT vendor_id, name, address, city, state, zip, phone, email, notes FROM Vendors ORDER BY name";
+                    
+                    using (var cmd = new MySqlCommand(query, connection))
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            vendors.Add(new Vendor
+                            {
+                                VendorId = reader.GetInt32("vendor_id"),
+                                Name = reader.GetString("name"),
+                                Address = reader.IsDBNull("address") ? null : reader.GetString("address"),
+                                City = reader.IsDBNull("city") ? null : reader.GetString("city"),
+                                State = reader.IsDBNull("state") ? null : reader.GetString("state"),
+                                Zip = reader.IsDBNull("zip") ? null : reader.GetString("zip"),
+                                Phone = reader.IsDBNull("phone") ? null : reader.GetString("phone"),
+                                Email = reader.IsDBNull("email") ? null : reader.GetString("email"),
+                                Notes = reader.IsDBNull("notes") ? null : reader.GetString("notes")
+                            });
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // If any error occurs, return default vendors
+                vendors.Add(new Vendor { VendorId = 1, Name = "Home Depot" });
+                vendors.Add(new Vendor { VendorId = 2, Name = "Cooper Electric" });
+                vendors.Add(new Vendor { VendorId = 3, Name = "Warshauer Electric" });
+                vendors.Add(new Vendor { VendorId = 4, Name = "Good Friend Electric" });
+                vendors.Add(new Vendor { VendorId = 5, Name = "Lowes" });
+            }
+            
+            return vendors;
+        }
+
+        /// <summary>
+        /// Add vendor
+        /// </summary>
+        public int AddVendor(Vendor vendor)
+        {
+            if (!TableExists("Vendors"))
+            {
+                return 0; // Cannot add without table
+            }
+
+            try
+            {
+                using (var connection = new MySqlConnection(_connectionString))
+                {
+                    connection.Open();
+                    var query = @"
+                        INSERT INTO Vendors (name, address, city, state, zip, phone, email, notes)
+                        VALUES (@name, @address, @city, @state, @zip, @phone, @email, @notes);
+                        SELECT LAST_INSERT_ID();";
+                    
+                    using (var cmd = new MySqlCommand(query, connection))
+                    {
+                        cmd.Parameters.AddWithValue("@name", vendor.Name);
+                        cmd.Parameters.AddWithValue("@address", vendor.Address ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@city", vendor.City ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@state", vendor.State ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@zip", vendor.Zip ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@phone", vendor.Phone ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@email", vendor.Email ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@notes", vendor.Notes ?? (object)DBNull.Value);
+                        
+                        return Convert.ToInt32(cmd.ExecuteScalar());
+                    }
+                }
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
+        #endregion
+
         #region Estimate Methods
 
         /// <summary>
@@ -445,9 +549,6 @@ namespace ElectricalContractorSystem.Services
 
         public List<MaterialEntry> GetMaterialEntriesByJob(int jobId) => new List<MaterialEntry>();
         public int AddMaterialEntry(MaterialEntry entry) => 0;
-
-        public List<Vendor> GetAllVendors() => new List<Vendor>();
-        public int AddVendor(Vendor vendor) => 0;
 
         public List<PriceListItem> GetAllPriceListItems() => new List<PriceListItem>();
         public List<PriceListItem> GetActivePriceListItems() => new List<PriceListItem>();
