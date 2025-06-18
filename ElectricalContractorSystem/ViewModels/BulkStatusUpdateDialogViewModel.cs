@@ -297,16 +297,9 @@ namespace ElectricalContractorSystem.ViewModels
                 {
                     try
                     {
-                        bool success = _databaseService.UpdateJobStatus(job.JobId, NewStatus);
-                        if (success)
-                        {
-                            job.Status = NewStatus;
-                            successCount++;
-                        }
-                        else
-                        {
-                            errorCount++;
-                        }
+                        _databaseService.UpdateJobStatus(job.JobId, NewStatus);
+                        job.Status = NewStatus;
+                        successCount++;
                     }
                     catch (Exception ex)
                     {
