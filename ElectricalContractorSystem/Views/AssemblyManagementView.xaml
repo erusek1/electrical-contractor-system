@@ -87,7 +87,7 @@
                     
                     <!-- Assembly List -->
                     <DataGrid Grid.Row="1" 
-                              ItemsSource="{Binding Assemblies}"
+                              ItemsSource="{Binding AssembliesView}"
                               SelectedItem="{Binding SelectedAssembly}"
                               AutoGenerateColumns="False"
                               CanUserAddRows="False"
@@ -96,13 +96,13 @@
                               Background="Transparent">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Code" 
-                                                Binding="{Binding AssemblyCode}" 
+                                                Binding="{Binding AssemblyCode, Mode=OneWay}" 
                                                 Width="80"/>
                             <DataGridTextColumn Header="Name" 
-                                                Binding="{Binding Name}" 
+                                                Binding="{Binding Name, Mode=OneWay}" 
                                                 Width="*"/>
                             <DataGridCheckBoxColumn Header="Default" 
-                                                    Binding="{Binding IsDefault}" 
+                                                    Binding="{Binding IsDefault, Mode=OneWay}" 
                                                     Width="60"
                                                     IsReadOnly="True"/>
                         </DataGrid.Columns>
@@ -112,7 +112,7 @@
             
             <!-- Right Panel - Assembly Details -->
             <Grid Grid.Column="1" Margin="20">
-                <Grid Visibility="{Binding IsAssemblySelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid Visibility="{Binding SelectedAssembly, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
@@ -130,15 +130,15 @@
                             </Grid.ColumnDefinitions>
                             
                             <StackPanel Grid.Column="0">
-                                <TextBlock Text="{Binding SelectedAssembly.Name}" 
+                                <TextBlock Text="{Binding SelectedAssembly.Name, Mode=OneWay}" 
                                            FontSize="20" FontWeight="Bold"/>
                                 <TextBlock FontSize="14" Foreground="Gray" Margin="0,5,0,0">
                                     <Run Text="Code: "/>
-                                    <Run Text="{Binding SelectedAssembly.AssemblyCode}" FontWeight="Bold"/>
+                                    <Run Text="{Binding SelectedAssembly.AssemblyCode, Mode=OneWay}" FontWeight="Bold"/>
                                     <Run Text="   |   "/>
-                                    <Run Text="{Binding SelectedAssembly.IsDefault, Converter={StaticResource BooleanToStringConverter}, ConverterParameter='Default|Variant'}"/>
+                                    <Run Text="{Binding SelectedAssembly.IsDefault, Converter={StaticResource BooleanToStringConverter}, ConverterParameter='Default|Variant', Mode=OneWay}"/>
                                 </TextBlock>
-                                <TextBlock Text="{Binding SelectedAssembly.Description}" 
+                                <TextBlock Text="{Binding SelectedAssembly.Description, Mode=OneWay}" 
                                            FontSize="14" Margin="0,10,0,0" TextWrapping="Wrap"/>
                             </StackPanel>
                             
@@ -147,15 +147,14 @@
                                         Command="{Binding EditAssemblyCommand}"
                                         Background="#3498DB" Foreground="White"
                                         Padding="10,5" Margin="0,0,5,0"/>
-                                <Button Content="Duplicate" 
-                                        Command="{Binding DuplicateAssemblyCommand}"
+                                <Button Content="Create Variant" 
+                                        Command="{Binding CreateVariantCommand}"
                                         Background="#9B59B6" Foreground="White"
                                         Padding="10,5" Margin="0,0,5,0"/>
                                 <Button Content="Delete" 
                                         Command="{Binding DeleteAssemblyCommand}"
                                         Background="#E74C3C" Foreground="White"
-                                        Padding="10,5"
-                                        Visibility="{Binding CanDeleteAssembly, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                        Padding="10,5"/>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -175,31 +174,31 @@
                             
                             <StackPanel Grid.Column="0" Margin="0,0,10,0">
                                 <TextBlock Text="Rough" FontWeight="Bold" Margin="0,0,0,5"/>
-                                <TextBlock Text="{Binding SelectedAssembly.RoughMinutes, StringFormat='{}{0} min'}" 
+                                <TextBlock Text="{Binding SelectedAssembly.RoughMinutes, StringFormat='{}{0} min', Mode=OneWay}" 
                                            FontSize="18"/>
                             </StackPanel>
                             
                             <StackPanel Grid.Column="1" Margin="0,0,10,0">
                                 <TextBlock Text="Finish" FontWeight="Bold" Margin="0,0,0,5"/>
-                                <TextBlock Text="{Binding SelectedAssembly.FinishMinutes, StringFormat='{}{0} min'}" 
+                                <TextBlock Text="{Binding SelectedAssembly.FinishMinutes, StringFormat='{}{0} min', Mode=OneWay}" 
                                            FontSize="18"/>
                             </StackPanel>
                             
                             <StackPanel Grid.Column="2" Margin="0,0,10,0">
                                 <TextBlock Text="Service" FontWeight="Bold" Margin="0,0,0,5"/>
-                                <TextBlock Text="{Binding SelectedAssembly.ServiceMinutes, StringFormat='{}{0} min'}" 
+                                <TextBlock Text="{Binding SelectedAssembly.ServiceMinutes, StringFormat='{}{0} min', Mode=OneWay}" 
                                            FontSize="18"/>
                             </StackPanel>
                             
                             <StackPanel Grid.Column="3" Margin="0,0,10,0">
                                 <TextBlock Text="Extra" FontWeight="Bold" Margin="0,0,0,5"/>
-                                <TextBlock Text="{Binding SelectedAssembly.ExtraMinutes, StringFormat='{}{0} min'}" 
+                                <TextBlock Text="{Binding SelectedAssembly.ExtraMinutes, StringFormat='{}{0} min', Mode=OneWay}" 
                                            FontSize="18"/>
                             </StackPanel>
                             
                             <StackPanel Grid.Column="4">
                                 <TextBlock Text="Total Hours" FontWeight="Bold" Margin="0,0,0,5"/>
-                                <TextBlock Text="{Binding TotalLaborHours, StringFormat='{}{0:N1} hrs'}" 
+                                <TextBlock Text="{Binding TotalLaborHours, StringFormat='{}{0:N1} hrs', Mode=OneWay}" 
                                            FontSize="18" Foreground="#3498DB" FontWeight="Bold"/>
                             </StackPanel>
                         </Grid>
@@ -211,43 +210,50 @@
                         <TabItem Header="Components">
                             <Grid>
                                 <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="*"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
                                 
+                                <!-- Add Component Button -->
+                                <Button Grid.Row="0" 
+                                        Content="Add Component" 
+                                        Command="{Binding AddComponentCommand}"
+                                        Background="#27AE60" Foreground="White"
+                                        Padding="10,5" Margin="10"
+                                        HorizontalAlignment="Left"/>
+                                
                                 <!-- Components List -->
-                                <DataGrid Grid.Row="0" 
+                                <DataGrid Grid.Row="1" 
                                           ItemsSource="{Binding Components}"
                                           SelectedItem="{Binding SelectedComponent}"
                                           AutoGenerateColumns="False"
                                           CanUserAddRows="False"
                                           GridLinesVisibility="Horizontal"
                                           BorderThickness="1"
-                                          BorderBrush="#E0E0E0">
+                                          BorderBrush="#E0E0E0"
+                                          Margin="10,0,10,10">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="Material" 
-                                                            Binding="{Binding Material.Name}" 
+                                                            Binding="{Binding ItemName, Mode=OneWay}" 
                                                             Width="*"/>
                                         <DataGridTextColumn Header="Code" 
-                                                            Binding="{Binding Material.ItemCode}" 
+                                                            Binding="{Binding ItemCode, Mode=OneWay}" 
                                                             Width="80"/>
                                         <DataGridTextColumn Header="Quantity" 
-                                                            Binding="{Binding Quantity}" 
+                                                            Binding="{Binding Quantity, Mode=OneWay}" 
                                                             Width="80"/>
-                                        <DataGridTextColumn Header="Unit" 
-                                                            Binding="{Binding Material.UnitOfMeasure}" 
-                                                            Width="60"/>
                                         <DataGridTextColumn Header="Unit Cost" 
-                                                            Binding="{Binding Material.CurrentPrice, StringFormat='${0:N2}'}" 
+                                                            Binding="{Binding UnitPrice, StringFormat='${0:N2}', Mode=OneWay}" 
                                                             Width="100"/>
                                         <DataGridTextColumn Header="Total Cost" 
-                                                            Binding="{Binding TotalCost, StringFormat='${0:N2}'}" 
+                                                            Binding="{Binding TotalCost, StringFormat='${0:N2}', Mode=OneWay}" 
                                                             Width="100"/>
                                         <DataGridTemplateColumn Width="50">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <Button Content="X" 
-                                                            Command="{Binding DataContext.DeleteComponentCommand, 
+                                                            Command="{Binding DataContext.RemoveComponentCommand, 
                                                                       RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                             CommandParameter="{Binding}"
                                                             Background="#E74C3C" Foreground="White"
@@ -259,10 +265,10 @@
                                 </DataGrid>
                                 
                                 <!-- Total Material Cost -->
-                                <Border Grid.Row="1" Background="#F8F9FA" Padding="15" Margin="0,10,0,0">
+                                <Border Grid.Row="2" Background="#F8F9FA" Padding="15" Margin="10,0,10,10">
                                     <TextBlock HorizontalAlignment="Right">
                                         <Run Text="Total Material Cost: " FontWeight="Bold"/>
-                                        <Run Text="{Binding TotalMaterialCost, StringFormat='${0:N2}'}" 
+                                        <Run Text="{Binding TotalMaterialCost, StringFormat='${0:N2}', Mode=OneWay}" 
                                              FontSize="18" Foreground="#27AE60" FontWeight="Bold"/>
                                     </TextBlock>
                                 </Border>
@@ -288,7 +294,6 @@
                                 <!-- Variants List -->
                                 <DataGrid Grid.Row="1" 
                                           ItemsSource="{Binding Variants}"
-                                          SelectedItem="{Binding SelectedVariant}"
                                           AutoGenerateColumns="False"
                                           CanUserAddRows="False"
                                           GridLinesVisibility="Horizontal"
@@ -297,45 +302,15 @@
                                           Margin="10,0,10,10">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="Name" 
-                                                            Binding="{Binding VariantAssembly.Name}" 
+                                                            Binding="{Binding Name, Mode=OneWay}" 
                                                             Width="*"/>
                                         <DataGridCheckBoxColumn Header="Default" 
-                                                                Binding="{Binding VariantAssembly.IsDefault}" 
+                                                                Binding="{Binding IsDefault, Mode=OneWay}" 
                                                                 Width="60"
                                                                 IsReadOnly="True"/>
                                         <DataGridTextColumn Header="Components" 
-                                                            Binding="{Binding ComponentCount}" 
+                                                            Binding="{Binding Components.Count, Mode=OneWay}" 
                                                             Width="100"/>
-                                        <DataGridTemplateColumn Width="120">
-                                            <DataGridTemplateColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <Button Content="Set as Default" 
-                                                            Command="{Binding DataContext.SetDefaultVariantCommand, 
-                                                                      RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                            CommandParameter="{Binding}"
-                                                            Background="#27AE60" Foreground="White"
-                                                            Padding="5,2"
-                                                            Visibility="{Binding DataContext.CanSetAsDefault, 
-                                                                        RelativeSource={RelativeSource AncestorType=UserControl},
-                                                                        Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                                                </DataTemplate>
-                                            </DataGridTemplateColumn.CellTemplate>
-                                        </DataGridTemplateColumn>
-                                        <DataGridTemplateColumn Width="60">
-                                            <DataGridTemplateColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <Button Content="Delete" 
-                                                            Command="{Binding DataContext.DeleteVariantCommand, 
-                                                                      RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                            CommandParameter="{Binding}"
-                                                            Background="#E74C3C" Foreground="White"
-                                                            Padding="5,2"
-                                                            Visibility="{Binding DataContext.CanDeleteVariant, 
-                                                                        RelativeSource={RelativeSource AncestorType=UserControl},
-                                                                        Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                                                </DataTemplate>
-                                            </DataGridTemplateColumn.CellTemplate>
-                                        </DataGridTemplateColumn>
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </Grid>
@@ -344,11 +319,20 @@
                 </Grid>
                 
                 <!-- No Selection Message -->
-                <TextBlock Grid.Row="0" 
-                           Text="Select an assembly from the list to view details"
+                <TextBlock Text="Select an assembly from the list to view details"
                            FontSize="16" Foreground="Gray"
-                           HorizontalAlignment="Center" VerticalAlignment="Center"
-                           Visibility="{Binding IsAssemblySelected, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=True}"/>
+                           HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedAssembly}" Value="{x:Null}">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
             </Grid>
         </Grid>
     </Grid>
