@@ -28,7 +28,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
+    <Optimize>false</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
@@ -118,8 +118,7 @@
     <Compile Include="Controls\QuickItemEntry.xaml.cs">
       <DependentUpon>QuickItemEntry.xaml</DependentUpon>
     </Compile>
-    <Compile Include="DatabaseConnectionTest.cs" />
-    <Compile Include="StartupTest.cs" />
+    <Compile Include="DatabaseVerificationProgram.cs" />
     <Compile Include="Helpers\BooleanToStringConverter.cs" />
     <Compile Include="Helpers\BooleanToVisibilityConverter.cs" />
     <Compile Include="Helpers\BoolToOpacityConverter.cs" />
@@ -132,6 +131,7 @@
     <Compile Include="Helpers\IntToVisibilityConverter.cs" />
     <Compile Include="Helpers\InverseBooleanConverter.cs" />
     <Compile Include="Helpers\InverseBooleanToVisibilityConverter.cs" />
+    <Compile Include="Helpers\MissingConverters.cs" />
     <Compile Include="Helpers\NotNullConverter.cs" />
     <Compile Include="Helpers\NotNullOrEmptyConverter.cs" />
     <Compile Include="Helpers\RelayCommand.cs" />
@@ -187,23 +187,17 @@
     <Compile Include="Services\DataUtilityService.cs" />
     <Compile Include="Services\DatabaseConnectionTest.cs" />
     <Compile Include="Services\DatabaseService.cs" />
-    <Compile Include="Services\DatabaseService.Customer.cs" />
-    <Compile Include="Services\DatabaseService.Estimating.cs" />
-    <Compile Include="Services\DatabaseService.Extended.cs" />
-    <Compile Include="Services\DatabaseServiceEstimateFixes.cs" />
-    <Compile Include="Services\DatabaseServiceExtensions.cs" />
     <Compile Include="Services\DatabaseServicePricingExtensions.cs" />
-    <Compile Include="Services\DatabaseServicePropertyExtensions.cs" />
     <Compile Include="Services\EstimateConversionService.cs" />
     <Compile Include="Services\EstimatePdfService.cs" />
     <Compile Include="Services\EstimateService.cs" />
     <Compile Include="Services\EstimateServiceExtensions.cs" />
-    <Compile Include="Services\ModelAndServiceFixes.cs" />
     <Compile Include="Services\PriceListService.cs" />
     <Compile Include="Services\PricingService.cs" />
     <Compile Include="Services\PropertyService.cs" />
     <Compile Include="Services\ReportService.cs" />
     <Compile Include="Services\ReportServiceFixes.cs" />
+    <Compile Include="Services\SimpleDatabaseTest.cs" />
     <Compile Include="ViewModels\AssemblyEditViewModel.cs" />
     <Compile Include="ViewModels\AssemblyManagementViewModel.cs" />
     <Compile Include="ViewModels\BulkStatusUpdateDialogViewModel.cs" />
@@ -224,6 +218,7 @@
     <Compile Include="ViewModels\MaterialEntryViewModel.cs" />
     <Compile Include="ViewModels\MaterialPriceTrackingViewModel.cs" />
     <Compile Include="ViewModels\PriceListManagementViewModel.cs" />
+    <Compile Include="ViewModels\PropertyManagementViewModel.cs" />
     <Compile Include="ViewModels\ViewModelBase.cs" />
     <Compile Include="ViewModels\WeeklyLaborEntryViewModel.cs" />
     <Compile Include="Views\AddComponentDialog.xaml.cs">
@@ -234,6 +229,9 @@
     </Compile>
     <Compile Include="Views\AddJobAtPropertyDialog.xaml.cs">
       <DependentUpon>AddJobAtPropertyDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\AddMaterialDialog.xaml.cs">
+      <DependentUpon>AddMaterialDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\AddPropertyDialog.xaml.cs">
       <DependentUpon>AddPropertyDialog.xaml</DependentUpon>
@@ -288,6 +286,9 @@
     </Compile>
     <Compile Include="Views\ImportJobsWindow.xaml.cs">
       <DependentUpon>ImportJobsWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\ImportPricesDialog.xaml.cs">
+      <DependentUpon>ImportPricesDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\JobCostTrackingView.xaml.cs">
       <DependentUpon>JobCostTrackingView.xaml</DependentUpon>
@@ -356,6 +357,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\AddJobAtPropertyDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\AddMaterialDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -428,6 +433,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\ImportJobsWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\ImportPricesDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
