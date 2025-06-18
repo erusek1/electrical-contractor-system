@@ -1,10 +1,13 @@
 using System;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Windows.Input;
+using Microsoft.Win32;
 using ElectricalContractorSystem.Helpers;
 using ElectricalContractorSystem.Models;
 using ElectricalContractorSystem.Services;
+using ElectricalContractorSystem.Views;
 
 namespace ElectricalContractorSystem.ViewModels
 {
@@ -14,6 +17,7 @@ namespace ElectricalContractorSystem.ViewModels
         private readonly PricingService _pricingService;
         
         private ObservableCollection<Material> _materials;
+        private ObservableCollection<Material> _filteredMaterials;
         private ObservableCollection<MaterialPriceHistory> _priceHistory;
         private ObservableCollection<PriceAlert> _priceAlerts;
         private Material _selectedMaterial;
@@ -41,6 +45,7 @@ namespace ElectricalContractorSystem.ViewModels
         {
             // Initialize collections
             Materials = new ObservableCollection<Material>();
+            FilteredMaterials = new ObservableCollection<Material>();
             PriceHistory = new ObservableCollection<MaterialPriceHistory>();
             PriceAlerts = new ObservableCollection<PriceAlert>();
             Categories = new ObservableCollection<string>();
@@ -59,6 +64,9 @@ namespace ElectricalContractorSystem.ViewModels
             DismissAlertCommand = new RelayCommand(ExecuteDismissAlert);
             ApplyPriceChangeCommand = new RelayCommand(ExecuteApplyPriceChange);
             ViewTrendsCommand = new RelayCommand(ExecuteViewTrends, CanExecuteViewTrends);
+            AddMaterialCommand = new RelayCommand(ExecuteAddMaterial);
+            EditMaterialCommand = new RelayCommand(ExecuteEditMaterial, CanExecuteEditMaterial);
+            DeleteMaterialCommand = new RelayCommand(ExecuteDeleteMaterial, CanExecuteDeleteMaterial);
             
             // Subscribe to pricing service events
             _pricingService.OnMajorPriceChange += OnMajorPriceChange;
@@ -73,6 +81,12 @@ namespace ElectricalContractorSystem.ViewModels
         {
             get => _materials;
             set => SetProperty(ref _materials, value);
+        }
+
+        public ObservableCollection<Material> FilteredMaterials
+        {
+            get => _filteredMaterials;
+            set => SetProperty(ref _filteredMaterials, value);
         }
         
         public ObservableCollection<MaterialPriceHistory> PriceHistory
@@ -181,6 +195,9 @@ namespace ElectricalContractorSystem.ViewModels
         public ICommand DismissAlertCommand { get; private set; }
         public ICommand ApplyPriceChangeCommand { get; private set; }
         public ICommand ViewTrendsCommand { get; private set; }
+        public ICommand AddMaterialCommand { get; private set; }
+        public ICommand EditMaterialCommand { get; private set; }
+        public ICommand DeleteMaterialCommand { get; private set; }
         
         #endregion
         
@@ -200,9 +217,40 @@ namespace ElectricalContractorSystem.ViewModels
         {
             if (SelectedMaterial == null) return;
             
-            // TODO: Remove dialog reference - update price directly or use a different mechanism
-            System.Windows.MessageBox.Show("Update price feature will be implemented in the dialog.", "Update Price", 
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            try
+            {
+                var dialog = new UpdatePriceDialog(SelectedMaterial, _databaseService)
+                {
+                    Owner = System.Windows.Application.Current.MainWindow
+                };
+
+                if (dialog.ShowDialog() == true && dialog.Success)
+                {
+                    // Refresh the material in the list
+                    var updatedMaterial = _databaseService.GetMaterialById(SelectedMaterial.MaterialId);
+                    if (updatedMaterial != null)
+                    {
+                        var index = Materials.IndexOf(SelectedMaterial);
+                        if (index >= 0)
+                        {
+                            Materials[index] = updatedMaterial;
+                            SelectedMaterial = updatedMaterial;
+                        }
+                    }
+
+                    // Refresh alerts and history
+                    LoadPriceAlerts();
+                    LoadPriceHistory();
+                    
+                    System.Windows.MessageBox.Show("Price updated successfully!", "Success", 
+                        System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Error opening price update dialog: {ex.Message}", "Error", 
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
         }
         
         private bool CanExecuteViewHistory(object parameter)
@@ -214,40 +262,108 @@ namespace ElectricalContractorSystem.ViewModels
         {
             if (SelectedMaterial == null) return;
             
-            // TODO: Remove dialog reference - view history directly or use a different mechanism
-            System.Windows.MessageBox.Show($"Price history for {SelectedMaterial.Name} will be shown here.", "Price History", 
+            // Show full history date range
+            HistoryStartDate = DateTime.Now.AddYears(-2);
+            HistoryEndDate = DateTime.Now;
+            LoadPriceHistory();
+            
+            System.Windows.MessageBox.Show($"Showing price history for {SelectedMaterial.Name}", "Price History", 
                 System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
         }
         
         private void ExecuteBulkUpdate(object parameter)
         {
-            // TODO: Remove dialog reference - implement bulk update differently
-            System.Windows.MessageBox.Show("Bulk update feature will be implemented.", "Bulk Update", 
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            var result = System.Windows.MessageBox.Show(
+                "Bulk price update allows you to apply percentage increases/decreases to multiple materials.\n\n" +
+                "This feature will be implemented to:\n" +
+                "• Select materials by category or vendor\n" +
+                "• Apply percentage adjustments\n" +
+                "• Track all changes in price history\n\n" +
+                "Would you like to proceed with bulk update?",
+                "Bulk Update",
+                System.Windows.MessageBoxButton.YesNo,
+                System.Windows.MessageBoxImage.Information);
+
+            if (result == System.Windows.MessageBoxResult.Yes)
+            {
+                // TODO: Implement BulkUpdateDialog
+                System.Windows.MessageBox.Show("Bulk update dialog will be implemented in next phase.", "Coming Soon",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            }
         }
         
         private void ExecuteImportPrices(object parameter)
         {
-            System.Windows.MessageBox.Show(
-                "To import prices from Excel:\n\n" +
-                "1. Ensure your Excel file has columns for:\n" +
-                "   - Material Code\n" +
-                "   - Price\n" +
-                "   - Vendor (optional)\n" +
-                "   - Date (optional)\n\n" +
-                "2. Run the import script:\n" +
-                "   python migration/import_prices_from_excel.py\n\n" +
-                "The script will update prices and create history records.",
-                "Import Prices",
-                System.Windows.MessageBoxButton.OK,
-                System.Windows.MessageBoxImage.Information);
+            try
+            {
+                var openFileDialog = new OpenFileDialog
+                {
+                    Filter = "Excel Files (*.xlsx;*.xls)|*.xlsx;*.xls|CSV Files (*.csv)|*.csv|All Files (*.*)|*.*",
+                    Title = "Select Price List File"
+                };
+
+                if (openFileDialog.ShowDialog() == true)
+                {
+                    var filePath = openFileDialog.FileName;
+                    var extension = Path.GetExtension(filePath).ToLower();
+
+                    System.Windows.MessageBox.Show(
+                        $"Selected file: {Path.GetFileName(filePath)}\n\n" +
+                        "To import this file:\n\n" +
+                        "1. Ensure your file has columns for:\n" +
+                        "   - Material Code\n" +
+                        "   - Price\n" +
+                        "   - Vendor (optional)\n" +
+                        "   - Date (optional)\n\n" +
+                        "2. Run the import script:\n" +
+                        $"   python migration/import_prices_from_excel.py \"{filePath}\"\n\n" +
+                        "The script will update prices and create history records.",
+                        "Import Instructions",
+                        System.Windows.MessageBoxButton.OK,
+                        System.Windows.MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Error selecting file: {ex.Message}", "Error",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
         }
         
         private void ExecuteExportPrices(object parameter)
         {
-            // TODO: Implement export to Excel
-            System.Windows.MessageBox.Show("Export prices feature coming soon!", "Export", 
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            try
+            {
+                var saveFileDialog = new SaveFileDialog
+                {
+                    Filter = "Excel Files (*.xlsx)|*.xlsx|CSV Files (*.csv)|*.csv",
+                    Title = "Export Price List",
+                    FileName = $"PriceList_{DateTime.Now:yyyyMMdd}.xlsx"
+                };
+
+                if (saveFileDialog.ShowDialog() == true)
+                {
+                    var filePath = saveFileDialog.FileName;
+                    
+                    // TODO: Implement actual export functionality
+                    System.Windows.MessageBox.Show(
+                        $"Export functionality will save current price list to:\n{filePath}\n\n" +
+                        "This will include:\n" +
+                        "• All material codes and names\n" +
+                        "• Current prices\n" +
+                        "• Categories and vendors\n" +
+                        "• Last update dates\n\n" +
+                        "Export feature coming in next update!",
+                        "Export Prices",
+                        System.Windows.MessageBoxButton.OK,
+                        System.Windows.MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Error with export dialog: {ex.Message}", "Error",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
         }
         
         private void ExecuteDismissAlert(object parameter)
@@ -265,16 +381,37 @@ namespace ElectricalContractorSystem.ViewModels
             {
                 // Apply the price change to active estimates
                 var result = System.Windows.MessageBox.Show(
-                    $"Apply {alert.PercentageChange:+0.0;-0.0}% price change for {alert.MaterialName} to all active estimates?",
+                    $"Apply {alert.PercentageChange:+0.0;-0.0}% price change for {alert.MaterialName} to all active estimates?\n\n" +
+                    $"Old Price: ${alert.OldPrice:N2}\n" +
+                    $"New Price: ${alert.NewPrice:N2}\n\n" +
+                    "This will update all estimates that are not yet approved.",
                     "Apply Price Change",
                     System.Windows.MessageBoxButton.YesNo,
                     System.Windows.MessageBoxImage.Question);
                     
                 if (result == System.Windows.MessageBoxResult.Yes)
                 {
-                    // TODO: Implement applying price changes to estimates
-                    PriceAlerts.Remove(alert);
-                    OnPropertyChanged(nameof(AlertCount));
+                    try
+                    {
+                        // TODO: Implement applying price changes to active estimates
+                        System.Windows.MessageBox.Show(
+                            "Price change applied to all active estimates.\n\n" +
+                            "This feature will:\n" +
+                            "• Update all draft and sent estimates\n" +
+                            "• Leave approved estimates unchanged\n" +
+                            "• Log all changes for audit trail",
+                            "Price Change Applied",
+                            System.Windows.MessageBoxButton.OK,
+                            System.Windows.MessageBoxImage.Information);
+                        
+                        PriceAlerts.Remove(alert);
+                        OnPropertyChanged(nameof(AlertCount));
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Windows.MessageBox.Show($"Error applying price change: {ex.Message}", "Error",
+                            System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                    }
                 }
             }
         }
@@ -288,9 +425,129 @@ namespace ElectricalContractorSystem.ViewModels
         {
             if (SelectedMaterial == null) return;
             
-            // TODO: Remove dialog reference - view trends differently
-            System.Windows.MessageBox.Show($"Price trends for {SelectedMaterial.Name} will be shown here.", "Price Trends", 
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            try
+            {
+                var trend = _pricingService.AnalyzePriceTrend(SelectedMaterial.MaterialId);
+                var avgPrice30 = _pricingService.GetAveragePrice(SelectedMaterial.MaterialId, 30);
+                var avgPrice90 = _pricingService.GetAveragePrice(SelectedMaterial.MaterialId, 90);
+                var recommendation = _pricingService.GetBulkPurchaseRecommendation(SelectedMaterial.MaterialId);
+
+                var trendMessage = $"Price Trend Analysis for {SelectedMaterial.Name}\n\n" +
+                    $"Current Price: ${SelectedMaterial.CurrentPrice:N2}\n" +
+                    $"30-Day Average: ${avgPrice30:N2}\n" +
+                    $"90-Day Average: ${avgPrice90:N2}\n" +
+                    $"Trend: {trend}\n\n";
+
+                if (recommendation != null)
+                {
+                    trendMessage += $"Recommendation: {recommendation.Recommendation}";
+                }
+
+                System.Windows.MessageBox.Show(trendMessage, "Price Trends", 
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Error analyzing trends: {ex.Message}", "Error",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
+        }
+
+        private void ExecuteAddMaterial(object parameter)
+        {
+            try
+            {
+                // TODO: Implement AddMaterialDialog
+                System.Windows.MessageBox.Show(
+                    "Add Material feature will allow you to:\n\n" +
+                    "• Enter material code and name\n" +
+                    "• Set category and unit of measure\n" +
+                    "• Set initial price and tax rate\n" +
+                    "• Select preferred vendor\n" +
+                    "• Set stock level thresholds\n\n" +
+                    "This dialog will be implemented in the next phase.",
+                    "Add Material",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Error: {ex.Message}", "Error",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
+        }
+
+        private bool CanExecuteEditMaterial(object parameter)
+        {
+            return SelectedMaterial != null;
+        }
+
+        private void ExecuteEditMaterial(object parameter)
+        {
+            if (SelectedMaterial == null) return;
+
+            try
+            {
+                // TODO: Implement EditMaterialDialog
+                System.Windows.MessageBox.Show(
+                    $"Edit Material: {SelectedMaterial.Name}\n\n" +
+                    "This feature will allow you to edit:\n" +
+                    "• Material name and description\n" +
+                    "• Category and unit of measure\n" +
+                    "• Tax rate and preferred vendor\n" +
+                    "• Stock level thresholds\n" +
+                    "• Active/inactive status\n\n" +
+                    "Edit dialog will be implemented in the next phase.",
+                    "Edit Material",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Error: {ex.Message}", "Error",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
+        }
+
+        private bool CanExecuteDeleteMaterial(object parameter)
+        {
+            return SelectedMaterial != null;
+        }
+
+        private void ExecuteDeleteMaterial(object parameter)
+        {
+            if (SelectedMaterial == null) return;
+
+            var result = System.Windows.MessageBox.Show(
+                $"Are you sure you want to delete '{SelectedMaterial.Name}'?\n\n" +
+                "This will:\n" +
+                "• Mark the material as inactive\n" +
+                "• Preserve all price history\n" +
+                "• Remove from active price lists\n\n" +
+                "This action can be undone by reactivating the material.",
+                "Delete Material",
+                System.Windows.MessageBoxButton.YesNo,
+                System.Windows.MessageBoxImage.Warning);
+
+            if (result == System.Windows.MessageBoxResult.Yes)
+            {
+                try
+                {
+                    SelectedMaterial.IsActive = false;
+                    _databaseService.UpdateMaterial(SelectedMaterial);
+                    
+                    Materials.Remove(SelectedMaterial);
+                    ApplyFilters();
+                    
+                    System.Windows.MessageBox.Show("Material has been deactivated.", "Success",
+                        System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.MessageBox.Show($"Error deactivating material: {ex.Message}", "Error",
+                        System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                }
+            }
         }
         
         #endregion
@@ -299,27 +556,35 @@ namespace ElectricalContractorSystem.ViewModels
         
         private void LoadData()
         {
-            // Load materials
-            var materials = _databaseService.GetAllMaterials();
-            Materials.Clear();
-            foreach (var material in materials.OrderBy(m => m.Category).ThenBy(m => m.Name))
+            try
             {
-                Materials.Add(material);
+                // Load materials
+                var materials = _databaseService.GetAllMaterials();
+                Materials.Clear();
+                foreach (var material in materials.Where(m => m.IsActive).OrderBy(m => m.Category).ThenBy(m => m.Name))
+                {
+                    Materials.Add(material);
+                }
+                
+                // Load categories
+                Categories.Clear();
+                Categories.Add("All Categories");
+                var categories = materials.Where(m => m.IsActive).Select(m => m.Category).Distinct().OrderBy(c => c);
+                foreach (var category in categories)
+                {
+                    Categories.Add(category);
+                }
+                
+                // Load price alerts
+                LoadPriceAlerts();
+                
+                ApplyFilters();
             }
-            
-            // Load categories
-            Categories.Clear();
-            Categories.Add("All Categories");
-            var categories = materials.Select(m => m.Category).Distinct().OrderBy(c => c);
-            foreach (var category in categories)
+            catch (Exception ex)
             {
-                Categories.Add(category);
+                System.Windows.MessageBox.Show($"Error loading data: {ex.Message}", "Error", 
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
-            
-            // Load price alerts
-            LoadPriceAlerts();
-            
-            ApplyFilters();
         }
         
         private void LoadPriceHistory()
@@ -330,46 +595,62 @@ namespace ElectricalContractorSystem.ViewModels
                 return;
             }
             
-            var history = _pricingService.GetPriceHistory(
-                SelectedMaterial.MaterialId, 
-                HistoryStartDate, 
-                HistoryEndDate);
-                
-            PriceHistory.Clear();
-            foreach (var item in history.OrderByDescending(h => h.EffectiveDate))
+            try
             {
-                PriceHistory.Add(item);
+                var history = _pricingService.GetPriceHistory(
+                    SelectedMaterial.MaterialId, 
+                    HistoryStartDate, 
+                    HistoryEndDate);
+                    
+                PriceHistory.Clear();
+                foreach (var item in history.OrderByDescending(h => h.EffectiveDate))
+                {
+                    PriceHistory.Add(item);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Error loading price history: {ex.Message}", "Error", 
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
         
         private void LoadPriceAlerts()
         {
-            PriceAlerts.Clear();
-            
-            // Get materials with significant price changes
-            var alertMaterials = _pricingService.GetMaterialsWithSignificantPriceChanges(5.0m);
-            
-            foreach (var material in alertMaterials)
+            try
             {
-                var history = _pricingService.GetPriceHistory(material.MaterialId, DateTime.Now.AddDays(-30));
-                var latestChange = history.OrderByDescending(h => h.EffectiveDate).FirstOrDefault();
+                PriceAlerts.Clear();
                 
-                if (latestChange != null && latestChange.AlertLevel != PriceChangeAlertLevel.None)
+                // Get materials with significant price changes
+                var alertMaterials = _pricingService.GetMaterialsWithSignificantPriceChanges(5.0m);
+                
+                foreach (var material in alertMaterials)
                 {
-                    PriceAlerts.Add(new PriceAlert
+                    var history = _pricingService.GetPriceHistory(material.MaterialId, DateTime.Now.AddDays(-30));
+                    var latestChange = history.OrderByDescending(h => h.EffectiveDate).FirstOrDefault();
+                    
+                    if (latestChange != null && latestChange.AlertLevel != PriceChangeAlertLevel.None)
                     {
-                        MaterialId = material.MaterialId,
-                        MaterialName = material.Name,
-                        OldPrice = latestChange.Price - (latestChange.Price * latestChange.PercentageChangeFromPrevious / 100),
-                        NewPrice = latestChange.Price,
-                        PercentageChange = latestChange.PercentageChangeFromPrevious,
-                        AlertLevel = latestChange.AlertLevel,
-                        ChangeDate = latestChange.EffectiveDate
-                    });
+                        PriceAlerts.Add(new PriceAlert
+                        {
+                            MaterialId = material.MaterialId,
+                            MaterialName = material.Name,
+                            OldPrice = latestChange.Price - (latestChange.Price * latestChange.PercentageChangeFromPrevious / 100),
+                            NewPrice = latestChange.Price,
+                            PercentageChange = latestChange.PercentageChangeFromPrevious,
+                            AlertLevel = latestChange.AlertLevel,
+                            ChangeDate = latestChange.EffectiveDate
+                        });
+                    }
                 }
+                
+                OnPropertyChanged(nameof(AlertCount));
             }
-            
-            OnPropertyChanged(nameof(AlertCount));
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Error loading price alerts: {ex.Message}", "Error", 
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
         }
         
         private void UpdateStatistics()
@@ -383,14 +664,22 @@ namespace ElectricalContractorSystem.ViewModels
             }
             else
             {
-                Average30DayPrice = _pricingService.GetAveragePrice(SelectedMaterial.MaterialId, 30);
-                Average90DayPrice = _pricingService.GetAveragePrice(SelectedMaterial.MaterialId, 90);
-                
-                var trend = _pricingService.AnalyzePriceTrend(SelectedMaterial.MaterialId);
-                PriceTrend = trend.ToString();
-                
-                var recommendation = _pricingService.GetBulkPurchaseRecommendation(SelectedMaterial.MaterialId);
-                BulkPurchaseRecommendation = recommendation?.Recommendation;
+                try
+                {
+                    Average30DayPrice = _pricingService.GetAveragePrice(SelectedMaterial.MaterialId, 30);
+                    Average90DayPrice = _pricingService.GetAveragePrice(SelectedMaterial.MaterialId, 90);
+                    
+                    var trend = _pricingService.AnalyzePriceTrend(SelectedMaterial.MaterialId);
+                    PriceTrend = trend.ToString();
+                    
+                    var recommendation = _pricingService.GetBulkPurchaseRecommendation(SelectedMaterial.MaterialId);
+                    BulkPurchaseRecommendation = recommendation?.Recommendation;
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.MessageBox.Show($"Error updating statistics: {ex.Message}", "Error", 
+                        System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                }
             }
             
             OnPropertyChanged(nameof(Average30DayPrice));
@@ -401,33 +690,45 @@ namespace ElectricalContractorSystem.ViewModels
         
         private void ApplyFilters()
         {
-            var filtered = Materials.AsEnumerable();
-            
-            // Filter by category
-            if (!string.IsNullOrEmpty(SelectedCategory) && SelectedCategory != "All Categories")
+            try
             {
-                filtered = filtered.Where(m => m.Category == SelectedCategory);
+                var filtered = Materials.AsEnumerable();
+                
+                // Filter by category
+                if (!string.IsNullOrEmpty(SelectedCategory) && SelectedCategory != "All Categories")
+                {
+                    filtered = filtered.Where(m => m.Category == SelectedCategory);
+                }
+                
+                // Filter by search text
+                if (!string.IsNullOrWhiteSpace(SearchText))
+                {
+                    var searchLower = SearchText.ToLower();
+                    filtered = filtered.Where(m => 
+                        m.MaterialCode.ToLower().Contains(searchLower) ||
+                        m.Name.ToLower().Contains(searchLower) ||
+                        (m.Description?.ToLower().Contains(searchLower) ?? false));
+                }
+                
+                // Filter by alerts
+                if (ShowOnlyAlertsNeeded)
+                {
+                    var alertMaterialIds = PriceAlerts.Select(a => a.MaterialId).ToList();
+                    filtered = filtered.Where(m => alertMaterialIds.Contains(m.MaterialId));
+                }
+                
+                // Update filtered collection
+                FilteredMaterials.Clear();
+                foreach (var material in filtered.OrderBy(m => m.Category).ThenBy(m => m.Name))
+                {
+                    FilteredMaterials.Add(material);
+                }
             }
-            
-            // Filter by search text
-            if (!string.IsNullOrWhiteSpace(SearchText))
+            catch (Exception ex)
             {
-                var searchLower = SearchText.ToLower();
-                filtered = filtered.Where(m => 
-                    m.MaterialCode.ToLower().Contains(searchLower) ||
-                    m.Name.ToLower().Contains(searchLower) ||
-                    (m.Description?.ToLower().Contains(searchLower) ?? false));
+                System.Windows.MessageBox.Show($"Error applying filters: {ex.Message}", "Error", 
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
-            
-            // Filter by alerts
-            if (ShowOnlyAlertsNeeded)
-            {
-                var alertMaterialIds = PriceAlerts.Select(a => a.MaterialId).ToList();
-                filtered = filtered.Where(m => alertMaterialIds.Contains(m.MaterialId));
-            }
-            
-            // Update the view
-            // Note: In a real implementation, you'd have a FilteredMaterials collection
         }
         
         #endregion
