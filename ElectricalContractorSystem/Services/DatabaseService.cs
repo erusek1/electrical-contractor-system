@@ -249,24 +249,24 @@ namespace ElectricalContractorSystem.Services
 
                 using (var cmd = new MySqlCommand(query, connection))
                 {
-                    // Add parameters using snake_case column names
+                    // Add parameters using snake_case column names and correct property names
                     cmd.Parameters.AddWithValue("@estimate_number", estimate.EstimateNumber);
-                    cmd.Parameters.AddWithValue("@version", estimate.Version ?? 1);
+                    cmd.Parameters.AddWithValue("@version", estimate.Version);
                     cmd.Parameters.AddWithValue("@customer_id", estimate.CustomerId);
                     cmd.Parameters.AddWithValue("@job_name", estimate.ProjectName);
-                    cmd.Parameters.AddWithValue("@job_address", estimate.PropertyAddress ?? (object)DBNull.Value);
-                    cmd.Parameters.AddWithValue("@job_city", estimate.PropertyCity ?? (object)DBNull.Value);
-                    cmd.Parameters.AddWithValue("@job_state", estimate.PropertyState ?? (object)DBNull.Value);
-                    cmd.Parameters.AddWithValue("@job_zip", estimate.PropertyZip ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@job_address", estimate.Address ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@job_city", estimate.City ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@job_state", estimate.State ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@job_zip", estimate.Zip ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@square_footage", estimate.SquareFootage ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@num_floors", estimate.NumFloors ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@status", estimate.Status.ToString());
-                    cmd.Parameters.AddWithValue("@tax_rate", estimate.TaxRate ?? 6.625m);
-                    cmd.Parameters.AddWithValue("@material_markup", estimate.MaterialMarkup ?? 22.0m);
-                    cmd.Parameters.AddWithValue("@labor_rate", estimate.LaborRate ?? 85.0m);
+                    cmd.Parameters.AddWithValue("@tax_rate", estimate.TaxRate);
+                    cmd.Parameters.AddWithValue("@material_markup", estimate.MaterialMarkup);
+                    cmd.Parameters.AddWithValue("@labor_rate", estimate.LaborRate);
                     cmd.Parameters.AddWithValue("@total_material_cost", estimate.TotalMaterialCost);
                     cmd.Parameters.AddWithValue("@total_labor_minutes", estimate.TotalLaborMinutes);
-                    cmd.Parameters.AddWithValue("@total_labor_hours", estimate.TotalLaborCost / (estimate.LaborRate ?? 85.0m));
+                    cmd.Parameters.AddWithValue("@total_labor_hours", estimate.LaborRate > 0 ? estimate.TotalLaborCost / estimate.LaborRate : 0);
                     cmd.Parameters.AddWithValue("@total_labor_cost", estimate.TotalLaborCost);
                     cmd.Parameters.AddWithValue("@total_price", estimate.TotalPrice);
                     cmd.Parameters.AddWithValue("@notes", estimate.Notes ?? (object)DBNull.Value);
@@ -378,13 +378,13 @@ namespace ElectricalContractorSystem.Services
                 Version = reader.GetInt32("version"),
                 CustomerId = reader.GetInt32("customer_id"),
                 ProjectName = reader.GetString("job_name"),
-                PropertyAddress = reader.IsDBNull(reader.GetOrdinal("job_address")) ? null : reader.GetString("job_address"),
-                PropertyCity = reader.IsDBNull(reader.GetOrdinal("job_city")) ? null : reader.GetString("job_city"),
-                PropertyState = reader.IsDBNull(reader.GetOrdinal("job_state")) ? null : reader.GetString("job_state"),
-                PropertyZip = reader.IsDBNull(reader.GetOrdinal("job_zip")) ? null : reader.GetString("job_zip"),
+                Address = reader.IsDBNull(reader.GetOrdinal("job_address")) ? null : reader.GetString("job_address"),
+                City = reader.IsDBNull(reader.GetOrdinal("job_city")) ? null : reader.GetString("job_city"),
+                State = reader.IsDBNull(reader.GetOrdinal("job_state")) ? null : reader.GetString("job_state"),
+                Zip = reader.IsDBNull(reader.GetOrdinal("job_zip")) ? null : reader.GetString("job_zip"),
                 SquareFootage = reader.IsDBNull(reader.GetOrdinal("square_footage")) ? (int?)null : reader.GetInt32("square_footage"),
                 NumFloors = reader.IsDBNull(reader.GetOrdinal("num_floors")) ? (int?)null : reader.GetInt32("num_floors"),
-                Status = Enum.Parse<EstimateStatus>(reader.GetString("status")),
+                Status = (EstimateStatus)Enum.Parse(typeof(EstimateStatus), reader.GetString("status")),
                 CreateDate = reader.GetDateTime("created_date"),
                 CreatedBy = reader.IsDBNull(reader.GetOrdinal("created_by")) ? null : reader.GetString("created_by"),
                 UpdatedDate = reader.IsDBNull(reader.GetOrdinal("modified_date")) ? (DateTime?)null : reader.GetDateTime("modified_date"),
