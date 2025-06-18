@@ -18,7 +18,7 @@ namespace ElectricalContractorSystem.Services
 
         public DatabaseService()
         {
-            _connectionString = ConfigurationManager.ConnectionStrings["ElectricalDB"]?.ConnectionString ?? "Server=localhost;Database=electrical_contractor_db;Uid=root;Pwd=password;";
+            _connectionString = ConfigurationManager.ConnectionStrings["ElectricalDB"]?.ConnectionString ?? "Server=localhost;Database=electrical_contractor_db;Uid=root;Pwd=215Osborn;";
         }
 
         public DatabaseService(string connectionString)
