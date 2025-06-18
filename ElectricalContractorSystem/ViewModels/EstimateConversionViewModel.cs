@@ -1,213 +1,190 @@
 using System;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Windows.Input;
-using ElectricalContractorSystem.Helpers;
 using ElectricalContractorSystem.Models;
 using ElectricalContractorSystem.Services;
+using ElectricalContractorSystem.Helpers;
 
 namespace ElectricalContractorSystem.ViewModels
 {
-    public class EstimateConversionViewModel : ViewModelBase
+    public class EstimateConversionViewModel : INotifyPropertyChanged
     {
+        private readonly Estimate _estimate;
         private readonly DatabaseService _databaseService;
-        private readonly EstimateConversionService _conversionService;
-        private readonly Estimate _sourceEstimate;
-        
-        private string _jobNumber;
-        private bool _includeAllStages = true;
-        private bool _includeMaterialCosts = true;
-        private bool _includeRoomSpecifications = true;
-        private bool _includePermitItems = true;
+        private string _jobName;
+        private string _newJobNumber;
+        private bool _includeLineItems = true;
+        private bool _createJobStages = true;
+        private bool _setEstimatedCosts = true;
+        private bool _markEstimateConverted = true;
         private string _notes;
-        private Job _createdJob;
-        private bool _isConverting;
-        private string _conversionStatus;
-        
-        public EstimateConversionViewModel(DatabaseService databaseService, Estimate sourceEstimate)
+
+        public event Action<Job> JobCreated;
+        public event Action DialogCancelled;
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        public EstimateConversionViewModel(Estimate estimate, DatabaseService databaseService)
         {
-            _databaseService = databaseService;
-            _conversionService = new EstimateConversionService(databaseService);
-            _sourceEstimate = sourceEstimate;
+            _estimate = estimate ?? throw new ArgumentNullException(nameof(estimate));
+            _databaseService = databaseService ?? throw new ArgumentNullException(nameof(databaseService));
             
-            // Initialize commands
-            ConvertCommand = new RelayCommand(ExecuteConvert, CanExecuteConvert);
-            CancelCommand = new RelayCommand(ExecuteCancel);
-            
-            // Generate next job number
-            GenerateJobNumber();
+            InitializeProperties();
+            InitializeCommands();
         }
-        
-        #region Properties
-        
-        public Estimate SourceEstimate => _sourceEstimate;
-        
-        public string EstimateInfo => $"Estimate {_sourceEstimate.EstimateNumber} v{_sourceEstimate.Version}";
-        
-        public string CustomerInfo => $"{_sourceEstimate.Customer?.Name} - {_sourceEstimate.JobName}";
-        
-        public string JobNumber
+
+        private void InitializeProperties()
         {
-            get => _jobNumber;
+            JobName = _estimate.JobName;
+            NewJobNumber = _databaseService.GetNextJobNumber();
+        }
+
+        private void InitializeCommands()
+        {
+            ConvertCommand = new RelayCommand(_ => ConvertEstimateToJob(), _ => CanConvert());
+            CancelCommand = new RelayCommand(_ => Cancel());
+        }
+
+        // Properties
+        public string EstimateNumber => _estimate.EstimateNumber;
+        public string CustomerName => _estimate.Customer?.Name ?? "Unknown Customer";
+        public decimal TotalValue => _estimate.TotalPrice;
+
+        public string JobName
+        {
+            get => _jobName;
             set
             {
-                SetProperty(ref _jobNumber, value);
-                CommandManager.InvalidateRequerySuggested();
+                _jobName = value;
+                OnPropertyChanged();
+                ((RelayCommand)ConvertCommand).RaiseCanExecuteChanged();
             }
         }
-        
-        public bool IncludeAllStages
+
+        public string NewJobNumber
         {
-            get => _includeAllStages;
-            set => SetProperty(ref _includeAllStages, value);
+            get => _newJobNumber;
+            set
+            {
+                _newJobNumber = value;
+                OnPropertyChanged();
+            }
         }
-        
-        public bool IncludeMaterialCosts
+
+        public bool IncludeLineItems
         {
-            get => _includeMaterialCosts;
-            set => SetProperty(ref _includeMaterialCosts, value);
+            get => _includeLineItems;
+            set
+            {
+                _includeLineItems = value;
+                OnPropertyChanged();
+            }
         }
-        
-        public bool IncludeRoomSpecifications
+
+        public bool CreateJobStages
         {
-            get => _includeRoomSpecifications;
-            set => SetProperty(ref _includeRoomSpecifications, value);
+            get => _createJobStages;
+            set
+            {
+                _createJobStages = value;
+                OnPropertyChanged();
+            }
         }
-        
-        public bool IncludePermitItems
+
+        public bool SetEstimatedCosts
         {
-            get => _includePermitItems;
-            set => SetProperty(ref _includePermitItems, value);
+            get => _setEstimatedCosts;
+            set
+            {
+                _setEstimatedCosts = value;
+                OnPropertyChanged();
+            }
         }
-        
+
+        public bool MarkEstimateConverted
+        {
+            get => _markEstimateConverted;
+            set
+            {
+                _markEstimateConverted = value;
+                OnPropertyChanged();
+            }
+        }
+
         public string Notes
         {
             get => _notes;
-            set => SetProperty(ref _notes, value);
-        }
-        
-        public Job CreatedJob
-        {
-            get => _createdJob;
-            private set => SetProperty(ref _createdJob, value);
-        }
-        
-        public bool IsConverting
-        {
-            get => _isConverting;
             set
             {
-                SetProperty(ref _isConverting, value);
-                CommandManager.InvalidateRequerySuggested();
+                _notes = value;
+                OnPropertyChanged();
             }
         }
-        
-        public string ConversionStatus
+
+        // Commands
+        public ICommand ConvertCommand { get; private set; }
+        public ICommand CancelCommand { get; private set; }
+
+        private bool CanConvert()
         {
-            get => _conversionStatus;
-            set => SetProperty(ref _conversionStatus, value);
+            return !string.IsNullOrWhiteSpace(JobName) && !string.IsNullOrWhiteSpace(NewJobNumber);
         }
-        
-        #endregion
-        
-        #region Commands
-        
-        public ICommand ConvertCommand { get; }
-        public ICommand CancelCommand { get; }
-        
-        #endregion
-        
-        #region Command Implementations
-        
-        private bool CanExecuteConvert(object parameter)
-        {
-            return !string.IsNullOrWhiteSpace(JobNumber) && 
-                   !IsConverting &&
-                   _sourceEstimate.Status == EstimateStatus.Approved;
-        }
-        
-        private async void ExecuteConvert(object parameter)
+
+        private void ConvertEstimateToJob()
         {
             try
             {
-                IsConverting = true;
-                ConversionStatus = "Starting conversion...";
-                
-                // Use the ConversionOptions from the Services namespace
-                var options = new Services.ConversionOptions
+                var conversionOptions = new EstimateToJobConversionOptions
                 {
-                    IncludeAllStages = IncludeAllStages,
-                    IncludeMaterialCosts = IncludeMaterialCosts,
-                    IncludeRoomSpecifications = IncludeRoomSpecifications,
-                    IncludePermitItems = IncludePermitItems,
-                    JobNumber = JobNumber,
+                    JobNumber = NewJobNumber,
+                    JobName = JobName,
+                    IncludeLineItems = IncludeLineItems,
+                    CreateJobStages = CreateJobStages,
+                    SetEstimatedCosts = SetEstimatedCosts,
+                    MarkEstimateConverted = MarkEstimateConverted,
                     Notes = Notes
                 };
-                
-                // Update status
-                ConversionStatus = "Creating job...";
-                CreatedJob = await _conversionService.ConvertEstimateToJobAsync(_sourceEstimate, options);
-                
-                if (CreatedJob != null)
+
+                var job = _databaseService.ConvertEstimateToJob(_estimate.EstimateId, conversionOptions);
+
+                if (job != null)
                 {
-                    ConversionStatus = "Conversion completed successfully!";
-                    
-                    // Mark estimate as converted
-                    _sourceEstimate.ConvertedToJobId = CreatedJob.JobId;
-                    _sourceEstimate.ConvertedDate = DateTime.Now;
-                    _databaseService.SaveEstimate(_sourceEstimate);
-                    
-                    // Raise completion event
-                    ConversionCompleted?.Invoke(this, true);
+                    JobCreated?.Invoke(job);
                 }
                 else
                 {
-                    ConversionStatus = "Conversion failed. Please check the logs.";
+                    // Handle conversion failure
+                    throw new InvalidOperationException("Failed to convert estimate to job.");
                 }
             }
             catch (Exception ex)
             {
-                ConversionStatus = $"Error: {ex.Message}";
-                System.Windows.MessageBox.Show(
-                    $"An error occurred during conversion:\n{ex.Message}",
-                    "Conversion Error",
-                    System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Error);
-            }
-            finally
-            {
-                IsConverting = false;
+                // Log the error and show message to user
+                // For now, just throw to be handled by the calling code
+                throw new InvalidOperationException($"Error converting estimate to job: {ex.Message}", ex);
             }
         }
-        
-        private void ExecuteCancel(object parameter)
+
+        private void Cancel()
         {
-            ConversionCompleted?.Invoke(this, false);
+            DialogCancelled?.Invoke();
         }
-        
-        #endregion
-        
-        #region Private Methods
-        
-        private void GenerateJobNumber()
+
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
-            // Get the next available job number
-            var lastJob = _databaseService.GetLastJobNumber();
-            if (!string.IsNullOrEmpty(lastJob) && int.TryParse(lastJob, out int lastNumber))
-            {
-                JobNumber = (lastNumber + 1).ToString();
-            }
-            else
-            {
-                // Start from a default if no jobs exist
-                JobNumber = "1001";
-            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
-        
-        #endregion
-        
-        #region Events
-        
-        public event EventHandler<bool> ConversionCompleted;
-        
-        #endregion
+    }
+
+    // Helper class for conversion options
+    public class EstimateToJobConversionOptions
+    {
+        public string JobNumber { get; set; }
+        public string JobName { get; set; }
+        public bool IncludeLineItems { get; set; }
+        public bool CreateJobStages { get; set; }
+        public bool SetEstimatedCosts { get; set; }
+        public bool MarkEstimateConverted { get; set; }
+        public string Notes { get; set; }
     }
 }
