@@ -20,7 +20,20 @@ namespace ElectricalContractorSystem.Services
             _connectionString = ConfigurationManager.ConnectionStrings["ElectricalDB"].ConnectionString;
         }
 
+        public DatabaseService(string connectionString)
+        {
+            _connectionString = connectionString;
+        }
+
         #region Connection and Utility Methods
+
+        /// <summary>
+        /// Get database connection - used by extension methods
+        /// </summary>
+        public MySqlConnection GetConnection()
+        {
+            return new MySqlConnection(_connectionString);
+        }
 
         /// <summary>
         /// Test database connection
