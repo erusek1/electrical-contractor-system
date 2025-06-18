@@ -4,6 +4,7 @@ using System.Configuration;
 using System.Data;
 using MySql.Data.MySqlClient;
 using ElectricalContractorSystem.Models;
+using ElectricalContractorSystem.ViewModels;
 
 namespace ElectricalContractorSystem.Services
 {
@@ -169,310 +170,403 @@ namespace ElectricalContractorSystem.Services
 
         #endregion
 
-        #region Material Methods (SAMPLE DATA IMPLEMENTATION)
+        #region Customer Methods (REAL IMPLEMENTATION)
 
         /// <summary>
-        /// Get all materials - works with or without database
+        /// Get all customers
         /// </summary>
-        public List<Material> GetAllMaterials()
+        public List<Customer> GetAllCustomers()
         {
-            var materials = new List<Material>();
-
-            // Try to get from database first
-            try
-            {
-                if (TableExists("Materials"))
-                {
-                    // Use the extension method for real database access
-                    return this.GetAllMaterials();
-                }
-            }
-            catch
-            {
-                // Fall through to sample data
-            }
-
-            // Return sample data if database isn't available
-            materials.AddRange(GetSampleMaterials());
-            return materials;
-        }
-
-        /// <summary>
-        /// Get sample materials for testing
-        /// </summary>
-        private List<Material> GetSampleMaterials()
-        {
-            return new List<Material>
-            {
-                new Material
-                {
-                    MaterialId = 1,
-                    MaterialCode = "12-2-NM",
-                    Name = "12-2 Romex Cable",
-                    Description = "12 AWG 2-conductor NM cable",
-                    Category = "Wire",
-                    UnitOfMeasure = "Foot",
-                    CurrentPrice = 0.85m,
-                    TaxRate = 6.4m,
-                    IsActive = true,
-                    CreatedDate = DateTime.Now.AddMonths(-6)
-                },
-                new Material
-                {
-                    MaterialId = 2,
-                    MaterialCode = "OUTLET-20A",
-                    Name = "20A Duplex Outlet",
-                    Description = "Commercial grade 20 amp duplex receptacle",
-                    Category = "Devices",
-                    UnitOfMeasure = "Each",
-                    CurrentPrice = 8.95m,
-                    TaxRate = 6.4m,
-                    IsActive = true,
-                    CreatedDate = DateTime.Now.AddMonths(-6)
-                },
-                new Material
-                {
-                    MaterialId = 3,
-                    MaterialCode = "SW-SINGLE",
-                    Name = "Single Pole Switch",
-                    Description = "Decora style single pole switch",
-                    Category = "Devices",
-                    UnitOfMeasure = "Each",
-                    CurrentPrice = 6.75m,
-                    TaxRate = 6.4m,
-                    IsActive = true,
-                    CreatedDate = DateTime.Now.AddMonths(-6)
-                },
-                new Material
-                {
-                    MaterialId = 4,
-                    MaterialCode = "LED-4IN",
-                    Name = "4\" LED Recessed Light",
-                    Description = "4 inch LED high hat recessed light",
-                    Category = "Fixtures",
-                    UnitOfMeasure = "Each",
-                    CurrentPrice = 24.50m,
-                    TaxRate = 6.4m,
-                    IsActive = true,
-                    CreatedDate = DateTime.Now.AddMonths(-6)
-                },
-                new Material
-                {
-                    MaterialId = 5,
-                    MaterialCode = "GFCI-15A",
-                    Name = "15A GFCI Outlet",
-                    Description = "15 amp tamper proof GFCI outlet",
-                    Category = "Devices",
-                    UnitOfMeasure = "Each",
-                    CurrentPrice = 15.25m,
-                    TaxRate = 6.4m,
-                    IsActive = true,
-                    CreatedDate = DateTime.Now.AddMonths(-6)
-                },
-                new Material
-                {
-                    MaterialId = 6,
-                    MaterialCode = "PANEL-200A",
-                    Name = "200A Main Panel",
-                    Description = "200 amp main electrical panel",
-                    Category = "Panels",
-                    UnitOfMeasure = "Each",
-                    CurrentPrice = 285.00m,
-                    TaxRate = 6.4m,
-                    IsActive = true,
-                    CreatedDate = DateTime.Now.AddMonths(-6)
-                },
-                new Material
-                {
-                    MaterialId = 7,
-                    MaterialCode = "CONDUIT-1/2",
-                    Name = "1/2\" EMT Conduit",
-                    Description = "1/2 inch EMT conduit",
-                    Category = "Conduit",
-                    UnitOfMeasure = "Foot",
-                    CurrentPrice = 1.25m,
-                    TaxRate = 6.4m,
-                    IsActive = true,
-                    CreatedDate = DateTime.Now.AddMonths(-6)
-                },
-                new Material
-                {
-                    MaterialId = 8,
-                    MaterialCode = "CONN-1/2",
-                    Name = "1/2\" EMT Connector",
-                    Description = "1/2 inch EMT connector",
-                    Category = "Conduit",
-                    UnitOfMeasure = "Each",
-                    CurrentPrice = 1.85m,
-                    TaxRate = 6.4m,
-                    IsActive = true,
-                    CreatedDate = DateTime.Now.AddMonths(-6)
-                }
-            };
-        }
-
-        /// <summary>
-        /// Get material by ID
-        /// </summary>
-        public Material GetMaterialById(int materialId)
-        {
-            try
-            {
-                if (TableExists("Materials"))
-                {
-                    return this.GetMaterialById(materialId);
-                }
-            }
-            catch
-            {
-                // Fall through to sample data
-            }
-
-            // Return sample data
-            var materials = GetSampleMaterials();
-            return materials.Find(m => m.MaterialId == materialId);
-        }
-
-        /// <summary>
-        /// Update material
-        /// </summary>
-        public void UpdateMaterial(Material material)
-        {
-            try
-            {
-                if (TableExists("Materials"))
-                {
-                    this.UpdateMaterial(material);
-                    return;
-                }
-            }
-            catch
-            {
-                // No-op for sample data
-            }
-
-            // For sample data, just update the UpdatedDate
-            material.UpdatedDate = DateTime.Now;
-        }
-
-        /// <summary>
-        /// Save material price history
-        /// </summary>
-        public void SaveMaterialPriceHistory(MaterialPriceHistory history)
-        {
-            try
-            {
-                if (TableExists("MaterialPriceHistory"))
-                {
-                    this.SaveMaterialPriceHistory(history);
-                    return;
-                }
-            }
-            catch
-            {
-                // No-op for sample data
-            }
-
-            // For sample data, just set the ID
-            history.HistoryId = new Random().Next(1000, 9999);
-        }
-
-        #endregion
-
-        #region Vendor Methods (REAL IMPLEMENTATION)
-
-        /// <summary>
-        /// Get all vendors
-        /// </summary>
-        public List<Vendor> GetAllVendors()
-        {
-            var vendors = new List<Vendor>();
+            var customers = new List<Customer>();
             
-            try
+            if (!TableExists("customers"))
             {
-                if (TableExists("Vendors"))
+                return customers;
+            }
+            
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = "SELECT customer_id, name, address, city, state, zip, email, phone, notes FROM customers ORDER BY name";
+                
+                using (var cmd = new MySqlCommand(query, connection))
+                using (var reader = cmd.ExecuteReader())
                 {
-                    using (var connection = new MySqlConnection(_connectionString))
+                    while (reader.Read())
                     {
-                        connection.Open();
-                        var query = "SELECT vendor_id, name, address, city, state, zip, phone, email, notes FROM Vendors ORDER BY name";
-                        
-                        using (var cmd = new MySqlCommand(query, connection))
-                        using (var reader = cmd.ExecuteReader())
+                        customers.Add(new Customer
                         {
-                            while (reader.Read())
+                            CustomerId = reader.GetInt32("customer_id"),
+                            Name = reader.GetString("name"),
+                            Address = reader.IsDBNull("address") ? null : reader.GetString("address"),
+                            City = reader.IsDBNull("city") ? null : reader.GetString("city"),
+                            State = reader.IsDBNull("state") ? null : reader.GetString("state"),
+                            Zip = reader.IsDBNull("zip") ? null : reader.GetString("zip"),
+                            Email = reader.IsDBNull("email") ? null : reader.GetString("email"),
+                            Phone = reader.IsDBNull("phone") ? null : reader.GetString("phone"),
+                            Notes = reader.IsDBNull("notes") ? null : reader.GetString("notes")
+                        });
+                    }
+                }
+            }
+            
+            return customers;
+        }
+
+        /// <summary>
+        /// Get customer by ID
+        /// </summary>
+        public Customer GetCustomerById(int customerId)
+        {
+            if (!TableExists("customers"))
+            {
+                return null;
+            }
+            
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = "SELECT customer_id, name, address, city, state, zip, email, phone, notes FROM customers WHERE customer_id = @customerId";
+                
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    cmd.Parameters.AddWithValue("@customerId", customerId);
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            return new Customer
                             {
-                                vendors.Add(new Vendor
-                                {
-                                    VendorId = reader.GetInt32("vendor_id"),
-                                    Name = reader.GetString("name"),
-                                    Address = reader.IsDBNull("address") ? null : reader.GetString("address"),
-                                    City = reader.IsDBNull("city") ? null : reader.GetString("city"),
-                                    State = reader.IsDBNull("state") ? null : reader.GetString("state"),
-                                    Zip = reader.IsDBNull("zip") ? null : reader.GetString("zip"),
-                                    Phone = reader.IsDBNull("phone") ? null : reader.GetString("phone"),
-                                    Email = reader.IsDBNull("email") ? null : reader.GetString("email"),
-                                    Notes = reader.IsDBNull("notes") ? null : reader.GetString("notes")
-                                });
-                            }
+                                CustomerId = reader.GetInt32("customer_id"),
+                                Name = reader.GetString("name"),
+                                Address = reader.IsDBNull("address") ? null : reader.GetString("address"),
+                                City = reader.IsDBNull("city") ? null : reader.GetString("city"),
+                                State = reader.IsDBNull("state") ? null : reader.GetString("state"),
+                                Zip = reader.IsDBNull("zip") ? null : reader.GetString("zip"),
+                                Email = reader.IsDBNull("email") ? null : reader.GetString("email"),
+                                Phone = reader.IsDBNull("phone") ? null : reader.GetString("phone"),
+                                Notes = reader.IsDBNull("notes") ? null : reader.GetString("notes")
+                            };
                         }
                     }
-                    return vendors;
                 }
             }
-            catch
-            {
-                // Fall through to default vendors
-            }
-
-            // Return default vendors if database table doesn't exist or on error
-            vendors.Add(new Vendor { VendorId = 1, Name = "Home Depot" });
-            vendors.Add(new Vendor { VendorId = 2, Name = "Cooper Electric" });
-            vendors.Add(new Vendor { VendorId = 3, Name = "Warshauer Electric" });
-            vendors.Add(new Vendor { VendorId = 4, Name = "Good Friend Electric" });
-            vendors.Add(new Vendor { VendorId = 5, Name = "Lowes" });
             
-            return vendors;
+            return null;
         }
 
         /// <summary>
-        /// Add vendor
+        /// Add new customer
         /// </summary>
-        public int AddVendor(Vendor vendor)
+        public int AddCustomer(Customer customer)
         {
-            if (!TableExists("Vendors"))
+            if (!TableExists("customers"))
             {
-                return 0; // Cannot add without table
+                return 0;
             }
+            
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = @"
+                    INSERT INTO customers (name, address, city, state, zip, email, phone, notes)
+                    VALUES (@name, @address, @city, @state, @zip, @email, @phone, @notes);
+                    SELECT LAST_INSERT_ID();";
+                
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    cmd.Parameters.AddWithValue("@name", customer.Name);
+                    cmd.Parameters.AddWithValue("@address", customer.Address ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@city", customer.City ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@state", customer.State ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@zip", customer.Zip ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@email", customer.Email ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@phone", customer.Phone ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@notes", customer.Notes ?? (object)DBNull.Value);
+                    
+                    return Convert.ToInt32(cmd.ExecuteScalar());
+                }
+            }
+        }
 
+        /// <summary>
+        /// Save customer (add or update)
+        /// </summary>
+        public void SaveCustomer(Customer customer)
+        {
+            if (customer.CustomerId == 0)
+            {
+                customer.CustomerId = AddCustomer(customer);
+            }
+            else
+            {
+                UpdateCustomer(customer);
+            }
+        }
+
+        /// <summary>
+        /// Update customer
+        /// </summary>
+        public void UpdateCustomer(Customer customer)
+        {
+            if (!TableExists("customers"))
+            {
+                return;
+            }
+            
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = @"
+                    UPDATE customers SET 
+                        name = @name, address = @address, city = @city, state = @state, 
+                        zip = @zip, email = @email, phone = @phone, notes = @notes
+                    WHERE customer_id = @customerId";
+                
+                using (var cmd = new MySqlCommand(query, connection))
+                {
+                    cmd.Parameters.AddWithValue("@customerId", customer.CustomerId);
+                    cmd.Parameters.AddWithValue("@name", customer.Name);
+                    cmd.Parameters.AddWithValue("@address", customer.Address ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@city", customer.City ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@state", customer.State ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@zip", customer.Zip ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@email", customer.Email ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@phone", customer.Phone ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@notes", customer.Notes ?? (object)DBNull.Value);
+                    
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Delete customer
+        /// </summary>
+        public bool DeleteCustomer(int customerId)
+        {
             try
             {
-                using (var connection = new MySqlConnection(_connectionString))
+                if (!TableExists("customers"))
                 {
-                    connection.Open();
-                    var query = @"
-                        INSERT INTO Vendors (name, address, city, state, zip, phone, email, notes)
-                        VALUES (@name, @address, @city, @state, @zip, @phone, @email, @notes);
-                        SELECT LAST_INSERT_ID();";
-                    
-                    using (var cmd = new MySqlCommand(query, connection))
-                    {
-                        cmd.Parameters.AddWithValue("@name", vendor.Name);
-                        cmd.Parameters.AddWithValue("@address", vendor.Address ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@city", vendor.City ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@state", vendor.State ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@zip", vendor.Zip ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@phone", vendor.Phone ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@email", vendor.Email ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@notes", vendor.Notes ?? (object)DBNull.Value);
-                        
-                        return Convert.ToInt32(cmd.ExecuteScalar());
-                    }
+                    return false;
+                }
+
+                var query = "DELETE FROM customers WHERE customer_id = @customerId";
+                var parameters = new Dictionary<string, object> { ["@customerId"] = customerId };
+                
+                return ExecuteNonQuery(query, parameters) > 0;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Get next job number
+        /// </summary>
+        public string GetNextJobNumber()
+        {
+            if (!TableExists("jobs"))
+            {
+                return "716"; // Start after your current highest
+            }
+            
+            try
+            {
+                var query = "SELECT MAX(CAST(job_number AS UNSIGNED)) FROM jobs WHERE job_number REGEXP '^[0-9]+$'";
+                var maxNumber = ExecuteScalar<int?>(query);
+                
+                if (maxNumber.HasValue)
+                {
+                    return (maxNumber.Value + 1).ToString();
+                }
+                else
+                {
+                    return "716"; // Default start
                 }
             }
             catch
             {
-                return 0;
+                return "716"; // Default on error
+            }
+        }
+
+        /// <summary>
+        /// Convert estimate to job
+        /// </summary>
+        public Job ConvertEstimateToJob(int estimateId, EstimateToJobConversionOptions options)
+        {
+            if (!TableExists("estimates") || !TableExists("jobs"))
+            {
+                throw new InvalidOperationException("Required tables do not exist.");
+            }
+
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                connection.Open();
+                using (var transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        // Get the estimate
+                        var estimate = GetEstimate(estimateId, connection, transaction);
+                        if (estimate == null)
+                        {
+                            throw new InvalidOperationException("Estimate not found.");
+                        }
+
+                        // Create the job
+                        var job = new Job
+                        {
+                            JobNumber = options.JobNumber,
+                            CustomerId = estimate.CustomerId,
+                            JobName = options.JobName,
+                            Address = estimate.Address,
+                            City = estimate.City,
+                            State = estimate.State,
+                            Zip = estimate.Zip,
+                            SquareFootage = estimate.SquareFootage,
+                            NumFloors = estimate.NumFloors,
+                            Status = JobStatus.InProgress,
+                            CreateDate = DateTime.Now,
+                            TotalEstimate = estimate.TotalPrice,
+                            TotalActual = 0,
+                            Notes = options.Notes,
+                            EstimateId = estimateId
+                        };
+
+                        // Insert the job
+                        var jobId = InsertJob(job, connection, transaction);
+                        job.JobId = jobId;
+
+                        // Create job stages if requested
+                        if (options.CreateJobStages)
+                        {
+                            CreateJobStagesFromEstimate(estimateId, jobId, connection, transaction);
+                        }
+
+                        // Copy room specifications if requested
+                        if (options.IncludeLineItems)
+                        {
+                            CopyEstimateRoomsToJob(estimateId, jobId, connection, transaction);
+                        }
+
+                        // Mark estimate as converted if requested
+                        if (options.MarkEstimateConverted)
+                        {
+                            UpdateEstimateStatus(estimateId, "Converted", jobId, connection, transaction);
+                        }
+
+                        transaction.Commit();
+                        return job;
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                }
+            }
+        }
+
+        private Estimate GetEstimate(int estimateId, MySqlConnection connection, MySqlTransaction transaction)
+        {
+            var query = "SELECT * FROM estimates WHERE estimate_id = @estimateId";
+            using (var cmd = new MySqlCommand(query, connection, transaction))
+            {
+                cmd.Parameters.AddWithValue("@estimateId", estimateId);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        return ReadEstimate(reader);
+                    }
+                }
+            }
+            return null;
+        }
+
+        private int InsertJob(Job job, MySqlConnection connection, MySqlTransaction transaction)
+        {
+            var query = @"
+                INSERT INTO jobs (job_number, customer_id, job_name, address, city, state, zip, 
+                                square_footage, num_floors, status, create_date, total_estimate, 
+                                total_actual, notes, estimate_id)
+                VALUES (@job_number, @customer_id, @job_name, @address, @city, @state, @zip,
+                        @square_footage, @num_floors, @status, @create_date, @total_estimate,
+                        @total_actual, @notes, @estimate_id);
+                SELECT LAST_INSERT_ID();";
+
+            using (var cmd = new MySqlCommand(query, connection, transaction))
+            {
+                cmd.Parameters.AddWithValue("@job_number", job.JobNumber);
+                cmd.Parameters.AddWithValue("@customer_id", job.CustomerId);
+                cmd.Parameters.AddWithValue("@job_name", job.JobName);
+                cmd.Parameters.AddWithValue("@address", job.Address ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@city", job.City ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@state", job.State ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@zip", job.Zip ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@square_footage", job.SquareFootage ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@num_floors", job.NumFloors ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@status", job.Status.ToString());
+                cmd.Parameters.AddWithValue("@create_date", job.CreateDate);
+                cmd.Parameters.AddWithValue("@total_estimate", job.TotalEstimate ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@total_actual", job.TotalActual ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@notes", job.Notes ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@estimate_id", job.EstimateId ?? (object)DBNull.Value);
+
+                return Convert.ToInt32(cmd.ExecuteScalar());
+            }
+        }
+
+        private void CreateJobStagesFromEstimate(int estimateId, int jobId, MySqlConnection connection, MySqlTransaction transaction)
+        {
+            var query = @"
+                INSERT INTO jobstages (job_id, stage_name, estimated_hours, estimated_material_cost)
+                SELECT @jobId, stage, labor_hours, material_cost
+                FROM estimatestagesummary 
+                WHERE estimate_id = @estimateId";
+
+            using (var cmd = new MySqlCommand(query, connection, transaction))
+            {
+                cmd.Parameters.AddWithValue("@jobId", jobId);
+                cmd.Parameters.AddWithValue("@estimateId", estimateId);
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        private void CopyEstimateRoomsToJob(int estimateId, int jobId, MySqlConnection connection, MySqlTransaction transaction)
+        {
+            // This would copy estimate line items to room specifications
+            // The exact implementation depends on how you want to map the data
+            var query = @"
+                INSERT INTO roomspecifications (job_id, room_name, item_description, quantity, item_code, unit_price, total_price)
+                SELECT @jobId, r.room_name, li.description, li.quantity, li.item_code, li.unit_price,
+                       (li.quantity * li.unit_price) as total_price
+                FROM estimaterooms r
+                INNER JOIN estimatelineitems li ON r.room_id = li.room_id
+                WHERE r.estimate_id = @estimateId";
+
+            using (var cmd = new MySqlCommand(query, connection, transaction))
+            {
+                cmd.Parameters.AddWithValue("@jobId", jobId);
+                cmd.Parameters.AddWithValue("@estimateId", estimateId);
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        private void UpdateEstimateStatus(int estimateId, string status, int jobId, MySqlConnection connection, MySqlTransaction transaction)
+        {
+            var query = "UPDATE estimates SET status = @status, job_id = @jobId, modified_date = @modifiedDate WHERE estimate_id = @estimateId";
+            using (var cmd = new MySqlCommand(query, connection, transaction))
+            {
+                cmd.Parameters.AddWithValue("@status", status);
+                cmd.Parameters.AddWithValue("@jobId", jobId);
+                cmd.Parameters.AddWithValue("@modifiedDate", DateTime.Now);
+                cmd.Parameters.AddWithValue("@estimateId", estimateId);
+                cmd.ExecuteNonQuery();
             }
         }
 
@@ -495,14 +589,24 @@ namespace ElectricalContractorSystem.Services
             using (var connection = new MySqlConnection(_connectionString))
             {
                 connection.Open();
-                var query = "SELECT * FROM estimates ORDER BY estimate_number DESC";
+                var query = @"
+                    SELECT e.*, c.name as customer_name 
+                    FROM estimates e 
+                    LEFT JOIN customers c ON e.customer_id = c.customer_id 
+                    ORDER BY e.estimate_number DESC";
                 
                 using (var cmd = new MySqlCommand(query, connection))
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
                     {
-                        estimates.Add(ReadEstimate(reader));
+                        var estimate = ReadEstimate(reader);
+                        estimate.Customer = new Customer 
+                        { 
+                            CustomerId = estimate.CustomerId,
+                            Name = reader.IsDBNull("customer_name") ? "Unknown" : reader.GetString("customer_name")
+                        };
+                        estimates.Add(estimate);
                     }
                 }
             }
@@ -532,13 +636,12 @@ namespace ElectricalContractorSystem.Services
                         INSERT INTO estimates (estimate_number, version, customer_id, job_name, job_address, 
                                              job_city, job_state, job_zip, square_footage, num_floors, status,
                                              created_date, created_by, tax_rate, material_markup, labor_rate,
-                                             total_material_cost, total_labor_minutes, total_labor_hours,
-                                             total_labor_cost, total_price, notes)
+                                             total_material_cost, total_labor_minutes, total_price, notes)
                         VALUES (@estimate_number, @version, @customer_id, @job_name, @job_address,
                                 @job_city, @job_state, @job_zip, @square_footage, @num_floors, @status,
                                 @created_date, @created_by, @tax_rate, @material_markup, @labor_rate,
-                                @total_material_cost, @total_labor_minutes, @total_labor_hours,
-                                @total_labor_cost, @total_price, @notes)";
+                                @total_material_cost, @total_labor_minutes, @total_price, @notes);
+                        SELECT LAST_INSERT_ID();";
                 }
                 else
                 {
@@ -551,8 +654,7 @@ namespace ElectricalContractorSystem.Services
                             num_floors = @num_floors, status = @status, modified_date = @modified_date,
                             modified_by = @modified_by, tax_rate = @tax_rate, material_markup = @material_markup,
                             labor_rate = @labor_rate, total_material_cost = @total_material_cost,
-                            total_labor_minutes = @total_labor_minutes, total_labor_hours = @total_labor_hours,
-                            total_labor_cost = @total_labor_cost, total_price = @total_price, notes = @notes
+                            total_labor_minutes = @total_labor_minutes, total_price = @total_price, notes = @notes
                         WHERE estimate_id = @estimate_id";
                 }
 
@@ -575,8 +677,6 @@ namespace ElectricalContractorSystem.Services
                     cmd.Parameters.AddWithValue("@labor_rate", estimate.LaborRate);
                     cmd.Parameters.AddWithValue("@total_material_cost", estimate.TotalMaterialCost);
                     cmd.Parameters.AddWithValue("@total_labor_minutes", estimate.TotalLaborMinutes);
-                    cmd.Parameters.AddWithValue("@total_labor_hours", estimate.LaborRate > 0 ? estimate.TotalLaborCost / estimate.LaborRate : 0);
-                    cmd.Parameters.AddWithValue("@total_labor_cost", estimate.TotalLaborCost);
                     cmd.Parameters.AddWithValue("@total_price", estimate.TotalPrice);
                     cmd.Parameters.AddWithValue("@notes", estimate.Notes ?? (object)DBNull.Value);
 
@@ -584,8 +684,8 @@ namespace ElectricalContractorSystem.Services
                     {
                         cmd.Parameters.AddWithValue("@created_date", estimate.CreateDate);
                         cmd.Parameters.AddWithValue("@created_by", estimate.CreatedBy ?? "System");
-                        cmd.ExecuteNonQuery();
-                        estimate.EstimateId = (int)cmd.LastInsertedId;
+                        var result = cmd.ExecuteScalar();
+                        estimate.EstimateId = Convert.ToInt32(result);
                     }
                     else
                     {
@@ -703,7 +803,6 @@ namespace ElectricalContractorSystem.Services
                 LaborRate = reader.GetDecimal("labor_rate"),
                 TotalMaterialCost = reader.GetDecimal("total_material_cost"),
                 TotalLaborMinutes = reader.GetInt32("total_labor_minutes"),
-                TotalLaborCost = reader.IsDBNull(reader.GetOrdinal("total_labor_cost")) ? 0 : reader.GetDecimal("total_labor_cost"),
                 TotalPrice = reader.GetDecimal("total_price"),
                 Notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString("notes"),
                 ConvertedToJobId = reader.IsDBNull(reader.GetOrdinal("job_id")) ? (int?)null : reader.GetInt32("job_id")
@@ -717,13 +816,6 @@ namespace ElectricalContractorSystem.Services
         // These are minimal implementations to prevent compilation errors
         // The full implementations would come from the main DatabaseService file
 
-        public List<Customer> GetAllCustomers() => new List<Customer>();
-        public Customer GetCustomerById(int customerId) => null;
-        public int AddCustomer(Customer customer) => 0;
-        public void UpdateCustomer(Customer customer) { }
-        public void SaveCustomer(Customer customer) { }
-        public bool DeleteCustomer(int customerId) => false;
-
         public List<Job> GetAllJobs() => new List<Job>();
         public Job GetJobById(int jobId) => null;
         public Job GetJob(int jobId) => null;
@@ -733,7 +825,6 @@ namespace ElectricalContractorSystem.Services
         public void UpdateJob(Job job) { }
         public void UpdateJobStatus(int jobId, string status) { }
         public bool DeleteJob(int jobId) => false;
-        public string GetNextJobNumber() => "1";
         public string GetLastJobNumber() => "1";
 
         public List<JobStage> GetJobStages(int jobId) => new List<JobStage>();
@@ -754,6 +845,14 @@ namespace ElectricalContractorSystem.Services
 
         public List<MaterialEntry> GetMaterialEntriesByJob(int jobId) => new List<MaterialEntry>();
         public int AddMaterialEntry(MaterialEntry entry) => 0;
+
+        public List<Vendor> GetAllVendors() => new List<Vendor>();
+        public int AddVendor(Vendor vendor) => 0;
+
+        public List<Material> GetAllMaterials() => new List<Material>();
+        public Material GetMaterialById(int materialId) => null;
+        public void UpdateMaterial(Material material) { }
+        public void SaveMaterialPriceHistory(MaterialPriceHistory history) { }
 
         public List<PriceListItem> GetAllPriceListItems() => new List<PriceListItem>();
         public List<PriceListItem> GetActivePriceListItems() => new List<PriceListItem>();
