@@ -202,6 +202,7 @@ namespace ElectricalContractorSystem.Services
         
         /// <summary>
         /// Apply labor adjustment based on difficulty preset
+        /// FIXED: Proper type conversion for minutes calculation
         /// </summary>
         public AssemblyTemplate ApplyLaborAdjustment(int assemblyId, DifficultyPreset preset)
         {
@@ -213,7 +214,7 @@ namespace ElectricalContractorSystem.Services
                 var assembly = _databaseService.GetAssemblyById(assemblyId);
                 if (assembly == null) return null;
                 
-                // Create a temporary copy with adjustments
+                // FIXED: Safe decimal-to-int conversion with proper rounding
                 var adjustedAssembly = new AssemblyTemplate
                 {
                     AssemblyId = assembly.AssemblyId,
@@ -221,10 +222,10 @@ namespace ElectricalContractorSystem.Services
                     Name = assembly.Name,
                     Description = assembly.Description,
                     Category = assembly.Category,
-                    RoughMinutes = (int)(assembly.RoughMinutes * preset.RoughMultiplier),
-                    FinishMinutes = (int)(assembly.FinishMinutes * preset.FinishMultiplier),
-                    ServiceMinutes = (int)(assembly.ServiceMinutes * preset.ServiceMultiplier),
-                    ExtraMinutes = (int)(assembly.ExtraMinutes * preset.ExtraMultiplier),
+                    RoughMinutes = Convert.ToInt32(Math.Round(assembly.RoughMinutes * preset.RoughMultiplier)),
+                    FinishMinutes = Convert.ToInt32(Math.Round(assembly.FinishMinutes * preset.FinishMultiplier)),
+                    ServiceMinutes = Convert.ToInt32(Math.Round(assembly.ServiceMinutes * preset.ServiceMultiplier)),
+                    ExtraMinutes = Convert.ToInt32(Math.Round(assembly.ExtraMinutes * preset.ExtraMultiplier)),
                     Components = assembly.Components
                 };
                 
@@ -286,36 +287,47 @@ namespace ElectricalContractorSystem.Services
                     }
                 }
                 
-                // Check date for seasonal adjustments - FIXED: Proper DateTime handling
+                // FIXED: Proper DateTime handling - Use CreateDate instead of nullable field
                 var jobDate = job.CreateDate;
-                if (jobDate.Month == 12)
+                if (jobDate != default(DateTime))
                 {
-                    var decemberPreset = allPresets.FirstOrDefault(p => p.Name.Contains("December"));
-                    if (decemberPreset != null) suggestions.Add(decemberPreset);
-                }
-                else if (jobDate.Month >= 6 && jobDate.Month <= 8)
-                {
-                    var summerPreset = allPresets.FirstOrDefault(p => p.Name.Contains("Summer Peak"));
-                    if (summerPreset != null) suggestions.Add(summerPreset);
+                    if (jobDate.Month == 12)
+                    {
+                        var decemberPreset = allPresets.FirstOrDefault(p => p.Name.Contains("December"));
+                        if (decemberPreset != null) suggestions.Add(decemberPreset);
+                    }
+                    else if (jobDate.Month >= 6 && jobDate.Month <= 8)
+                    {
+                        var summerPreset = allPresets.FirstOrDefault(p => p.Name.Contains("Summer Peak"));
+                        if (summerPreset != null) suggestions.Add(summerPreset);
+                    }
                 }
                 
                 // Check customer history for difficulty patterns
-                var customerJobs = _databaseService.GetJobsByCustomer(job.CustomerId);
-                if (customerJobs?.Any() == true)
+                try
                 {
-                    var previousAdjustments = customerJobs
-                        .SelectMany(j => _databaseService.GetLaborAdjustmentsByJob(j.JobId))
-                        .Where(a => a.PresetId.HasValue)
-                        .GroupBy(a => a.PresetId)
-                        .OrderByDescending(g => g.Count())
-                        .FirstOrDefault();
-                        
-                    if (previousAdjustments != null)
+                    var customerJobs = _databaseService.GetJobsByCustomer(job.CustomerId);
+                    if (customerJobs?.Any() == true)
                     {
-                        var commonPreset = allPresets.FirstOrDefault(p => p.PresetId == previousAdjustments.Key);
-                        if (commonPreset != null && !suggestions.Contains(commonPreset))
-                            suggestions.Add(commonPreset);
+                        var previousAdjustments = customerJobs
+                            .SelectMany(j => _databaseService.GetLaborAdjustmentsByJob(j.JobId))
+                            .Where(a => a.PresetId.HasValue)
+                            .GroupBy(a => a.PresetId)
+                            .OrderByDescending(g => g.Count())
+                            .FirstOrDefault();
+                            
+                        if (previousAdjustments != null)
+                        {
+                            var commonPreset = allPresets.FirstOrDefault(p => p.PresetId == previousAdjustments.Key);
+                            if (commonPreset != null && !suggestions.Contains(commonPreset))
+                                suggestions.Add(commonPreset);
+                        }
                     }
+                }
+                catch (Exception ex)
+                {
+                    // Don't fail the whole method if customer history lookup fails
+                    System.Diagnostics.Debug.WriteLine($"Error getting customer history: {ex.Message}");
                 }
                 
                 return suggestions;
@@ -340,10 +352,12 @@ namespace ElectricalContractorSystem.Services
             
             try
             {
+                // FIXED: Use proper default dates and handle nullables correctly
+                var start = startDate ?? DateTime.Now.AddYears(-1);
+                var end = endDate ?? DateTime.Now;
+                
                 // Get all estimates within date range
-                var estimates = _databaseService.GetEstimatesInDateRange(
-                    startDate ?? DateTime.Now.AddYears(-1), 
-                    endDate ?? DateTime.Now);
+                var estimates = _databaseService.GetEstimatesInDateRange(start, end);
                 
                 if (estimates?.Any() == true)
                 {
@@ -411,6 +425,75 @@ namespace ElectricalContractorSystem.Services
             {
                 System.Diagnostics.Debug.WriteLine($"Error in GetVariantUsageByCode: {ex.Message}");
                 return new List<AssemblyVariantUsage>();
+            }
+        }
+        
+        #endregion
+        
+        #region Utility Methods
+        
+        /// <summary>
+        /// Calculate total assembly cost including materials and labor
+        /// </summary>
+        public decimal CalculateAssemblyCost(AssemblyTemplate assembly, decimal laborRate = 75m)
+        {
+            if (assembly?.Components == null)
+                return 0m;
+                
+            try
+            {
+                decimal materialCost = 0m;
+                decimal laborCost = 0m;
+                
+                // Calculate material cost
+                foreach (var component in assembly.Components)
+                {
+                    var priceListItem = _databaseService.GetPriceListItemById(component.PriceListItemId);
+                    if (priceListItem != null)
+                    {
+                        materialCost += priceListItem.BaseCost * component.Quantity;
+                    }
+                }
+                
+                // Calculate labor cost (convert minutes to hours)
+                var totalMinutes = assembly.RoughMinutes + assembly.FinishMinutes + 
+                                 assembly.ServiceMinutes + assembly.ExtraMinutes;
+                laborCost = (totalMinutes / 60m) * laborRate;
+                
+                return materialCost + laborCost;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in CalculateAssemblyCost: {ex.Message}");
+                return 0m;
+            }
+        }
+        
+        /// <summary>
+        /// Record labor adjustment for tracking and analysis
+        /// </summary>
+        public void RecordLaborAdjustment(int jobId, int assemblyId, string reason, 
+            decimal originalMinutes, decimal adjustedMinutes, string adjustedBy)
+        {
+            try
+            {
+                var adjustment = new LaborAdjustment
+                {
+                    JobId = jobId,
+                    AssemblyId = assemblyId,
+                    Reason = reason,
+                    OriginalMinutes = originalMinutes,
+                    AdjustedMinutes = adjustedMinutes,
+                    AdjustedBy = adjustedBy,
+                    AdjustedDate = DateTime.Now
+                };
+                
+                _databaseService.SaveLaborAdjustment(adjustment);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in RecordLaborAdjustment: {ex.Message}");
+                throw;
             }
         }
         
