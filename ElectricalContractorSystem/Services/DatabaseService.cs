@@ -8,8 +8,9 @@ using ElectricalContractorSystem.Models;
 namespace ElectricalContractorSystem.Services
 {
     /// <summary>
-    /// UNIFIED DATABASE SERVICE - ALL DATABASE OPERATIONS IN ONE FILE
+    /// CONSOLIDATED DATABASE SERVICE - ALL DATABASE OPERATIONS IN ONE FILE
     /// Fixed table naming conventions to match actual database schema (CAPITALIZED table names)
+    /// Removed all partial class conflicts that were preventing customer data from loading
     /// </summary>
     public class DatabaseService
     {
@@ -18,7 +19,7 @@ namespace ElectricalContractorSystem.Services
         public DatabaseService()
         {
             _connectionString = ConfigurationManager.ConnectionStrings["ElectricalDB"]?.ConnectionString ?? 
-                              "Server=localhost;Database=electrical_contractor_db;Uid=root;Pwd=215Osborn;";
+                              "Server=localhost;Port=3306;Database=electrical_contractor_db;Uid=root;Pwd=215Osborn;SslMode=none;";
         }
 
         public DatabaseService(string connectionString)
@@ -41,9 +42,44 @@ namespace ElectricalContractorSystem.Services
                     return true;
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"Database connection failed: {ex.Message}");
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// Get database information for debugging
+        /// </summary>
+        public string GetDatabaseInfo()
+        {
+            try
+            {
+                using (var connection = new MySqlConnection(_connectionString))
+                {
+                    connection.Open();
+                    var info = $"Connected to: {connection.Database} on {connection.DataSource}";
+                    
+                    // Get table list
+                    var tablesQuery = "SHOW TABLES";
+                    using (var cmd = new MySqlCommand(tablesQuery, connection))
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        var tables = new List<string>();
+                        while (reader.Read())
+                        {
+                            tables.Add(reader.GetString(0));
+                        }
+                        info += $"\nTables found: {string.Join(", ", tables)}";
+                    }
+                    
+                    return info;
+                }
+            }
+            catch (Exception ex)
+            {
+                return $"Error getting database info: {ex.Message}";
             }
         }
 
@@ -146,7 +182,28 @@ namespace ElectricalContractorSystem.Services
                 using (var connection = new MySqlConnection(_connectionString))
                 {
                     connection.Open();
-                    // FIXED: Use "Customers" (capitalized) to match database schema
+                    
+                    // First check if Customers table exists
+                    var checkQuery = "SHOW TABLES LIKE 'Customers'";
+                    using (var checkCmd = new MySqlCommand(checkQuery, connection))
+                    {
+                        var tableExists = checkCmd.ExecuteScalar() != null;
+                        if (!tableExists)
+                        {
+                            System.Diagnostics.Debug.WriteLine("Customers table does not exist!");
+                            return customers;
+                        }
+                    }
+                    
+                    // Get customer count first
+                    var countQuery = "SELECT COUNT(*) FROM Customers";
+                    using (var countCmd = new MySqlCommand(countQuery, connection))
+                    {
+                        var count = Convert.ToInt32(countCmd.ExecuteScalar());
+                        System.Diagnostics.Debug.WriteLine($"Found {count} customers in database");
+                    }
+                    
+                    // Get all customers
                     var query = "SELECT customer_id, name, address, city, state, zip, email, phone, notes FROM Customers ORDER BY name";
                     
                     using (var cmd = new MySqlCommand(query, connection))
@@ -169,11 +226,13 @@ namespace ElectricalContractorSystem.Services
                         }
                     }
                 }
+                
+                System.Diagnostics.Debug.WriteLine($"Successfully loaded {customers.Count} customers");
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error in GetAllCustomers: {ex.Message}");
-                // Return empty list on error instead of throwing
+                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
             }
             
             return customers;
@@ -496,6 +555,53 @@ namespace ElectricalContractorSystem.Services
             {
                 System.Diagnostics.Debug.WriteLine($"Error in AddJob: {ex.Message}");
                 return 0;
+            }
+        }
+
+        /// <summary>
+        /// Update job - FIXED
+        /// </summary>
+        public void UpdateJob(Job job)
+        {
+            try
+            {
+                using (var connection = new MySqlConnection(_connectionString))
+                {
+                    connection.Open();
+                    var query = @"
+                        UPDATE Jobs SET 
+                            job_number = @job_number, customer_id = @customer_id, job_name = @job_name,
+                            address = @address, city = @city, state = @state, zip = @zip,
+                            square_footage = @square_footage, num_floors = @num_floors, status = @status,
+                            completion_date = @completion_date, total_estimate = @total_estimate,
+                            total_actual = @total_actual, notes = @notes
+                        WHERE job_id = @job_id";
+
+                    using (var cmd = new MySqlCommand(query, connection))
+                    {
+                        cmd.Parameters.AddWithValue("@job_id", job.JobId);
+                        cmd.Parameters.AddWithValue("@job_number", job.JobNumber);
+                        cmd.Parameters.AddWithValue("@customer_id", job.CustomerId);
+                        cmd.Parameters.AddWithValue("@job_name", job.JobName);
+                        cmd.Parameters.AddWithValue("@address", job.Address ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@city", job.City ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@state", job.State ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@zip", job.Zip ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@square_footage", job.SquareFootage ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@num_floors", job.NumFloors ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@status", job.Status.ToString());
+                        cmd.Parameters.AddWithValue("@completion_date", job.CompletionDate ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@total_estimate", job.TotalEstimate ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@total_actual", job.TotalActual ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@notes", job.Notes ?? (object)DBNull.Value);
+
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in UpdateJob: {ex.Message}");
             }
         }
 
@@ -823,7 +929,7 @@ namespace ElectricalContractorSystem.Services
 
         #endregion
 
-        #region Estimate Methods (Placeholder - Will be extended by estimating system)
+        #region Estimate Methods (Will be extended by estimating system)
 
         public List<Estimate> GetAllEstimates() => new List<Estimate>();
         public void SaveEstimate(Estimate estimate) { }
@@ -832,7 +938,7 @@ namespace ElectricalContractorSystem.Services
 
         #endregion
 
-        #region Placeholder Methods for Other Operations
+        #region Additional Methods Required by Other Services
 
         // Job Stages
         public List<JobStage> GetJobStages(int jobId) => new List<JobStage>();
@@ -861,7 +967,6 @@ namespace ElectricalContractorSystem.Services
         public bool DeletePermitItem(int permitId) => false;
 
         // Additional CRUD operations
-        public void UpdateJob(Job job) { }
         public void UpdateJobStatus(int jobId, string status) { }
         public bool DeleteJob(int jobId) => false;
         public List<Job> GetJobsByCustomer(int customerId) => new List<Job>();
