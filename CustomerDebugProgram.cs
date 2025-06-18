@@ -7,7 +7,7 @@ namespace ElectricalContractorSystem
 {
     class CustomerDebugProgram
     {
-        private static string connectionString = "Server=localhost;Database=electrical_contractor_db;Uid=root;Pwd=;";
+        private static string connectionString = "Server=localhost;Database=electrical_contractor_db;Uid=root;Pwd=215Osborn;";
         
         static void Main(string[] args)
         {
