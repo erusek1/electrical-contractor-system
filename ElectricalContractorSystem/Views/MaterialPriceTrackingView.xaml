@@ -26,9 +26,19 @@
                            Foreground="White"/>
                 
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Content="Add Material" 
+                            Command="{Binding AddMaterialCommand}"
+                            Background="#27AE60" Foreground="White"
+                            Padding="15,8" Margin="0,0,10,0"
+                            BorderThickness="0"/>
                     <Button Content="Import Prices" 
                             Command="{Binding ImportPricesCommand}"
                             Background="#3498DB" Foreground="White"
+                            Padding="15,8" Margin="0,0,10,0"
+                            BorderThickness="0"/>
+                    <Button Content="Export Prices" 
+                            Command="{Binding ExportPricesCommand}"
+                            Background="#E67E22" Foreground="White"
                             Padding="15,8" Margin="0,0,10,0"
                             BorderThickness="0"/>
                     <Button Content="Bulk Update" 
@@ -100,6 +110,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     
                     <!-- Search and Filter -->
@@ -113,6 +124,7 @@
                         <TextBox Grid.Row="0" 
                                  Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                                  Tag="Search materials..."
+                                 Style="{StaticResource SearchBoxStyle}"
                                  Padding="8" Margin="0,0,0,10"/>
                         
                         <ComboBox Grid.Row="1" 
@@ -127,7 +139,7 @@
                     
                     <!-- Material List -->
                     <DataGrid Grid.Row="1" 
-                              ItemsSource="{Binding Materials}"
+                              ItemsSource="{Binding FilteredMaterials}"
                               SelectedItem="{Binding SelectedMaterial}"
                               AutoGenerateColumns="False"
                               CanUserAddRows="False"
@@ -160,6 +172,18 @@
                                                 Width="70"/>
                         </DataGrid.Columns>
                     </DataGrid>
+
+                    <!-- Material Actions -->
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="15" HorizontalAlignment="Right">
+                        <Button Content="Edit" 
+                                Command="{Binding EditMaterialCommand}"
+                                Background="#3498DB" Foreground="White"
+                                Padding="10,6" Margin="0,0,5,0" MinWidth="60"/>
+                        <Button Content="Delete" 
+                                Command="{Binding DeleteMaterialCommand}"
+                                Background="#E74C3C" Foreground="White"
+                                Padding="10,6" MinWidth="60"/>
+                    </StackPanel>
                 </Grid>
             </Border>
             
