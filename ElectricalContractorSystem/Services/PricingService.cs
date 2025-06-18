@@ -78,6 +78,31 @@ namespace ElectricalContractorSystem.Services
                 });
             }
         }
+
+        // Public methods to fire events (for UpdatePriceDialog)
+        public void FireMajorPriceChangeEvent(Material material, decimal oldPrice, decimal newPrice, decimal percentageChange)
+        {
+            OnMajorPriceChange?.Invoke(this, new PriceChangeAlertEventArgs
+            {
+                Material = material,
+                OldPrice = oldPrice,
+                NewPrice = newPrice,
+                PercentageChange = percentageChange,
+                AlertLevel = PriceChangeAlertLevel.Immediate
+            });
+        }
+
+        public void FireModeratePriceChangeEvent(Material material, decimal oldPrice, decimal newPrice, decimal percentageChange)
+        {
+            OnModeratePriceChange?.Invoke(this, new PriceChangeAlertEventArgs
+            {
+                Material = material,
+                OldPrice = oldPrice,
+                NewPrice = newPrice,
+                PercentageChange = percentageChange,
+                AlertLevel = PriceChangeAlertLevel.Review
+            });
+        }
         
         public List<MaterialPriceHistory> GetPriceHistory(int materialId, DateTime? startDate = null, DateTime? endDate = null)
         {
