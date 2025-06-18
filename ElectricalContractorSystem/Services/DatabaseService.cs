@@ -11,6 +11,7 @@ namespace ElectricalContractorSystem.Services
     /// CONSOLIDATED DATABASE SERVICE - ALL DATABASE OPERATIONS IN ONE FILE
     /// Fixed table naming conventions to match actual database schema (CAPITALIZED table names)
     /// Removed all partial class conflicts that were preventing customer data from loading
+    /// FIXED: String-to-enum conversion errors and missing enum types
     /// </summary>
     public class DatabaseService
     {
@@ -401,7 +402,7 @@ namespace ElectricalContractorSystem.Services
 
         #endregion
 
-        #region Job Methods (FIXED - Using correct table names)
+        #region Job Methods (FIXED - Using correct table names and status conversion)
 
         /// <summary>
         /// Get all jobs - FIXED
@@ -567,7 +568,7 @@ namespace ElectricalContractorSystem.Services
                         cmd.Parameters.AddWithValue("@zip", job.Zip ?? (object)DBNull.Value);
                         cmd.Parameters.AddWithValue("@square_footage", job.SquareFootage ?? (object)DBNull.Value);
                         cmd.Parameters.AddWithValue("@num_floors", job.NumFloors ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@status", job.Status.ToString());
+                        cmd.Parameters.AddWithValue("@status", job.Status); // Job.Status is string, store as string
                         cmd.Parameters.AddWithValue("@create_date", job.CreateDate);
                         cmd.Parameters.AddWithValue("@total_estimate", job.TotalEstimate ?? (object)DBNull.Value);
                         cmd.Parameters.AddWithValue("@total_actual", job.TotalActual ?? (object)DBNull.Value);
@@ -615,7 +616,7 @@ namespace ElectricalContractorSystem.Services
                         cmd.Parameters.AddWithValue("@zip", job.Zip ?? (object)DBNull.Value);
                         cmd.Parameters.AddWithValue("@square_footage", job.SquareFootage ?? (object)DBNull.Value);
                         cmd.Parameters.AddWithValue("@num_floors", job.NumFloors ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@status", job.Status.ToString());
+                        cmd.Parameters.AddWithValue("@status", job.Status); // Job.Status is string, store as string
                         cmd.Parameters.AddWithValue("@completion_date", job.CompletionDate ?? (object)DBNull.Value);
                         cmd.Parameters.AddWithValue("@total_estimate", job.TotalEstimate ?? (object)DBNull.Value);
                         cmd.Parameters.AddWithValue("@total_actual", job.TotalActual ?? (object)DBNull.Value);
@@ -648,7 +649,7 @@ namespace ElectricalContractorSystem.Services
                 Zip = reader.IsDBNull("zip") ? null : reader.GetString("zip"),
                 SquareFootage = reader.IsDBNull("square_footage") ? (int?)null : reader.GetInt32("square_footage"),
                 NumFloors = reader.IsDBNull("num_floors") ? (int?)null : reader.GetInt32("num_floors"),
-                Status = Enum.Parse<JobStatus>(reader.GetString("status")),
+                Status = reader.IsDBNull("status") ? "Estimate" : reader.GetString("status"), // FIXED: Use string instead of enum
                 CreateDate = reader.GetDateTime("create_date"),
                 CompletionDate = reader.IsDBNull("completion_date") ? (DateTime?)null : reader.GetDateTime("completion_date"),
                 TotalEstimate = reader.IsDBNull("total_estimate") ? (decimal?)null : reader.GetDecimal("total_estimate"),
@@ -659,7 +660,7 @@ namespace ElectricalContractorSystem.Services
 
         #endregion
 
-        #region Employee Methods (FIXED - Using correct table names)
+        #region Employee Methods (FIXED - Using correct table names and status conversion)
 
         /// <summary>
         /// Get all employees - FIXED
@@ -686,7 +687,7 @@ namespace ElectricalContractorSystem.Services
                                 Name = reader.GetString("name"),
                                 HourlyRate = reader.GetDecimal("hourly_rate"),
                                 BurdenRate = reader.IsDBNull("burden_rate") ? (decimal?)null : reader.GetDecimal("burden_rate"),
-                                Status = Enum.Parse<EmployeeStatus>(reader.GetString("status")),
+                                Status = reader.IsDBNull("status") ? "Active" : reader.GetString("status"), // FIXED: Use string instead of enum
                                 Notes = reader.IsDBNull("notes") ? null : reader.GetString("notes")
                             });
                         }
@@ -726,7 +727,7 @@ namespace ElectricalContractorSystem.Services
                                 Name = reader.GetString("name"),
                                 HourlyRate = reader.GetDecimal("hourly_rate"),
                                 BurdenRate = reader.IsDBNull("burden_rate") ? (decimal?)null : reader.GetDecimal("burden_rate"),
-                                Status = Enum.Parse<EmployeeStatus>(reader.GetString("status")),
+                                Status = reader.IsDBNull("status") ? "Active" : reader.GetString("status"), // FIXED: Use string instead of enum
                                 Notes = reader.IsDBNull("notes") ? null : reader.GetString("notes")
                             });
                         }
@@ -739,6 +740,90 @@ namespace ElectricalContractorSystem.Services
             }
             
             return employees;
+        }
+
+        #endregion
+
+        #region Vendor Methods
+
+        /// <summary>
+        /// Get all vendors
+        /// </summary>
+        public List<Vendor> GetAllVendors()
+        {
+            var vendors = new List<Vendor>();
+            
+            try
+            {
+                using (var connection = new MySqlConnection(_connectionString))
+                {
+                    connection.Open();
+                    var query = "SELECT vendor_id, name, address, city, state, zip, phone, email, notes FROM Vendors ORDER BY name";
+                    
+                    using (var cmd = new MySqlCommand(query, connection))
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            vendors.Add(new Vendor
+                            {
+                                VendorId = reader.GetInt32("vendor_id"),
+                                Name = reader.GetString("name"),
+                                Address = reader.IsDBNull("address") ? null : reader.GetString("address"),
+                                City = reader.IsDBNull("city") ? null : reader.GetString("city"),
+                                State = reader.IsDBNull("state") ? null : reader.GetString("state"),
+                                Zip = reader.IsDBNull("zip") ? null : reader.GetString("zip"),
+                                Phone = reader.IsDBNull("phone") ? null : reader.GetString("phone"),
+                                Email = reader.IsDBNull("email") ? null : reader.GetString("email"),
+                                Notes = reader.IsDBNull("notes") ? null : reader.GetString("notes")
+                            });
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in GetAllVendors: {ex.Message}");
+            }
+            
+            return vendors;
+        }
+
+        /// <summary>
+        /// Add new vendor
+        /// </summary>
+        public int AddVendor(Vendor vendor)
+        {
+            try
+            {
+                using (var connection = new MySqlConnection(_connectionString))
+                {
+                    connection.Open();
+                    var query = @"
+                        INSERT INTO Vendors (name, address, city, state, zip, phone, email, notes)
+                        VALUES (@name, @address, @city, @state, @zip, @phone, @email, @notes);
+                        SELECT LAST_INSERT_ID();";
+                    
+                    using (var cmd = new MySqlCommand(query, connection))
+                    {
+                        cmd.Parameters.AddWithValue("@name", vendor.Name);
+                        cmd.Parameters.AddWithValue("@address", vendor.Address ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@city", vendor.City ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@state", vendor.State ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@zip", vendor.Zip ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@phone", vendor.Phone ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@email", vendor.Email ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@notes", vendor.Notes ?? (object)DBNull.Value);
+                        
+                        return Convert.ToInt32(cmd.ExecuteScalar());
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in AddVendor: {ex.Message}");
+                return 0;
+            }
         }
 
         #endregion
@@ -824,10 +909,6 @@ namespace ElectricalContractorSystem.Services
         public void UpdateEmployee(Employee employee) { }
         public void SaveEmployee(Employee employee) { }
         public bool DeleteEmployee(int employeeId) => false;
-
-        // Vendors
-        public List<Vendor> GetAllVendors() => new List<Vendor>();
-        public int AddVendor(Vendor vendor) => 0;
 
         // Price List
         public List<PriceListItem> GetAllPriceListItems() => new List<PriceListItem>();
