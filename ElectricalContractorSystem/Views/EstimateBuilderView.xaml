@@ -42,6 +42,7 @@
                             Padding="15,8" Margin="0,0,10,0"
                             BorderThickness="0"/>
                     <Button Content="Generate PDF" 
+                            Command="{Binding GeneratePdfCommand}"
                             Background="#3498DB" Foreground="White"
                             Padding="15,8" BorderThickness="0"/>
                 </StackPanel>
@@ -170,8 +171,7 @@
                         <TextBox Grid.Column="1" 
                                  Text="{Binding QuickEntryCode, UpdateSourceTrigger=PropertyChanged}"
                                  Tag="Code (o, s, hh)"
-                                 Margin="0,0,5,0"
-                                 KeyDown="QuickEntryCode_KeyDown"/>
+                                 Margin="0,0,5,0"/>
                         
                         <ComboBox Grid.Column="2" 
                                   ItemsSource="{Binding QuickEntryMatches}"
@@ -287,16 +287,16 @@
                               Visibility="{Binding ShowAssemblies, Converter={StaticResource BoolToVis}}">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Code" 
-                                                Binding="{Binding Code}" 
+                                                Binding="{Binding AssemblyCode}" 
                                                 Width="60"/>
                             <DataGridTextColumn Header="Name" 
                                                 Binding="{Binding Name}" 
                                                 Width="*"/>
                             <DataGridTextColumn Header="Labor" 
-                                                Binding="{Binding TotalLaborMinutes, StringFormat='{}{0}m'}" 
+                                                Binding="{Binding RoughMinutes, StringFormat='{}{0}m'}" 
                                                 Width="60"/>
                             <DataGridTextColumn Header="Price" 
-                                                Binding="{Binding TotalPrice, StringFormat='${0:N2}'}" 
+                                                Binding="{Binding Components[0].UnitPrice, StringFormat='${0:N2}'}" 
                                                 Width="70"/>
                         </DataGrid.Columns>
                     </DataGrid>
@@ -318,7 +318,7 @@
                                                 Binding="{Binding Name}" 
                                                 Width="*"/>
                             <DataGridTextColumn Header="Price" 
-                                                Binding="{Binding TotalPrice, StringFormat='${0:N2}'}" 
+                                                Binding="{Binding BaseCost, StringFormat='${0:N2}'}" 
                                                 Width="70"/>
                         </DataGrid.Columns>
                     </DataGrid>
