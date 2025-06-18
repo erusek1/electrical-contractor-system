@@ -44,48 +44,58 @@ namespace ElectricalContractorSystem
         
         private void InitializeHomeScreenButtons()
         {
-            // Wire up the home screen buttons
-            var newEstimateBtn = this.FindName("NewEstimateButton") as System.Windows.Controls.Button;
-            if (newEstimateBtn != null)
+            try
             {
-                newEstimateBtn.Click += NewEstimate_Click;
+                // Wire up the home screen buttons
+                var newEstimateBtn = this.FindName("NewEstimateButton") as System.Windows.Controls.Button;
+                if (newEstimateBtn != null)
+                {
+                    newEstimateBtn.Click += NewEstimate_Click;
+                }
+                
+                var manageEstimatesBtn = this.FindName("ManageEstimatesButton") as System.Windows.Controls.Button;
+                if (manageEstimatesBtn != null)
+                {
+                    manageEstimatesBtn.Click += ManageEstimates_Click;
+                }
+                
+                var jobManagementBtn = this.FindName("JobManagementButton") as System.Windows.Controls.Button;
+                if (jobManagementBtn != null)
+                {
+                    jobManagementBtn.Click += JobManagement_Click;
+                }
+                
+                var weeklyLaborBtn = this.FindName("WeeklyLaborEntryButton") as System.Windows.Controls.Button;
+                if (weeklyLaborBtn != null)
+                {
+                    weeklyLaborBtn.Click += WeeklyLaborEntry_Click;
+                }
+                
+                // Wire up new assembly and pricing buttons
+                var assemblyManagementBtn = this.FindName("AssemblyManagementButton") as System.Windows.Controls.Button;
+                if (assemblyManagementBtn != null)
+                {
+                    assemblyManagementBtn.Click += AssemblyManagement_Click;
+                }
+                
+                var materialPriceTrackingBtn = this.FindName("MaterialPriceTrackingButton") as System.Windows.Controls.Button;
+                if (materialPriceTrackingBtn != null)
+                {
+                    materialPriceTrackingBtn.Click += MaterialPriceTracking_Click;
+                }
+                
+                var priceListManagementBtn = this.FindName("PriceListManagementButton") as System.Windows.Controls.Button;
+                if (priceListManagementBtn != null)
+                {
+                    priceListManagementBtn.Click += ManagePriceList_Click;
+                }
             }
-            
-            var manageEstimatesBtn = this.FindName("ManageEstimatesButton") as System.Windows.Controls.Button;
-            if (manageEstimatesBtn != null)
+            catch (Exception ex)
             {
-                manageEstimatesBtn.Click += ManageEstimates_Click;
-            }
-            
-            var jobManagementBtn = this.FindName("JobManagementButton") as System.Windows.Controls.Button;
-            if (jobManagementBtn != null)
-            {
-                jobManagementBtn.Click += JobManagement_Click;
-            }
-            
-            var weeklyLaborBtn = this.FindName("WeeklyLaborEntryButton") as System.Windows.Controls.Button;
-            if (weeklyLaborBtn != null)
-            {
-                weeklyLaborBtn.Click += WeeklyLaborEntry_Click;
-            }
-            
-            // Wire up new assembly and pricing buttons
-            var assemblyManagementBtn = this.FindName("AssemblyManagementButton") as System.Windows.Controls.Button;
-            if (assemblyManagementBtn != null)
-            {
-                assemblyManagementBtn.Click += AssemblyManagement_Click;
-            }
-            
-            var materialPriceTrackingBtn = this.FindName("MaterialPriceTrackingButton") as System.Windows.Controls.Button;
-            if (materialPriceTrackingBtn != null)
-            {
-                materialPriceTrackingBtn.Click += MaterialPriceTracking_Click;
-            }
-            
-            var priceListManagementBtn = this.FindName("PriceListManagementButton") as System.Windows.Controls.Button;
-            if (priceListManagementBtn != null)
-            {
-                priceListManagementBtn.Click += ManagePriceList_Click;
+                MessageBox.Show($"Error initializing buttons: {ex.Message}", 
+                    "Initialization Error", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Warning);
             }
         }
         
@@ -133,16 +143,26 @@ namespace ElectricalContractorSystem
                 return;
             }
             
-            // Show customer selection dialog
-            var viewModel = new CustomerSelectionViewModel(_databaseService);
-            var dialog = new CustomerSelectionDialog
+            try
             {
-                DataContext = viewModel
-            };
-            
-            if (dialog.ShowDialog() == true && dialog.SelectedCustomer != null)
+                // Show customer selection dialog
+                var viewModel = new CustomerSelectionViewModel(_databaseService);
+                var dialog = new CustomerSelectionDialog
+                {
+                    DataContext = viewModel
+                };
+                
+                if (dialog.ShowDialog() == true && dialog.SelectedCustomer != null)
+                {
+                    ShowEstimateBuilder(dialog.SelectedCustomer);
+                }
+            }
+            catch (Exception ex)
             {
-                ShowEstimateBuilder(dialog.SelectedCustomer);
+                MessageBox.Show($"Error creating new estimate: {ex.Message}", 
+                    "Error", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Error);
             }
         }
         
@@ -226,14 +246,24 @@ namespace ElectricalContractorSystem
                 return;
             }
             
-            var viewModel = new JobManagementViewModel(_databaseService);
-            var view = new JobManagementView
+            try
             {
-                DataContext = viewModel
-            };
-            
-            MainContent.Content = view;
-            this.Title = "Electrical Contractor Management System - Job Management";
+                var viewModel = new JobManagementViewModel(_databaseService);
+                var view = new JobManagementView
+                {
+                    DataContext = viewModel
+                };
+                
+                MainContent.Content = view;
+                this.Title = "Electrical Contractor Management System - Job Management";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening Job Management: {ex.Message}", 
+                    "Error", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Error);
+            }
         }
         
         private void WeeklyLaborEntry_Click(object sender, RoutedEventArgs e)
@@ -252,14 +282,24 @@ namespace ElectricalContractorSystem
                 return;
             }
             
-            var viewModel = new WeeklyLaborEntryViewModel(_databaseService);
-            var view = new WeeklyLaborEntryView
+            try
             {
-                DataContext = viewModel
-            };
-            
-            MainContent.Content = view;
-            this.Title = "Electrical Contractor Management System - Weekly Labor Entry";
+                var viewModel = new WeeklyLaborEntryViewModel(_databaseService);
+                var view = new WeeklyLaborEntryView
+                {
+                    DataContext = viewModel
+                };
+                
+                MainContent.Content = view;
+                this.Title = "Electrical Contractor Management System - Weekly Labor Entry";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening Weekly Labor Entry: {ex.Message}", 
+                    "Error", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Error);
+            }
         }
         
         private void MaterialEntry_Click(object sender, RoutedEventArgs e)
@@ -273,14 +313,24 @@ namespace ElectricalContractorSystem
                 return;
             }
             
-            var viewModel = new MaterialEntryViewModel(_databaseService);
-            var view = new MaterialEntryView
+            try
             {
-                DataContext = viewModel
-            };
-            
-            MainContent.Content = view;
-            this.Title = "Electrical Contractor Management System - Material Entry";
+                var viewModel = new MaterialEntryViewModel(_databaseService);
+                var view = new MaterialEntryView
+                {
+                    DataContext = viewModel
+                };
+                
+                MainContent.Content = view;
+                this.Title = "Electrical Contractor Management System - Material Entry";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening Material Entry: {ex.Message}", 
+                    "Error", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Error);
+            }
         }
         
         private void JobCostTracking_Click(object sender, RoutedEventArgs e)
@@ -294,14 +344,24 @@ namespace ElectricalContractorSystem
                 return;
             }
             
-            var viewModel = new JobCostTrackingViewModel(_databaseService);
-            var view = new JobCostTrackingView
+            try
             {
-                DataContext = viewModel
-            };
-            
-            MainContent.Content = view;
-            this.Title = "Electrical Contractor Management System - Job Cost Tracking";
+                var viewModel = new JobCostTrackingViewModel(_databaseService);
+                var view = new JobCostTrackingView
+                {
+                    DataContext = viewModel
+                };
+                
+                MainContent.Content = view;
+                this.Title = "Electrical Contractor Management System - Job Cost Tracking";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening Job Cost Tracking: {ex.Message}", 
+                    "Error", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Error);
+            }
         }
         
         private void ImportJobs_Click(object sender, RoutedEventArgs e)
@@ -315,10 +375,20 @@ namespace ElectricalContractorSystem
                 return;
             }
             
-            var importWindow = new ImportJobsWindow();
-            var viewModel = new ImportJobsViewModel(_databaseService, importWindow);
-            importWindow.DataContext = viewModel;
-            importWindow.ShowDialog();
+            try
+            {
+                var importWindow = new ImportJobsWindow();
+                var viewModel = new ImportJobsViewModel(_databaseService, importWindow);
+                importWindow.DataContext = viewModel;
+                importWindow.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening Import Jobs: {ex.Message}", 
+                    "Error", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Error);
+            }
         }
         
         #endregion
@@ -336,13 +406,23 @@ namespace ElectricalContractorSystem
                 return;
             }
             
-            var viewModel = new CustomerManagementViewModel(_databaseService);
-            var view = new CustomerManagementView
+            try
             {
-                DataContext = viewModel
-            };
-            
-            view.ShowDialog();
+                var viewModel = new CustomerManagementViewModel(_databaseService);
+                var view = new CustomerManagementView
+                {
+                    DataContext = viewModel
+                };
+                
+                view.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening Customer Management: {ex.Message}", 
+                    "Error", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Error);
+            }
         }
         
         private void AddCustomer_Click(object sender, RoutedEventArgs e)
@@ -356,15 +436,25 @@ namespace ElectricalContractorSystem
                 return;
             }
             
-            var dialog = new AddCustomerDialog();
-            if (dialog.ShowDialog() == true)
+            try
             {
-                var customer = dialog.Customer;
-                _databaseService.SaveCustomer(customer);
-                MessageBox.Show($"Customer '{customer.Name}' added successfully!", 
-                    "Customer Added", 
+                var dialog = new AddCustomerDialog();
+                if (dialog.ShowDialog() == true)
+                {
+                    var customer = dialog.Customer;
+                    _databaseService.SaveCustomer(customer);
+                    MessageBox.Show($"Customer '{customer.Name}' added successfully!", 
+                        "Customer Added", 
+                        MessageBoxButton.OK, 
+                        MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error adding customer: {ex.Message}", 
+                    "Error", 
                     MessageBoxButton.OK, 
-                    MessageBoxImage.Information);
+                    MessageBoxImage.Error);
             }
         }
         
@@ -383,13 +473,23 @@ namespace ElectricalContractorSystem
                 return;
             }
             
-            var viewModel = new EmployeeManagementViewModel(_databaseService);
-            var view = new EmployeeManagementView
+            try
             {
-                DataContext = viewModel
-            };
-            
-            view.ShowDialog();
+                var viewModel = new EmployeeManagementViewModel(_databaseService);
+                var view = new EmployeeManagementView
+                {
+                    DataContext = viewModel
+                };
+                
+                view.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening Employee Management: {ex.Message}", 
+                    "Error", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Error);
+            }
         }
         
         private void EmployeeCostCalculator_Click(object sender, RoutedEventArgs e)
@@ -422,13 +522,23 @@ namespace ElectricalContractorSystem
                 return;
             }
             
-            var viewModel = new PriceListManagementViewModel(_databaseService);
-            var view = new PriceListManagementView
+            try
             {
-                DataContext = viewModel
-            };
-            
-            view.ShowDialog();
+                var viewModel = new PriceListManagementViewModel(_databaseService);
+                var view = new PriceListManagementView
+                {
+                    DataContext = viewModel
+                };
+                
+                view.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening Price List Management: {ex.Message}", 
+                    "Error", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Error);
+            }
         }
         
         private void ImportPriceList_Click(object sender, RoutedEventArgs e)
@@ -454,14 +564,24 @@ namespace ElectricalContractorSystem
                 return;
             }
             
-            // Show price list management view and use export function there
-            var viewModel = new PriceListManagementViewModel(_databaseService);
-            var view = new PriceListManagementView
+            try
             {
-                DataContext = viewModel
-            };
-            
-            view.ShowDialog();
+                // Show price list management view and use export function there
+                var viewModel = new PriceListManagementViewModel(_databaseService);
+                var view = new PriceListManagementView
+                {
+                    DataContext = viewModel
+                };
+                
+                view.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening Price List Management: {ex.Message}", 
+                    "Error", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Error);
+            }
         }
         
         private void AssemblyManagement_Click(object sender, RoutedEventArgs e)
@@ -480,15 +600,25 @@ namespace ElectricalContractorSystem
                 return;
             }
             
-            // Use the simpler constructor that exists in the ViewModel
-            var viewModel = new AssemblyManagementViewModel(_databaseService);
-            var view = new AssemblyManagementView
+            try
             {
-                DataContext = viewModel
-            };
-            
-            MainContent.Content = view;
-            this.Title = "Electrical Contractor Management System - Assembly Management";
+                // Use the simpler constructor that exists in the ViewModel
+                var viewModel = new AssemblyManagementViewModel(_databaseService);
+                var view = new AssemblyManagementView
+                {
+                    DataContext = viewModel
+                };
+                
+                MainContent.Content = view;
+                this.Title = "Electrical Contractor Management System - Assembly Management";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening Assembly Management: {ex.Message}", 
+                    "Error", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Error);
+            }
         }
         
         private void MaterialPriceTracking_Click(object sender, RoutedEventArgs e)
@@ -507,16 +637,26 @@ namespace ElectricalContractorSystem
                 return;
             }
             
-            // Create the services first
-            var pricingService = new PricingService(_databaseService);
-            var viewModel = new MaterialPriceTrackingViewModel(_databaseService, pricingService);
-            var view = new MaterialPriceTrackingView
+            try
             {
-                DataContext = viewModel
-            };
-            
-            MainContent.Content = view;
-            this.Title = "Electrical Contractor Management System - Material Price Tracking";
+                // Create the services first
+                var pricingService = new PricingService(_databaseService);
+                var viewModel = new MaterialPriceTrackingViewModel(_databaseService, pricingService);
+                var view = new MaterialPriceTrackingView
+                {
+                    DataContext = viewModel
+                };
+                
+                MainContent.Content = view;
+                this.Title = "Electrical Contractor Management System - Material Price Tracking";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening Material Price Tracking: {ex.Message}", 
+                    "Error", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Error);
+            }
         }
         
         #endregion
@@ -634,46 +774,76 @@ namespace ElectricalContractorSystem
         {
             if (!CheckDatabaseConnection()) return;
             
-            var viewModel = new JobDetailsViewModel(_databaseService);
-            viewModel.CurrentJob = job;
-            
-            var view = new JobDetailsView
+            try
             {
-                DataContext = viewModel
-            };
-            
-            MainContent.Content = view;
-            this.Title = $"Electrical Contractor Management System - Job #{job.JobNumber}";
+                var viewModel = new JobDetailsViewModel(_databaseService);
+                viewModel.CurrentJob = job;
+                
+                var view = new JobDetailsView
+                {
+                    DataContext = viewModel
+                };
+                
+                MainContent.Content = view;
+                this.Title = $"Electrical Contractor Management System - Job #{job.JobNumber}";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening job details: {ex.Message}", 
+                    "Error", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Error);
+            }
         }
         
         private void ShowEstimateBuilder(Customer customer = null)
         {
-            var viewModel = new EstimateBuilderViewModel(_databaseService);
-            var view = new EstimateBuilderView
+            try
             {
-                DataContext = viewModel
-            };
-            
-            // Create new estimate with customer
-            if (customer != null)
-            {
-                viewModel.CreateNewEstimate(customer);
+                var viewModel = new EstimateBuilderViewModel(_databaseService);
+                var view = new EstimateBuilderView
+                {
+                    DataContext = viewModel
+                };
+                
+                // Create new estimate with customer
+                if (customer != null)
+                {
+                    viewModel.CreateNewEstimate(customer);
+                }
+                
+                MainContent.Content = view;
+                this.Title = "Electrical Contractor Management System - Estimate Builder";
             }
-            
-            MainContent.Content = view;
-            this.Title = "Electrical Contractor Management System - Estimate Builder";
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening Estimate Builder: {ex.Message}", 
+                    "Error", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Error);
+            }
         }
         
         private void ShowEstimateList()
         {
-            var viewModel = new EstimateListViewModel(_databaseService);
-            var view = new EstimateListView
+            try
             {
-                DataContext = viewModel
-            };
-            
-            MainContent.Content = view;
-            this.Title = "Electrical Contractor Management System - Manage Estimates";
+                var viewModel = new EstimateListViewModel(_databaseService);
+                var view = new EstimateListView
+                {
+                    DataContext = viewModel
+                };
+                
+                MainContent.Content = view;
+                this.Title = "Electrical Contractor Management System - Manage Estimates";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening Estimate List: {ex.Message}", 
+                    "Error", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Error);
+            }
         }
         
         #endregion
