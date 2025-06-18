@@ -236,13 +236,20 @@ namespace ElectricalContractorSystem.ViewModels
         
         private void CreateAssembly()
         {
-            var dialog = new AssemblyEditDialog();
-            var viewModel = new AssemblyEditViewModel(_databaseService);
-            dialog.DataContext = viewModel;
-            
-            if (dialog.ShowDialog() == true)
+            try
             {
-                LoadData();
+                // Use the correct dialog name
+                var dialog = new CreateAssemblyDialog();
+                
+                if (dialog.ShowDialog() == true)
+                {
+                    LoadData();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Error creating assembly: {ex.Message}", 
+                    "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
         
@@ -250,15 +257,23 @@ namespace ElectricalContractorSystem.ViewModels
         {
             if (SelectedAssembly == null) return;
             
-            var dialog = new AssemblyEditDialog();
-            var viewModel = new AssemblyEditViewModel(_databaseService, SelectedAssembly);
-            dialog.DataContext = viewModel;
-            
-            if (dialog.ShowDialog() == true)
+            try
             {
-                LoadData();
-                // Try to reselect the edited assembly
-                SelectedAssembly = Assemblies.FirstOrDefault(a => a.AssemblyId == SelectedAssembly.AssemblyId);
+                var dialog = new EditAssemblyDialog();
+                var viewModel = new AssemblyEditViewModel(_databaseService, SelectedAssembly);
+                dialog.DataContext = viewModel;
+                
+                if (dialog.ShowDialog() == true)
+                {
+                    LoadData();
+                    // Try to reselect the edited assembly
+                    SelectedAssembly = Assemblies.FirstOrDefault(a => a.AssemblyId == SelectedAssembly.AssemblyId);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Error editing assembly: {ex.Message}", 
+                    "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
         
@@ -296,12 +311,12 @@ namespace ElectricalContractorSystem.ViewModels
         {
             if (SelectedAssembly == null) return;
             
-            var dialog = new CreateVariantDialog();
-            dialog.ParentAssemblyName = SelectedAssembly.Name;
-            
-            if (dialog.ShowDialog() == true)
+            try
             {
-                try
+                var dialog = new CreateVariantDialog();
+                dialog.ParentAssemblyName = SelectedAssembly.Name;
+                
+                if (dialog.ShowDialog() == true)
                 {
                     // Create the variant with a default category
                     var variant = _assemblyService.CreateAssembly(
@@ -343,11 +358,11 @@ namespace ElectricalContractorSystem.ViewModels
                     // Reload to show the new variant
                     LoadAssemblyDetails();
                 }
-                catch (Exception ex)
-                {
-                    System.Windows.MessageBox.Show($"Error creating variant: {ex.Message}", 
-                        "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
-                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Error creating variant: {ex.Message}", 
+                    "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
         
@@ -355,31 +370,31 @@ namespace ElectricalContractorSystem.ViewModels
         {
             if (SelectedAssembly == null) return;
             
-            var dialog = new AddComponentDialog();
-            var priceListItems = _databaseService.GetAllPriceListItems()
-                .Where(i => i.IsActive)
-                .Select(p => new PriceListItem
-                {
-                    ItemId = p.ItemId,
-                    ItemCode = p.ItemCode,
-                    Name = p.Name,
-                    Description = p.Description,
-                    Category = p.Category,
-                    BaseCost = p.BaseCost,
-                    TaxRate = p.TaxRate ?? 0.064m,
-                    LaborMinutes = p.LaborMinutes ?? 0,
-                    MarkupPercentage = p.MarkupPercentage ?? 0,
-                    IsActive = p.IsActive
-                })
-                .OrderBy(i => i.Category)
-                .ThenBy(i => i.Name)
-                .ToList();
-            
-            dialog.AvailableItems = priceListItems;
-            
-            if (dialog.ShowDialog() == true && dialog.SelectedItem != null)
+            try
             {
-                try
+                var dialog = new AddComponentDialog();
+                var priceListItems = _databaseService.GetAllPriceListItems()
+                    .Where(i => i.IsActive)
+                    .Select(p => new PriceListItem
+                    {
+                        ItemId = p.ItemId,
+                        ItemCode = p.ItemCode,
+                        Name = p.Name,
+                        Description = p.Description,
+                        Category = p.Category,
+                        BaseCost = p.BaseCost,
+                        TaxRate = p.TaxRate ?? 0.064m,
+                        LaborMinutes = p.LaborMinutes ?? 0,
+                        MarkupPercentage = p.MarkupPercentage ?? 0,
+                        IsActive = p.IsActive
+                    })
+                    .OrderBy(i => i.Category)
+                    .ThenBy(i => i.Name)
+                    .ToList();
+                
+                dialog.AvailableItems = priceListItems;
+                
+                if (dialog.ShowDialog() == true && dialog.SelectedItem != null)
                 {
                     _assemblyService.AddComponentToAssembly(
                         SelectedAssembly.AssemblyId,
@@ -389,11 +404,11 @@ namespace ElectricalContractorSystem.ViewModels
                     
                     LoadAssemblyDetails();
                 }
-                catch (Exception ex)
-                {
-                    System.Windows.MessageBox.Show($"Error adding component: {ex.Message}", 
-                        "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
-                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Error adding component: {ex.Message}", 
+                    "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
         
@@ -401,13 +416,13 @@ namespace ElectricalContractorSystem.ViewModels
         {
             if (SelectedComponent == null) return;
             
-            var dialog = new EditComponentDialog();
-            dialog.ComponentName = SelectedComponent.PriceListItem?.Name ?? "Unknown Component";
-            dialog.CurrentQuantity = SelectedComponent.Quantity;
-            
-            if (dialog.ShowDialog() == true)
+            try
             {
-                try
+                var dialog = new EditComponentDialog();
+                dialog.ComponentName = SelectedComponent.PriceListItem?.Name ?? "Unknown Component";
+                dialog.CurrentQuantity = SelectedComponent.Quantity;
+                
+                if (dialog.ShowDialog() == true)
                 {
                     _assemblyService.UpdateAssemblyComponent(
                         SelectedComponent.ComponentId,
@@ -416,11 +431,11 @@ namespace ElectricalContractorSystem.ViewModels
                     
                     LoadAssemblyDetails();
                 }
-                catch (Exception ex)
-                {
-                    System.Windows.MessageBox.Show($"Error updating component: {ex.Message}", 
-                        "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
-                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Error updating component: {ex.Message}", 
+                    "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
         
