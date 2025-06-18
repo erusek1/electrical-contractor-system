@@ -6,10 +6,10 @@ namespace ElectricalContractorSystem.Views
 {
     public partial class PriceListItemDialog : Window
     {
-        public PriceList PriceListItem { get; private set; }
+        public PriceListItem PriceListItem { get; private set; }
         public bool IsEditMode { get; private set; }
 
-        public PriceListItemDialog(PriceList item = null)
+        public PriceListItemDialog(PriceListItem item = null)
         {
             InitializeComponent();
             
@@ -24,7 +24,7 @@ namespace ElectricalContractorSystem.Views
             else
             {
                 Title = "Add Price List Item";
-                PriceListItem = new PriceList
+                PriceListItem = new PriceListItem
                 {
                     IsActive = true,
                     TaxRate = 6.625m, // Default NJ tax rate
@@ -44,9 +44,9 @@ namespace ElectricalContractorSystem.Views
             NameTextBox.Text = PriceListItem.Name;
             DescriptionTextBox.Text = PriceListItem.Description;
             BaseCostTextBox.Text = PriceListItem.BaseCost.ToString("F2");
-            TaxRateTextBox.Text = PriceListItem.TaxRate?.ToString("F3") ?? "6.625";
-            LaborMinutesTextBox.Text = PriceListItem.LaborMinutes?.ToString() ?? "0";
-            MarkupPercentageTextBox.Text = PriceListItem.MarkupPercentage?.ToString("F2") ?? "22.0";
+            TaxRateTextBox.Text = PriceListItem.TaxRate.ToString("F3");
+            LaborMinutesTextBox.Text = PriceListItem.LaborMinutes.ToString();
+            MarkupPercentageTextBox.Text = PriceListItem.MarkupPercentage.ToString("F2");
             IsActiveCheckBox.IsChecked = PriceListItem.IsActive;
             NotesTextBox.Text = PriceListItem.Notes;
         }
@@ -87,49 +87,46 @@ namespace ElectricalContractorSystem.Views
                 return;
             }
 
-            decimal? taxRate = null;
+            decimal taxRate = 0;
             if (!string.IsNullOrWhiteSpace(TaxRateTextBox.Text))
             {
-                if (!decimal.TryParse(TaxRateTextBox.Text, out decimal taxRateValue) || taxRateValue < 0)
+                if (!decimal.TryParse(TaxRateTextBox.Text, out taxRate) || taxRate < 0)
                 {
                     MessageBox.Show("Tax Rate must be a valid positive number.", "Validation Error", 
                         MessageBoxButton.OK, MessageBoxImage.Warning);
                     TaxRateTextBox.Focus();
                     return;
                 }
-                taxRate = taxRateValue;
             }
 
-            int? laborMinutes = null;
+            int laborMinutes = 0;
             if (!string.IsNullOrWhiteSpace(LaborMinutesTextBox.Text))
             {
-                if (!int.TryParse(LaborMinutesTextBox.Text, out int laborMinutesValue) || laborMinutesValue < 0)
+                if (!int.TryParse(LaborMinutesTextBox.Text, out laborMinutes) || laborMinutes < 0)
                 {
                     MessageBox.Show("Labor Minutes must be a valid positive integer.", "Validation Error", 
                         MessageBoxButton.OK, MessageBoxImage.Warning);
                     LaborMinutesTextBox.Focus();
                     return;
                 }
-                laborMinutes = laborMinutesValue;
             }
 
-            decimal? markupPercentage = null;
+            decimal markupPercentage = 0;
             if (!string.IsNullOrWhiteSpace(MarkupPercentageTextBox.Text))
             {
-                if (!decimal.TryParse(MarkupPercentageTextBox.Text, out decimal markupPercentageValue) || markupPercentageValue < 0)
+                if (!decimal.TryParse(MarkupPercentageTextBox.Text, out markupPercentage) || markupPercentage < 0)
                 {
                     MessageBox.Show("Markup Percentage must be a valid positive number.", "Validation Error", 
                         MessageBoxButton.OK, MessageBoxImage.Warning);
                     MarkupPercentageTextBox.Focus();
                     return;
                 }
-                markupPercentage = markupPercentageValue;
             }
 
             // Update or create the price list item
             if (!IsEditMode)
             {
-                PriceListItem = new PriceList();
+                PriceListItem = new PriceListItem();
             }
 
             PriceListItem.Category = CategoryTextBox.Text.Trim();
