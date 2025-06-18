@@ -248,29 +248,31 @@ namespace ElectricalContractorSystem
             var verifier = new DatabaseVerificationProgram();
             verifier.AddSampleData();
         }
-    }
 
-    /// <summary>
-    /// Simple console program that can be used to test database functionality
-    /// </summary>
-    class Program
-    {
-        static void Main(string[] args)
+        /// <summary>
+        /// Run verification and return results as string for display in UI
+        /// </summary>
+        public static string RunVerificationAndGetResults()
         {
-            Console.WriteLine("Electrical Contractor System - Database Verification");
-            Console.WriteLine("====================================================");
-            
-            if (args.Length > 0 && args[0].ToLower() == "addsample")
+            try
             {
-                DatabaseVerificationProgram.AddSampleDataToDatabase();
+                // Capture console output
+                var originalOut = Console.Out;
+                using (var stringWriter = new System.IO.StringWriter())
+                {
+                    Console.SetOut(stringWriter);
+                    
+                    var verifier = new DatabaseVerificationProgram();
+                    verifier.RunVerification();
+                    
+                    Console.SetOut(originalOut);
+                    return stringWriter.ToString();
+                }
             }
-            else
+            catch (Exception ex)
             {
-                DatabaseVerificationProgram.RunDatabaseVerification();
+                return $"Error running verification: {ex.Message}";
             }
-
-            Console.WriteLine("\nPress any key to exit...");
-            Console.ReadKey();
         }
     }
 }
