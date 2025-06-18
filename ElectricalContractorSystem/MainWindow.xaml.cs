@@ -399,17 +399,22 @@ namespace ElectricalContractorSystem
         {
             if (!CheckDatabaseConnection())
             {
-                MessageBox.Show("Manage Customers requires database connection.", 
-                    "Database Required", 
-                    MessageBoxButton.OK, 
+                MessageBox.Show("Manage Customers requires database connection.\n\n" +
+                    "Features include:\n" +
+                    "• View all customers and their properties\n" +
+                    "• Add, edit, and delete customers\n" +
+                    "• Manage customer properties\n" +
+                    "• View job history per customer",
+                    "Database Required",
+                    MessageBoxButton.OK,
                     MessageBoxImage.Information);
                 return;
             }
             
             try
             {
-                var viewModel = new CustomerManagementViewModel(_databaseService);
-                var view = new CustomerManagementView
+                var viewModel = new PropertyManagementViewModel(_databaseService);
+                var view = new PropertyManagementView
                 {
                     DataContext = viewModel
                 };
