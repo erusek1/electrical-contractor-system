@@ -42,6 +42,8 @@ namespace ElectricalContractorSystem.Models
         
         public DateTime? UpdatedDate { get; set; }
         
+        public string CreatedBy { get; set; } // ADDED: Missing property for AddMaterialDialog
+        
         // Navigation properties
         public virtual Vendor PreferredVendor { get; set; }
         
