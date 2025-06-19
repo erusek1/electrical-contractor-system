@@ -143,7 +143,7 @@ namespace ElectricalContractorSystem.Views
                     MaterialId = _material.MaterialId,
                     OldPrice = _material.CurrentPrice,
                     NewPrice = NewPrice,
-                    PercentageChange = PercentageChange,
+                    PercentageChange = PercentageChange, // This sets the percentage, AlertLevel is computed automatically
                     ChangedBy = Environment.UserName,
                     ChangeDate = DateTime.Now,
                     EffectiveDate = DateTime.Now,
@@ -152,14 +152,7 @@ namespace ElectricalContractorSystem.Views
                     Notes = Notes
                 };
 
-                // Determine alert level
-                var absChange = Math.Abs(PercentageChange);
-                if (absChange >= 15)
-                    priceHistory.AlertLevel = PriceChangeAlertLevel.Immediate;
-                else if (absChange >= 5)
-                    priceHistory.AlertLevel = PriceChangeAlertLevel.Review;
-                else
-                    priceHistory.AlertLevel = PriceChangeAlertLevel.None;
+                // REMOVED: Setting AlertLevel - it's computed automatically from PercentageChange
 
                 // Update material price
                 _material.CurrentPrice = NewPrice;
@@ -170,11 +163,12 @@ namespace ElectricalContractorSystem.Views
                 _databaseService.SaveMaterialPriceHistory(priceHistory);
 
                 // Fire price change events if significant
-                if (priceHistory.AlertLevel == PriceChangeAlertLevel.Immediate)
+                var absChange = Math.Abs(PercentageChange);
+                if (absChange >= 15)
                 {
                     _pricingService.FireMajorPriceChangeEvent(_material, _material.CurrentPrice, NewPrice, PercentageChange);
                 }
-                else if (priceHistory.AlertLevel == PriceChangeAlertLevel.Review)
+                else if (absChange >= 5)
                 {
                     _pricingService.FireModeratePriceChangeEvent(_material, _material.CurrentPrice, NewPrice, PercentageChange);
                 }
