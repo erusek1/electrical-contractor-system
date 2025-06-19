@@ -177,15 +177,13 @@ namespace ElectricalContractorSystem.ViewModels
         {
             if (SelectedEstimate != null)
             {
-                // Show conversion dialog
-                var conversionDialog = new EstimateConversionDialog();
-                var conversionViewModel = new EstimateConversionViewModel(_databaseService, SelectedEstimate);
-                conversionDialog.DataContext = conversionViewModel;
+                // FIXED: Show conversion dialog with proper constructor parameters
+                var conversionDialog = new EstimateConversionDialog(_databaseService, SelectedEstimate);
                 
-                if (conversionDialog.ShowDialog() == true)
+                if (conversionDialog.ShowDialog() == true && conversionDialog.CreatedJob != null)
                 {
                     LoadEstimates(); // Refresh to show updated status
-                    ConversionCompleted?.Invoke(conversionViewModel.CreatedJob);
+                    ConversionCompleted?.Invoke(conversionDialog.CreatedJob);
                 }
             }
         }
