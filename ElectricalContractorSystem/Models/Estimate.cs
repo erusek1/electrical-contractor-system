@@ -54,6 +54,11 @@ namespace ElectricalContractorSystem.Models
         public string UpdatedBy { get; set; }
         public DateTime? UpdatedDate { get; set; }
         
+        // ADDED: Missing properties used by DatabaseService
+        public string EstimateName { get => ProjectName; set => ProjectName = value; }
+        public decimal GrandTotal { get => TotalWithTax; set { } } // Read-only computed property
+        public decimal TotalWithTax => TotalPrice; // Alias for backward compatibility
+        
         // Collections
         public List<EstimateRoom> Rooms { get; set; }
         public List<EstimateLineItem> LineItems { get; set; }
