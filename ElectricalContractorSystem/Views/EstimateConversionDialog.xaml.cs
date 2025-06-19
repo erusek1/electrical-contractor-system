@@ -5,12 +5,16 @@ using ElectricalContractorSystem.Services;
 
 namespace ElectricalContractorSystem.Views
 {
+    /// <summary>
+    /// Dialog for converting estimates to jobs
+    /// FIXED: Constructor signature and property access issues
+    /// </summary>
     public partial class EstimateConversionDialog : Window
     {
-        public Job ConvertedJob { get; private set; }
+        public Job CreatedJob { get; private set; }
         public bool DialogResult { get; private set; }
 
-        public EstimateConversionDialog(Estimate estimate, DatabaseService databaseService)
+        public EstimateConversionDialog(DatabaseService databaseService, Estimate estimate)
         {
             InitializeComponent();
             var viewModel = new EstimateConversionViewModel(estimate, databaseService);
@@ -21,7 +25,7 @@ namespace ElectricalContractorSystem.Views
 
         private void OnJobCreated(Job job)
         {
-            ConvertedJob = job;
+            CreatedJob = job;
             DialogResult = true;
             Close();
         }
