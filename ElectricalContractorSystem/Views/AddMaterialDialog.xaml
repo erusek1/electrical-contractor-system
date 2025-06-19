@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Add New Material" Height="500" Width="600"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize">
+        ResizeMode="NoResize"
+        KeyDown="AddMaterialDialog_KeyDown">
     
     <Grid Margin="20">
         <Grid.RowDefinitions>
@@ -38,33 +39,39 @@
                 </Grid.RowDefinitions>
                 
                 <!-- Material Code -->
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="Material Code:" 
-                           VerticalAlignment="Center" Margin="0,0,10,10"/>
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Material Code:*" 
+                           VerticalAlignment="Center" Margin="0,0,10,10"
+                           FontWeight="SemiBold"/>
                 <TextBox Grid.Row="0" Grid.Column="1" Name="MaterialCodeTextBox"
-                         Text="{Binding MaterialCode}" 
-                         Padding="8,6" Margin="0,0,0,10"/>
+                         Text="{Binding MaterialCode, UpdateSourceTrigger=PropertyChanged}" 
+                         Padding="8,6" Margin="0,0,0,10"
+                         ToolTip="Unique identifier for this material"/>
                 
-                <!-- Name -->
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Name:" 
-                           VerticalAlignment="Center" Margin="0,0,10,10"/>
-                <TextBox Grid.Row="1" Grid.Column="1" Name="NameTextBox"
-                         Text="{Binding Name}" 
-                         Padding="8,6" Margin="0,0,0,10"/>
+                <!-- Material Name -->
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Material Name:*" 
+                           VerticalAlignment="Center" Margin="0,0,10,10"
+                           FontWeight="SemiBold"/>
+                <TextBox Grid.Row="1" Grid.Column="1" Name="MaterialNameTextBox"
+                         Text="{Binding MaterialName, UpdateSourceTrigger=PropertyChanged}" 
+                         Padding="8,6" Margin="0,0,0,10"
+                         ToolTip="Descriptive name for this material"/>
                 
                 <!-- Description -->
                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Description:" 
                            VerticalAlignment="Top" Margin="0,5,10,10"/>
                 <TextBox Grid.Row="2" Grid.Column="1" Name="DescriptionTextBox"
-                         Text="{Binding Description}" 
+                         Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" 
                          Padding="8,6" Height="60" TextWrapping="Wrap"
-                         AcceptsReturn="True" Margin="0,0,0,10"/>
+                         AcceptsReturn="True" Margin="0,0,0,10"
+                         ToolTip="Detailed description of the material"/>
                 
                 <!-- Category -->
                 <TextBlock Grid.Row="3" Grid.Column="0" Text="Category:" 
                            VerticalAlignment="Center" Margin="0,0,10,10"/>
                 <ComboBox Grid.Row="3" Grid.Column="1" Name="CategoryComboBox"
                           Text="{Binding Category}" IsEditable="True"
-                          Padding="8,6" Margin="0,0,0,10">
+                          Padding="8,6" Margin="0,0,0,10"
+                          ToolTip="Material category for organization">
                     <ComboBoxItem>Wire</ComboBoxItem>
                     <ComboBoxItem>Devices</ComboBoxItem>
                     <ComboBoxItem>Fixtures</ComboBoxItem>
@@ -72,6 +79,8 @@
                     <ComboBoxItem>Conduit</ComboBoxItem>
                     <ComboBoxItem>Tools</ComboBoxItem>
                     <ComboBoxItem>Hardware</ComboBoxItem>
+                    <ComboBoxItem>Safety</ComboBoxItem>
+                    <ComboBoxItem>Fasteners</ComboBoxItem>
                 </ComboBox>
                 
                 <!-- Unit of Measure -->
@@ -79,28 +88,40 @@
                            VerticalAlignment="Center" Margin="0,0,10,10"/>
                 <ComboBox Grid.Row="4" Grid.Column="1" Name="UnitComboBox"
                           Text="{Binding UnitOfMeasure}" IsEditable="True"
-                          Padding="8,6" Margin="0,0,0,10">
+                          Padding="8,6" Margin="0,0,0,10"
+                          ToolTip="How this material is measured and sold">
                     <ComboBoxItem>Each</ComboBoxItem>
                     <ComboBoxItem>Foot</ComboBoxItem>
                     <ComboBoxItem>Box</ComboBoxItem>
                     <ComboBoxItem>Roll</ComboBoxItem>
                     <ComboBoxItem>Pound</ComboBoxItem>
                     <ComboBoxItem>Gallon</ComboBoxItem>
+                    <ComboBoxItem>Square Foot</ComboBoxItem>
+                    <ComboBoxItem>Linear Foot</ComboBoxItem>
                 </ComboBox>
                 
                 <!-- Current Price -->
-                <TextBlock Grid.Row="5" Grid.Column="0" Text="Current Price:" 
-                           VerticalAlignment="Center" Margin="0,0,10,10"/>
-                <TextBox Grid.Row="5" Grid.Column="1" Name="PriceTextBox"
-                         Text="{Binding CurrentPrice, StringFormat='0.00'}" 
-                         Padding="8,6" Margin="0,0,0,10"/>
+                <TextBlock Grid.Row="5" Grid.Column="0" Text="Current Price:*" 
+                           VerticalAlignment="Center" Margin="0,0,10,10"
+                           FontWeight="SemiBold"/>
+                <StackPanel Grid.Row="5" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,10">
+                    <TextBlock Text="$" VerticalAlignment="Center" Margin="0,0,5,0" FontSize="14"/>
+                    <TextBox Name="PriceTextBox"
+                             Text="{Binding CurrentPrice, StringFormat='0.00', UpdateSourceTrigger=PropertyChanged}" 
+                             Padding="8,6" Width="120"
+                             ToolTip="Current price per unit"/>
+                </StackPanel>
                 
                 <!-- Tax Rate -->
                 <TextBlock Grid.Row="6" Grid.Column="0" Text="Tax Rate (%):" 
                            VerticalAlignment="Center" Margin="0,0,10,10"/>
-                <TextBox Grid.Row="6" Grid.Column="1" Name="TaxRateTextBox"
-                         Text="{Binding TaxRate, StringFormat='0.0'}" 
-                         Padding="8,6" Margin="0,0,0,10"/>
+                <StackPanel Grid.Row="6" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,10">
+                    <TextBox Name="TaxRateTextBox"
+                             Text="{Binding TaxRate, StringFormat='0.0', UpdateSourceTrigger=PropertyChanged}" 
+                             Padding="8,6" Width="80"
+                             ToolTip="Tax rate percentage (e.g., 6.4 for 6.4%)"/>
+                    <TextBlock Text="%" VerticalAlignment="Center" Margin="5,0,0,0" FontSize="14"/>
+                </StackPanel>
                 
                 <!-- Preferred Vendor -->
                 <TextBlock Grid.Row="7" Grid.Column="0" Text="Preferred Vendor:" 
@@ -109,41 +130,76 @@
                           ItemsSource="{Binding Vendors}"
                           SelectedItem="{Binding SelectedVendor}"
                           DisplayMemberPath="Name"
-                          Padding="8,6" Margin="0,0,0,10"/>
+                          Padding="8,6" Margin="0,0,0,10"
+                          ToolTip="Primary vendor for this material">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Name}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
                 
                 <!-- Min Stock Level -->
                 <TextBlock Grid.Row="8" Grid.Column="0" Text="Min Stock Level:" 
                            VerticalAlignment="Center" Margin="0,0,10,10"/>
                 <TextBox Grid.Row="8" Grid.Column="1" Name="MinStockTextBox"
-                         Text="{Binding MinStockLevel}" 
-                         Padding="8,6" Margin="0,0,0,10"/>
+                         Text="{Binding MinStockLevel, UpdateSourceTrigger=PropertyChanged}" 
+                         Padding="8,6" Margin="0,0,0,10" Width="120" HorizontalAlignment="Left"
+                         ToolTip="Minimum stock level before reorder alert"/>
                 
                 <!-- Max Stock Level -->
                 <TextBlock Grid.Row="9" Grid.Column="0" Text="Max Stock Level:" 
                            VerticalAlignment="Center" Margin="0,0,10,10"/>
                 <TextBox Grid.Row="9" Grid.Column="1" Name="MaxStockTextBox"
-                         Text="{Binding MaxStockLevel}" 
-                         Padding="8,6" Margin="0,0,0,10"/>
+                         Text="{Binding MaxStockLevel, UpdateSourceTrigger=PropertyChanged}" 
+                         Padding="8,6" Margin="0,0,0,10" Width="120" HorizontalAlignment="Left"
+                         ToolTip="Maximum stock level for inventory management"/>
                 
-                <!-- Is Active -->
-                <TextBlock Grid.Row="10" Grid.Column="0" Text="Active:" 
+                <!-- Is Material Active -->
+                <TextBlock Grid.Row="10" Grid.Column="0" Text="Active Material:" 
                            VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <CheckBox Grid.Row="10" Grid.Column="1" Name="IsActiveCheckBox"
-                          IsChecked="{Binding IsActive}" 
-                          VerticalAlignment="Center"/>
+                <StackPanel Grid.Row="10" Grid.Column="1" Orientation="Horizontal">
+                    <CheckBox Name="IsMaterialActiveCheckBox"
+                              IsChecked="{Binding IsMaterialActive}" 
+                              VerticalAlignment="Center"
+                              ToolTip="Whether this material is currently active for use"/>
+                    <TextBlock Text="Include in material lists and estimates" 
+                               VerticalAlignment="Center" Margin="10,0,0,0"
+                               Foreground="Gray" FontSize="12"/>
+                </StackPanel>
             </Grid>
         </ScrollViewer>
         
         <!-- Buttons -->
         <StackPanel Grid.Row="2" Orientation="Horizontal" 
                     HorizontalAlignment="Right" Margin="0,20,0,0">
-            <Button Content="Save Material" 
+            <Button Name="SaveButton"
+                    Content="Save Material" 
                     Click="SaveButton_Click"
+                    IsEnabled="{Binding CanSave}"
                     Background="#27AE60" Foreground="White"
-                    Padding="15,8" Margin="0,0,10,0" MinWidth="100"/>
-            <Button Content="Cancel" 
+                    Padding="15,8" Margin="0,0,10,0" MinWidth="100"
+                    ToolTip="Save the new material to the database">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Style.Triggers>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Background" Value="#BDC3C7"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            <Button Name="CancelButton"
+                    Content="Cancel" 
                     Click="CancelButton_Click"
-                    Padding="15,8" MinWidth="100"/>
+                    Padding="15,8" MinWidth="100"
+                    Background="#E74C3C" Foreground="White"
+                    ToolTip="Cancel and close without saving"/>
         </StackPanel>
+        
+        <!-- Status Text -->
+        <TextBlock Grid.Row="2" HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                   Text="* Required fields" FontSize="11" Foreground="Gray" Margin="0,5,0,0"/>
     </Grid>
 </Window>
