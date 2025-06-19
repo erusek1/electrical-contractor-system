@@ -850,7 +850,10 @@ namespace ElectricalContractorSystem.ViewModels
 
         #region Cleanup
 
-        protected override void OnDispose()
+        /// <summary>
+        /// Cleanup resources when the ViewModel is disposed
+        /// </summary>
+        public void Dispose()
         {
             // Unsubscribe from events
             if (_pricingService != null)
@@ -858,8 +861,6 @@ namespace ElectricalContractorSystem.ViewModels
                 _pricingService.OnMajorPriceChange -= OnMajorPriceChangeReceived;
                 _pricingService.OnModeratePriceChange -= OnModeratePriceChangeReceived;
             }
-
-            base.OnDispose();
         }
 
         #endregion
