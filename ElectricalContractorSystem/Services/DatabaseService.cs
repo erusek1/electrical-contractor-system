@@ -12,6 +12,7 @@ namespace ElectricalContractorSystem.Services
     /// Fixed table naming conventions to match actual database schema (CAPITALIZED table names)
     /// Removed all partial class conflicts that were preventing customer data from loading
     /// FIXED: String-to-enum conversion errors and missing enum types
+    /// FIXED: String-to-int conversion errors in data reader calls
     /// </summary>
     public class DatabaseService
     {
@@ -896,7 +897,7 @@ namespace ElectricalContractorSystem.Services
             {
                 cmd.Parameters.AddWithValue("@job_number", GetNextJobNumber());
                 cmd.Parameters.AddWithValue("@customer_id", estimate.CustomerId);
-                cmd.Parameters.AddWithValue("@job_name", estimate.EstimateName ?? $"Job from Estimate {estimate.EstimateNumber}");
+                cmd.Parameters.AddWithValue("@job_name", estimate.ProjectName ?? $"Job from Estimate {estimate.EstimateNumber}");
                 cmd.Parameters.AddWithValue("@address", estimate.JobAddress ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@city", estimate.JobCity ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@state", estimate.JobState ?? (object)DBNull.Value);
@@ -905,7 +906,7 @@ namespace ElectricalContractorSystem.Services
                 cmd.Parameters.AddWithValue("@num_floors", estimate.NumFloors ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@status", "In Progress");
                 cmd.Parameters.AddWithValue("@create_date", DateTime.Now);
-                cmd.Parameters.AddWithValue("@total_estimate", estimate.GrandTotal);
+                cmd.Parameters.AddWithValue("@total_estimate", estimate.TotalWithTax);
                 cmd.Parameters.AddWithValue("@notes", $"Created from estimate {estimate.EstimateNumber}");
 
                 return Convert.ToInt32(cmd.ExecuteScalar());
