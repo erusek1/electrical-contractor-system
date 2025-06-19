@@ -9,11 +9,17 @@ using ElectricalContractorSystem.Services;
 
 namespace ElectricalContractorSystem.Views
 {
+    /// <summary>
+    /// Dialog for adding new materials to the system
+    /// FIXED: Renamed conflicting properties to avoid inheritance conflicts
+    /// - Name → MaterialName (conflicts with FrameworkElement.Name)
+    /// - IsActive → IsMaterialActive (conflicts with Window.IsActive)
+    /// </summary>
     public partial class AddMaterialDialog : Window, INotifyPropertyChanged
     {
         private readonly DatabaseService _databaseService;
         private string _materialCode;
-        private string _name;
+        private string _materialName;
         private string _description;
         private string _category = "Devices";
         private string _unitOfMeasure = "Each";
@@ -21,7 +27,7 @@ namespace ElectricalContractorSystem.Views
         private decimal _taxRate = 6.4m;
         private int _minStockLevel;
         private int _maxStockLevel;
-        private bool _isActive = true;
+        private bool _isMaterialActive = true;
         private Vendor _selectedVendor;
 
         public AddMaterialDialog(DatabaseService databaseService)
@@ -37,6 +43,9 @@ namespace ElectricalContractorSystem.Views
 
         #region Properties
 
+        /// <summary>
+        /// Material code/SKU for the new material
+        /// </summary>
         public string MaterialCode
         {
             get => _materialCode;
@@ -44,19 +53,27 @@ namespace ElectricalContractorSystem.Views
             {
                 _materialCode = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(CanSave));
             }
         }
 
-        public string Name
+        /// <summary>
+        /// Material name - RENAMED to avoid conflict with FrameworkElement.Name
+        /// </summary>
+        public string MaterialName
         {
-            get => _name;
+            get => _materialName;
             set
             {
-                _name = value;
+                _materialName = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(CanSave));
             }
         }
 
+        /// <summary>
+        /// Material description
+        /// </summary>
         public string Description
         {
             get => _description;
@@ -67,6 +84,9 @@ namespace ElectricalContractorSystem.Views
             }
         }
 
+        /// <summary>
+        /// Material category
+        /// </summary>
         public string Category
         {
             get => _category;
@@ -77,6 +97,9 @@ namespace ElectricalContractorSystem.Views
             }
         }
 
+        /// <summary>
+        /// Unit of measure (Each, Foot, Box, etc.)
+        /// </summary>
         public string UnitOfMeasure
         {
             get => _unitOfMeasure;
@@ -87,6 +110,9 @@ namespace ElectricalContractorSystem.Views
             }
         }
 
+        /// <summary>
+        /// Current price of the material
+        /// </summary>
         public decimal CurrentPrice
         {
             get => _currentPrice;
@@ -94,9 +120,13 @@ namespace ElectricalContractorSystem.Views
             {
                 _currentPrice = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(CanSave));
             }
         }
 
+        /// <summary>
+        /// Tax rate percentage
+        /// </summary>
         public decimal TaxRate
         {
             get => _taxRate;
@@ -107,6 +137,9 @@ namespace ElectricalContractorSystem.Views
             }
         }
 
+        /// <summary>
+        /// Minimum stock level for alerts
+        /// </summary>
         public int MinStockLevel
         {
             get => _minStockLevel;
@@ -117,6 +150,9 @@ namespace ElectricalContractorSystem.Views
             }
         }
 
+        /// <summary>
+        /// Maximum stock level for alerts
+        /// </summary>
         public int MaxStockLevel
         {
             get => _maxStockLevel;
@@ -127,18 +163,27 @@ namespace ElectricalContractorSystem.Views
             }
         }
 
-        public bool IsActive
+        /// <summary>
+        /// Whether material is active - RENAMED to avoid conflict with Window.IsActive
+        /// </summary>
+        public bool IsMaterialActive
         {
-            get => _isActive;
+            get => _isMaterialActive;
             set
             {
-                _isActive = value;
+                _isMaterialActive = value;
                 OnPropertyChanged();
             }
         }
 
+        /// <summary>
+        /// Available vendors for selection
+        /// </summary>
         public ObservableCollection<Vendor> Vendors { get; private set; }
 
+        /// <summary>
+        /// Selected preferred vendor
+        /// </summary>
         public Vendor SelectedVendor
         {
             get => _selectedVendor;
@@ -149,13 +194,36 @@ namespace ElectricalContractorSystem.Views
             }
         }
 
+        /// <summary>
+        /// The newly created material (populated after successful save)
+        /// </summary>
         public Material NewMaterial { get; private set; }
+
+        /// <summary>
+        /// Indicates if the dialog was completed successfully
+        /// </summary>
         public bool Success { get; private set; }
+
+        /// <summary>
+        /// Computed property to determine if save is allowed
+        /// </summary>
+        public bool CanSave
+        {
+            get
+            {
+                return !string.IsNullOrWhiteSpace(MaterialCode) &&
+                       !string.IsNullOrWhiteSpace(MaterialName) &&
+                       CurrentPrice >= 0;
+            }
+        }
 
         #endregion
 
         #region Methods
 
+        /// <summary>
+        /// Load available vendors from database
+        /// </summary>
         private void LoadVendors()
         {
             Vendors = new ObservableCollection<Vendor>();
@@ -175,54 +243,111 @@ namespace ElectricalContractorSystem.Views
             }
         }
 
+        /// <summary>
+        /// Validate input and create new material
+        /// </summary>
+        private bool ValidateInput()
+        {
+            // Validate required fields
+            if (string.IsNullOrWhiteSpace(MaterialCode))
+            {
+                MessageBox.Show("Material Code is required.", "Validation Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                MaterialCodeTextBox.Focus();
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(MaterialName))
+            {
+                MessageBox.Show("Material Name is required.", "Validation Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                MaterialNameTextBox.Focus();
+                return false;
+            }
+
+            if (CurrentPrice < 0)
+            {
+                MessageBox.Show("Price must be greater than or equal to zero.", "Validation Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                PriceTextBox.Focus();
+                return false;
+            }
+
+            if (TaxRate < 0 || TaxRate > 100)
+            {
+                MessageBox.Show("Tax rate must be between 0 and 100 percent.", "Validation Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                TaxRateTextBox.Focus();
+                return false;
+            }
+
+            if (MinStockLevel < 0)
+            {
+                MessageBox.Show("Minimum stock level cannot be negative.", "Validation Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                MinStockTextBox.Focus();
+                return false;
+            }
+
+            if (MaxStockLevel < 0)
+            {
+                MessageBox.Show("Maximum stock level cannot be negative.", "Validation Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                MaxStockTextBox.Focus();
+                return false;
+            }
+
+            if (MaxStockLevel > 0 && MinStockLevel > MaxStockLevel)
+            {
+                MessageBox.Show("Minimum stock level cannot be greater than maximum stock level.", "Validation Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                MinStockTextBox.Focus();
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Create the new material object
+        /// </summary>
+        private void CreateMaterial()
+        {
+            NewMaterial = new Material
+            {
+                MaterialCode = MaterialCode.Trim(),
+                Name = MaterialName.Trim(),
+                Description = string.IsNullOrWhiteSpace(Description) ? null : Description.Trim(),
+                Category = Category,
+                UnitOfMeasure = UnitOfMeasure,
+                CurrentPrice = CurrentPrice,
+                TaxRate = TaxRate,
+                MinStockLevel = MinStockLevel,
+                MaxStockLevel = MaxStockLevel,
+                PreferredVendorId = SelectedVendor?.VendorId,
+                IsActive = IsMaterialActive,
+                CreatedDate = DateTime.Now,
+                CreatedBy = "User" // In a real system, this would be the current user
+            };
+
+            // Note: MaterialId will be assigned by the database when saved
+        }
+
+        #endregion
+
+        #region Event Handlers
+
+        /// <summary>
+        /// Save button click handler
+        /// </summary>
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                // Validate required fields
-                if (string.IsNullOrWhiteSpace(MaterialCode))
-                {
-                    MessageBox.Show("Material Code is required.", "Validation Error", 
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
-                    MaterialCodeTextBox.Focus();
+                if (!ValidateInput())
                     return;
-                }
 
-                if (string.IsNullOrWhiteSpace(Name))
-                {
-                    MessageBox.Show("Name is required.", "Validation Error", 
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
-                    NameTextBox.Focus();
-                    return;
-                }
-
-                if (CurrentPrice < 0)
-                {
-                    MessageBox.Show("Price must be greater than or equal to zero.", "Validation Error", 
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
-                    PriceTextBox.Focus();
-                    return;
-                }
-
-                // Create new material
-                NewMaterial = new Material
-                {
-                    MaterialCode = MaterialCode.Trim(),
-                    Name = Name.Trim(),
-                    Description = string.IsNullOrWhiteSpace(Description) ? null : Description.Trim(),
-                    Category = Category,
-                    UnitOfMeasure = UnitOfMeasure,
-                    CurrentPrice = CurrentPrice,
-                    TaxRate = TaxRate,
-                    MinStockLevel = MinStockLevel,
-                    MaxStockLevel = MaxStockLevel,
-                    PreferredVendorId = SelectedVendor?.VendorId,
-                    IsActive = IsActive,
-                    CreatedDate = DateTime.Now
-                };
-
-                // Add to sample data (since we're working with sample data)
-                NewMaterial.MaterialId = new Random().Next(100, 999);
+                CreateMaterial();
 
                 Success = true;
                 DialogResult = true;
@@ -235,6 +360,9 @@ namespace ElectricalContractorSystem.Views
             }
         }
 
+        /// <summary>
+        /// Cancel button click handler
+        /// </summary>
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             Success = false;
@@ -242,9 +370,24 @@ namespace ElectricalContractorSystem.Views
             Close();
         }
 
+        /// <summary>
+        /// Handle Enter key press for quick save
+        /// </summary>
+        private void AddMaterialDialog_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.Enter && CanSave)
+            {
+                SaveButton_Click(sender, new RoutedEventArgs());
+            }
+            else if (e.Key == System.Windows.Input.Key.Escape)
+            {
+                CancelButton_Click(sender, new RoutedEventArgs());
+            }
+        }
+
         #endregion
 
-        #region INotifyPropertyChanged
+        #region INotifyPropertyChanged Implementation
 
         public event PropertyChangedEventHandler PropertyChanged;
 
