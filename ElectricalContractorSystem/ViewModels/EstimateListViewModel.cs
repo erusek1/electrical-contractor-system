@@ -98,25 +98,21 @@ namespace ElectricalContractorSystem.ViewModels
         
         private void ExecuteNewEstimate(object parameter)
         {
-            // Show customer selection dialog
-            var customerDialog = new CustomerSelectionDialog();
-            var customerViewModel = new CustomerSelectionViewModel(_databaseService);
-            customerDialog.DataContext = customerViewModel;
+            // FIXED: Show customer selection dialog with proper constructor parameter
+            var customerDialog = new CustomerSelectionDialog(_databaseService);
             
-            if (customerDialog.ShowDialog() == true)
+            if (customerDialog.ShowDialog() == true && customerDialog.SelectedCustomer != null)
             {
-                var customer = customerViewModel.SelectedCustomer;
-                if (customer != null)
-                {
-                    // Open estimate builder with new estimate
-                    var estimateBuilder = new EstimateBuilderView();
-                    var builderViewModel = new EstimateBuilderViewModel(_databaseService);
-                    builderViewModel.CreateNewEstimate(customer);
-                    estimateBuilder.DataContext = builderViewModel;
-                    
-                    // Show as dialog or navigate to view
-                    EstimateCreated?.Invoke(builderViewModel);
-                }
+                var customer = customerDialog.SelectedCustomer;
+                
+                // Open estimate builder with new estimate
+                var estimateBuilder = new EstimateBuilderView();
+                var builderViewModel = new EstimateBuilderViewModel(_databaseService);
+                builderViewModel.CreateNewEstimate(customer);
+                estimateBuilder.DataContext = builderViewModel;
+                
+                // Show as dialog or navigate to view
+                EstimateCreated?.Invoke(builderViewModel);
             }
         }
         
