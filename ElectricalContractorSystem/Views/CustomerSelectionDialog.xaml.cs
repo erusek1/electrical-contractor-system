@@ -12,7 +12,7 @@ namespace ElectricalContractorSystem.Views
     public partial class CustomerSelectionDialog : Window
     {
         public Customer SelectedCustomer { get; private set; }
-        public bool DialogResult { get; private set; }
+        public new bool DialogResult { get; private set; }
 
         public CustomerSelectionDialog(DatabaseService databaseService)
         {
