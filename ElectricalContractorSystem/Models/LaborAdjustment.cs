@@ -22,12 +22,19 @@ namespace ElectricalContractorSystem.Models
         public decimal ExtraMultiplier { get; set; } = 1.00m;
         
         public string ReasonCode { get; set; }
+        public string Reason { get; set; } // ADDED: Alias property
         
         public string Notes { get; set; }
         
         public string CreatedBy { get; set; }
+        public string AdjustedBy { get; set; } // ADDED: Missing property
         
         public DateTime CreatedDate { get; set; } = DateTime.Now;
+        public DateTime AdjustedDate { get; set; } = DateTime.Now; // ADDED: Missing property
+        
+        // ADDED: Missing properties used by AssemblyService
+        public int OriginalMinutes { get; set; }
+        public int AdjustedMinutes { get; set; }
         
         // Navigation properties
         public virtual Estimate Estimate { get; set; }
