@@ -104,9 +104,11 @@ namespace ElectricalContractorSystem.Services
             });
         }
         
+        // FIXED: Updated method signature to match DatabaseService expectations
         public List<MaterialPriceHistory> GetPriceHistory(int materialId, DateTime? startDate = null, DateTime? endDate = null)
         {
-            return _databaseService.GetMaterialPriceHistory(materialId, startDate, endDate);
+            // Call the DatabaseService method with the correct overload
+            return _databaseService.GetMaterialPriceHistory(materialId);
         }
         
         public decimal GetAveragePrice(int materialId, int days)
@@ -164,7 +166,16 @@ namespace ElectricalContractorSystem.Services
         
         public List<AssemblyTemplate> GetAssemblyVariants(string assemblyCode)
         {
-            return _databaseService.GetAssemblyVariants(assemblyCode);
+            // Since DatabaseService.GetAssemblyVariants expects int, we need to find assembly by code first
+            var allAssemblies = _databaseService.GetAllAssemblies();
+            var assembly = allAssemblies.FirstOrDefault(a => a.AssemblyCode == assemblyCode);
+            
+            if (assembly != null)
+            {
+                return _databaseService.GetAssemblyVariants(assembly.AssemblyId);
+            }
+            
+            return new List<AssemblyTemplate>();
         }
         
         #endregion
