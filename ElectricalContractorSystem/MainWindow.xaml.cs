@@ -145,9 +145,9 @@ namespace ElectricalContractorSystem
             
             try
             {
-                // Show customer selection dialog
+                // Show customer selection dialog - FIXED: Pass DatabaseService parameter
                 var viewModel = new CustomerSelectionViewModel(_databaseService);
-                var dialog = new CustomerSelectionDialog
+                var dialog = new CustomerSelectionDialog(_databaseService)
                 {
                     DataContext = viewModel
                 };
@@ -443,7 +443,8 @@ namespace ElectricalContractorSystem
             
             try
             {
-                var dialog = new AddCustomerDialog();
+                // FIXED: Pass DatabaseService parameter
+                var dialog = new AddCustomerDialog(_databaseService);
                 if (dialog.ShowDialog() == true)
                 {
                     var customer = dialog.Customer;
