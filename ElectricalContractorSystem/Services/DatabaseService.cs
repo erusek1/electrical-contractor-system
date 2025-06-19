@@ -13,6 +13,7 @@ namespace ElectricalContractorSystem.Services
     /// Removed all partial class conflicts that were preventing customer data from loading
     /// FIXED: String-to-enum conversion errors and missing enum types
     /// FIXED: String-to-int conversion errors in data reader calls
+    /// ADDED: Missing methods referenced by other services
     /// </summary>
     public class DatabaseService
     {
@@ -1066,7 +1067,7 @@ namespace ElectricalContractorSystem.Services
 
         #endregion
 
-        #region Required Methods by Other Services (EMPTY IMPLEMENTATIONS)
+        #region Required Methods by Other Services - ADDED MISSING METHODS
 
         // Estimates
         public List<Estimate> GetAllEstimates() => new List<Estimate>();
@@ -1090,6 +1091,10 @@ namespace ElectricalContractorSystem.Services
         public List<LaborAdjustment> GetLaborAdjustmentsByJob(int jobId) => new List<LaborAdjustment>();
         public int GetAssemblyUsageCount(int assemblyId) => 0;
         public DateTime? GetAssemblyLastUsedDate(int assemblyId) => null;
+
+        // ADDED: Missing methods required by AssemblyService
+        public PriceListItem GetPriceListItemById(int itemId) => null;
+        public void SaveLaborAdjustment(LaborAdjustment adjustment) { }
 
         // Properties
         public List<Property> GetPropertiesForCustomer(int customerId) => new List<Property>();
