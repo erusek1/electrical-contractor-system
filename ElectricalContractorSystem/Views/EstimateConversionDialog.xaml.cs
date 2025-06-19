@@ -12,7 +12,7 @@ namespace ElectricalContractorSystem.Views
     public partial class EstimateConversionDialog : Window
     {
         public Job CreatedJob { get; private set; }
-        public bool DialogResult { get; private set; }
+        public new bool DialogResult { get; private set; }
 
         public EstimateConversionDialog(DatabaseService databaseService, Estimate estimate)
         {
